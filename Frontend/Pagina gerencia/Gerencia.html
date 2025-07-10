@@ -1,0 +1,57 @@
+<!-- Frontend/Pagina gerencia/Gerencia.html -->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Cardápio</title>
+    <!-- O caminho deve ser relativo à pasta raiz do frontend (onde o servidor está apontando) -->
+    <link rel="stylesheet" href="/Pagina gerencia/adm.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Gerenciador de Cardápio</h1>
+        </header>
+
+        <main class="main-grid">
+            <!-- Seção de Categorias -->
+            <section class="panel" id="categorias-panel">
+                <h2>Categorias</h2>
+                <div class="form-container">
+                    <input type="text" id="input-nova-categoria" placeholder="Nome da nova categoria">
+                    <button id="btn-add-categoria">Adicionar Categoria</button>
+                </div>
+                <ul id="lista-categorias" class="item-list">
+                    <!-- Categorias serão carregadas aqui via JS -->
+                </ul>
+            </section>
+
+            <!-- Seção de Produtos -->
+            <section class="panel" id="produtos-panel">
+                <h2>Produtos da Categoria: <span id="nome-categoria-selecionada">Nenhuma</span></h2>
+                <div id="form-produto-container" class="hidden">
+                    <h3>Adicionar Novo Produto</h3>
+                    <input type="text" id="input-nome-produto" placeholder="Nome do produto">
+                    <textarea id="input-descricao-produto" placeholder="Descrição do produto"></textarea>
+                    <input type="number" id="input-preco-produto" placeholder="Preço (ex: 25.50)">
+                    
+                    <!-- NOVO CAMPO AQUI -->
+                    <input type="number" id="input-serve-pessoas" placeholder="Serve quantas pessoas? (ex: 2)" min="1">
+
+                    <label for="input-imagem-produto">Imagem (SVG, PNG, JPG):</label>
+                    <input type="file" id="input-imagem-produto" accept="image/*">
+                    <button id="btn-add-produto">Salvar Produto</button>
+                </div>
+                <ul id="lista-produtos" class="item-list">
+                    <!-- Produtos serão carregados aqui via JS -->
+                </ul>
+            </section>
+        </main>
+    </div>
+
+    <!-- O caminho para o script também deve ser relativo à raiz do frontend -->
+    <script src="/Pagina gerencia/app.js"></script>
+</body>
+</html>

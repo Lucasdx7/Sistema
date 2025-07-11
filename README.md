@@ -1,4 +1,4 @@
-# Sistema de Gestão de Cardápio e Pedidos - Skina 67
+# Sistema de Gestão de Cardápio e Pedidos
 
 ![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow )
 ![Progresso](https://img.shields.io/badge/progresso-25%25-orange )
@@ -6,7 +6,7 @@
 ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue )
 ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
 
-Sistema de gerenciamento completo para o restaurante "Skina 67", com foco em segurança, usabilidade e atualizações em tempo real. A plataforma permite que a gerência administre o cardápio de forma dinâmica e segura, enquanto os clientes visualizam os produtos instantaneamente.
+Sistema de gerenciamento completo para restaurante, com foco em segurança, usabilidade e atualizações em tempo real. A plataforma permite que a gerência administre o cardápio de forma dinâmica e segura, enquanto os clientes visualizam os produtos instantaneamente.
 
 ## 📋 Visão Geral do Projeto
 

@@ -1,10 +1,9 @@
-// /Backend/routes/api.js
 const express = require('express');
 const router = express.Router();
 const { query, registrarLog } = require('../db');
-const bcrypt = require('bcryptjs'); // <-- LINHA ADICIONADA PARA CORRIGIR O ERRO
+const bcrypt = require('bcryptjs');
 
-// Função de middleware para verificar se o usuário está logado antes de registrar o log
+// --- Middleware de verificação (sem alterações) ---
 const checarUsuarioParaLog = (req, res, next) => {
     if (!req.usuario || !req.usuario.id || !req.usuario.nome) {
         console.error("Tentativa de ação de log sem um usuário autenticado.");
@@ -309,6 +308,181 @@ router.get('/mesas/status', checarUsuarioParaLog, async (req, res) => {
     } catch (error) {
         console.error('Erro ao buscar status das mesas:', error);
         res.status(500).json({ message: 'Erro no servidor ao buscar status das mesas.' });
+    }
+});
+
+
+// ==================================================================
+// ROTAS PARA PEDIDOS DO CLIENTE
+// ==================================================================
+
+router.post('/pedidos', checarUsuarioParaLog, async (req, res) => {
+    // Pega os dados do corpo da requisição
+    const { id_sessao, id_produto, preco_unitario } = req.body;
+
+    // Validação rigorosa dos dados recebidos
+    if (!id_sessao || !id_produto || preco_unitario === undefined || preco_unitario === null) {
+        return res.status(400).json({ message: 'Dados do pedido incompletos ou inválidos. Faltam informações essenciais.' });
+    }
+
+    try {
+        // Insere o novo pedido na tabela 'pedidos'
+        const result = await query(
+            'INSERT INTO pedidos (id_sessao, id_produto, preco_unitario, quantidade) VALUES (?, ?, ?, ?)',
+            [id_sessao, id_produto, preco_unitario, 1] // Assumindo quantidade 1 por padrão
+        );
+
+        // Responde com sucesso e o ID do novo pedido criado
+        res.status(201).json({ message: 'Produto adicionado ao pedido com sucesso!', pedidoId: result.insertId });
+
+    } catch (error) {
+        // Se houver um erro no banco de dados (ex: id_produto não existe), ele será capturado aqui
+        console.error('Erro ao inserir pedido no banco de dados:', error);
+        res.status(500).json({ message: 'Erro interno no servidor ao tentar salvar o pedido.' });
+    }
+});
+
+// GET /api/sessoes/:id/conta - Buscar os detalhes da conta de uma sessão (VERSÃO CORRIGIDA)
+router.get('/sessoes/:id/conta', checarUsuarioParaLog, async (req, res) => {
+    const { id } = req.params; // Pega o ID da sessão da URL
+
+    // Log para ter certeza de que o ID está chegando corretamente
+    console.log(`Buscando conta para a sessão com ID: ${id}`);
+
+    // Validação para garantir que o ID não é nulo ou indefinido
+    if (!id) {
+        return res.status(400).json({ message: 'O ID da sessão é obrigatório.' });
+    }
+
+    try {
+        const sql = `
+            SELECT 
+                p.id,
+                p.quantidade,
+                p.preco_unitario,
+                prod.nome AS nome_produto,
+                prod.imagem_svg
+            FROM pedidos p
+            JOIN produtos prod ON p.id_produto = prod.id
+            WHERE p.id_sessao = ?
+            ORDER BY p.data_pedido ASC;
+        `;
+        
+        // --- CORREÇÃO APLICADA AQUI ---
+        // Agora estamos passando o 'id' da sessão como parâmetro para a consulta.
+        const pedidos = await query(sql, [id]);
+        
+        // Calcula o total com base nos pedidos retornados
+        const total = pedidos.reduce((acc, item) => acc + (item.quantidade * item.preco_unitario), 0);
+
+        // Retorna os pedidos e o total formatado
+        res.json({ pedidos, total: total.toFixed(2) });
+
+    } catch (error) {
+        // Se ainda ocorrer um erro, ele será logado com mais detalhes
+        console.error(`Erro detalhado ao buscar conta da sessão [${id}]:`, error);
+        res.status(500).json({ message: 'Erro no servidor ao buscar a conta.' });
+    }
+});
+
+// /Backend/routes/api.js
+
+// ==================================================================
+// ROTA PARA BUSCAR O HISTÓRICO DE SESSÕES DE UMA MESA ESPECÍFICA
+// ==================================================================
+// /Backend/routes/api.js
+
+// ==================================================================
+// ROTA PARA BUSCAR O HISTÓRICO DE SESSÕES DE UMA MESA ESPECÍFICA (VERSÃO CORRIGIDA)
+// ==================================================================
+router.get('/mesas/:id/sessoes', checarUsuarioParaLog, async (req, res) => {
+    const { id } = req.params;
+    try {
+        // --- QUERY MELHORADA E CORRIGIDA ---
+        // 1. Usamos crases (`) em volta de 'status' para evitar conflito com palavras reservadas do SQL.
+        // 2. A subquery para calcular o total foi movida para dentro da lista de seleção.
+        const sql = `
+            SELECT 
+                sc.id,
+                sc.nome_cliente,
+                sc.data_inicio,
+                sc.data_fim,
+                sc.\`status\`,
+                (SELECT SUM(p.quantidade * p.preco_unitario) 
+                 FROM pedidos p 
+                 WHERE p.id_sessao = sc.id) AS total_gasto
+            FROM sessoes_cliente sc
+            WHERE sc.id_mesa = ?
+            ORDER BY sc.data_inicio DESC;
+        `;
+        
+        const sessoes = await query(sql, [id]);
+
+        // O MySQL pode retornar o 'total_gasto' como uma string. Garantimos que seja um número.
+        const sessoesFormatadas = sessoes.map(sessao => ({
+            ...sessao,
+            total_gasto: parseFloat(sessao.total_gasto) || 0
+        }));
+
+        res.json(sessoesFormatadas);
+
+    } catch (error) {
+        // Este log é crucial para o diagnóstico
+        console.error(`Erro ao buscar sessões da mesa ID [${id}]:`, error);
+        res.status(500).json({ message: 'Erro no servidor ao buscar o histórico da mesa.' });
+    }
+});
+
+// ==================================================================
+// ROTA PARA FECHAR A CONTA DE UMA SESSÃO (NOVA)
+// ==================================================================
+router.post('/sessoes/:id/fechar', checarUsuarioParaLog, async (req, res) => {
+    const { id } = req.params; // id da sessão
+    try {
+        // Atualiza o status da sessão para 'finalizada' e define a data de término
+        const result = await query(
+            "UPDATE sessoes_cliente SET status = 'finalizada', data_fim = NOW() WHERE id = ? AND status = 'ativa'",
+            [id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Sessão não encontrada ou já está finalizada.' });
+        }
+
+        // Log da ação
+        await registrarLog(req.usuario.id, req.usuario.nome, 'FECHOU_SESSAO', `Fechou a sessão ID ${id}.`);
+
+        res.json({ message: 'Conta fechada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao fechar sessão:', error);
+        res.status(500).json({ message: 'Erro no servidor ao fechar a conta.' });
+    }
+});
+
+
+// ==================================================================
+// ROTA PARA FECHAR A CONTA DE UMA SESSÃO (VERSÃO SIMPLES E ESTÁVEL)
+// ==================================================================
+router.post('/sessoes/:id/fechar', checarUsuarioParaLog, async (req, res) => {
+    const { id } = req.params; // id da sessão
+    try {
+        // Apenas atualiza o status da sessão no banco de dados
+        const result = await query(
+            "UPDATE sessoes_cliente SET status = 'finalizada', data_fim = NOW() WHERE id = ? AND status = 'ativa'",
+            [id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Sessão não encontrada ou já está finalizada.' });
+        }
+
+        // A chamada ao WebSocket foi removida daqui
+        
+        await registrarLog(req.usuario.id, req.usuario.nome, 'FECHOU_SESSAO', `Fechou a sessão ID ${id}.`);
+        res.json({ message: 'Conta fechada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao fechar sessão:', error);
+        res.status(500).json({ message: 'Erro no servidor ao fechar a conta.' });
     }
 });
 

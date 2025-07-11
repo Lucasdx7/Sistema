@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Minha Conta - Skina 67</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="../Pagina cliente/Usuario.css">
+</head>
+<body>
+    <!-- Botão escondido para o funcionário abrir o modal de logout -->
+    <button id="hidden-logout-button" class="hidden-button" title="Encerrar Sessão"></button>
+
+    <div class="dashboard-container">
+        <header class="main-header">
+            <a href="/cardapio" class="back-button" title="Voltar ao Cardápio">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h1>Minha Conta</h1>
+        </header>
+
+        <main class="account-main">
+            <div class="panel account-details">
+                <h2>Detalhes do Cliente</h2>
+                <p><strong>Nome:</strong> <span id="cliente-nome">Carregando...</span></p>
+                <p><strong>Mesa:</strong> <span id="cliente-mesa">Carregando...</span></p>
+            </div>
+
+            <div class="panel order-list">
+                <h2>Meus Pedidos</h2>
+                <ul id="lista-pedidos" class="item-list">
+                    <!-- Pedidos serão inseridos aqui -->
+                </ul>
+            </div>
+
+            <div class="panel account-summary">
+                <h2>Resumo da Conta</h2>
+                <div class="summary-item">
+                    <span>Subtotal</span>
+                    <span id="subtotal-valor">R$ 0,00</span>
+                </div>
+                <div class="summary-item">
+                    <span>Taxa de Serviço (10% )</span>
+                    <span id="taxa-servico">R$ 0,00</span>
+                </div>
+                <hr>
+                <div class="summary-item total">
+                    <span>TOTAL</span>
+                    <span id="total-valor">R$ 0,00</span>
+                </div>
+                <!-- O botão antigo pode ser mantido ou removido, como preferir -->
+                <button class="call-waiter-btn"><i class="fas fa-bell"></i> Chamar Garçom</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Logout da Mesa (NOVO) -->
+    <div id="logout-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button id="close-modal-btn" class="close-button">&times;</button>
+            <h2>Encerrar Sessão da Mesa</h2>
+            <p>Para liberar a mesa, confirme o usuário e senha dela.</p>
+            <form id="logout-form">
+                <div class="form-group">
+                    <label for="mesa-usuario">Usuário da Mesa</label>
+                    <input type="text" id="mesa-usuario" required>
+                </div>
+                <div class="form-group">
+                    <label for="mesa-senha">Senha da Mesa</label>
+                    <input type="password" id="mesa-senha" required>
+                </div>
+                <button type="submit" class="auth-submit-btn">Confirmar e Encerrar</button>
+                <p id="logout-message" class="message"></p>
+            </form>
+        </div>
+    </div>
+
+    <script src="../Pagina cliente/conta_cliente.js"></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-// Frontend/Pagina gerencia/app.js
+// /Frontend/Pagina gerencia/app.js
 
 document.addEventListener('DOMContentLoaded', () => {
     const API_URL = 'http://localhost:3000/api';
@@ -18,10 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputServePessoas = document.getElementById('input-serve-pessoas');
     const btnAddProduto = document.getElementById('btn-add-produto');
 
-    // --- Variável de Estado ---
+    // --- Variáveis de Estado ---
     let estado = {
         categoriaSelecionada: null
     };
+    let itemArrastado = null;
 
     // --- Funções de Conversão e API ---
     function fileToBase64(file) {
@@ -32,16 +33,46 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.onerror = error => reject(error);
         });
     }
-    
+
+    // VERSÃO ÚNICA E CORRETA DA FUNÇÃO apiCall
     async function apiCall(endpoint, method = 'GET', body = null) {
-        const options = { method, headers: { 'Content-Type': 'application/json' } };
-        if (body) { options.body = JSON.stringify(body); }
-        const response = await fetch(`${API_URL}${endpoint}`, options);
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: response.statusText }));
-            throw new Error(`Erro na API: ${errorData.message}`);
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            // Se não houver token, não adianta nem tentar. Redireciona para o login.
+            window.location.href = '/login';
+            return;
         }
-        return response.status === 204 ? {} : response.json();
+
+        const options = {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        };
+        if (body) { options.body = JSON.stringify(body); }
+
+        try {
+            const response = await fetch(`${API_URL}${endpoint}`, options);
+
+            if (response.status === 401 || response.status === 403) {
+                alert('Sua sessão expirou ou você não tem permissão. Por favor, faça login novamente.');
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('usuario');
+                window.location.href = '/login';
+                throw new Error('Sessão inválida');
+            }
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: response.statusText }));
+                throw new Error(`Erro na API: ${errorData.message}`);
+            }
+            return response.status === 204 ? {} : response.json();
+        } catch (error) {
+            console.error('Falha na chamada da API:', error);
+            // Não mostra o alerta aqui para não poluir, o erro já será tratado por quem chamou.
+            throw error;
+        }
     }
 
     // --- Funções de Renderização ---
@@ -55,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const li = document.createElement('li');
                 li.dataset.id = cat.id;
                 li.dataset.nome = cat.nome;
+                li.draggable = true;
                 li.innerHTML = `<span>${cat.nome}</span><button class="delete-btn" data-id="${cat.id}">X</button>`;
                 
                 if (estado.categoriaSelecionada && cat.id === estado.categoriaSelecionada.id) {
@@ -68,10 +100,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 estado.categoriaSelecionada = null;
                 nomeCategoriaSelecionada.textContent = 'Nenhuma';
                 formProdutoContainer.classList.add('hidden');
+                listaProdutos.innerHTML = '';
             }
         } catch (error) {
-            console.error("Falha em carregarCategorias:", error);
-            alert('Não foi possível carregar as categorias.');
+            // A apiCall já redireciona se for erro de autenticação, então não precisa de alerta aqui.
+            console.error("Falha ao carregar categorias.", error);
         }
     }
 
@@ -161,6 +194,46 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { alert(`Falha ao adicionar produto: ${error.message}`); }
     });
 
+    // --- Lógica de Drag and Drop ---
+    listaCategorias.addEventListener('dragstart', (e) => {
+        itemArrastado = e.target;
+        setTimeout(() => e.target.classList.add('dragging'), 0);
+    });
+
+    listaCategorias.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const itemApos = obterElementoAposArrastar(listaCategorias, e.clientY);
+        if (itemApos == null) {
+            listaCategorias.appendChild(itemArrastado);
+        } else {
+            listaCategorias.insertBefore(itemArrastado, itemApos);
+        }
+    });
+
+    function obterElementoAposArrastar(container, y) {
+        const elementosArrastaveis = [...container.querySelectorAll('li:not(.dragging)')];
+        return elementosArrastaveis.reduce((maisProximo, filho) => {
+            const box = filho.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > maisProximo.offset) {
+                return { offset: offset, element: filho };
+            } else {
+                return maisProximo;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    listaCategorias.addEventListener('dragend', async (e) => {
+        e.target.classList.remove('dragging');
+        const novaOrdemIds = [...listaCategorias.querySelectorAll('li')].map(li => li.dataset.id);
+        try {
+            await apiCall('/categorias/ordenar', 'POST', { ordem: novaOrdemIds });
+        } catch (error) {
+            alert('Não foi possível salvar a nova ordem. A página será recarregada.');
+            carregarCategorias();
+        }
+    });
+
     // --- Lógica do WebSocket ---
     function conectarWebSocketGerencia() {
         const ws = new WebSocket(WS_URL);
@@ -179,6 +252,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- INICIALIZAÇÃO ---
-    carregarCategorias();
-    conectarWebSocketGerencia();
+    // Verifica se o usuário está logado antes de carregar qualquer coisa
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        window.location.href = '/login';
+    } else {
+        carregarCategorias();
+        conectarWebSocketGerencia();
+    }
 });

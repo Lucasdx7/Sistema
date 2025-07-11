@@ -1,30 +1,23 @@
-// Backend/server.js
+// /Backend/server.js
 
-// --- 1. Módulos Necessários ---
 const express = require('express');
 const cors = require('cors');
-const path = require('path'); // Essencial para lidar com caminhos de arquivos
-const http = require('http' ); // Módulo HTTP nativo do Node.js
-const { WebSocketServer } = require('ws'); // Biblioteca de WebSocket
+const path = require('path');
+const http = require('http' );
+const { WebSocketServer } = require('ws');
 
 const apiRoutes = require('./routes/api');
+const authRoutes = require('./routes/auth');
+const { protegerRota } = require('./middleware/authMiddleware');
 
-// --- 2. Configuração Inicial ---
 const app = express();
 const PORT = 3000;
 
-// --- 3. Middlewares do Express ---
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// --- 4. Servindo os Arquivos do Frontend ---
-// Esta é a linha mais importante para a sua estrutura de pastas.
-// Ela diz ao Express: "Os arquivos públicos (HTML, CSS, JS) estão na pasta irmã chamada 'Frontend'".
-// path.join(__dirname, '..', 'Frontend') significa: a partir daqui (__dirname), volte um nível (..), e entre em 'Frontend'.
 app.use(express.static(path.join(__dirname, '..', 'Frontend')));
 
-// --- 5. Configuração do Servidor WebSocket ---
 const server = http.createServer(app );
 const wss = new WebSocketServer({ server });
 
@@ -40,33 +33,37 @@ wss.on('connection', ws => {
     console.log('Novo cliente conectado ao WebSocket!');
 });
 
-// Middleware para passar a função 'broadcast' para as rotas da API
 app.use((req, res, next) => {
     req.broadcast = broadcast;
     next();
 });
 
-// --- 6. Rotas da API e das Páginas ---
-app.use('/api', apiRoutes);
+app.use('/auth', authRoutes);
+app.use('/api', protegerRota, apiRoutes);
 
-// Rota para a página de GERENCIAMENTO
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'login.html'));
+});
+
+app.get('/gerencia-home', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'Gerencia-Home.html'));
+});
+
 app.get('/gerencia', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'Gerencia.html'));
 });
 
-// Rota para a página do CLIENTE
+// ROTA PARA A PÁGINA DE LOGS REMOVIDA
+
 app.get('/cardapio', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina cliente', 'Paginausuario.html'));
 });
 
-// Rota raiz: redireciona para o cardápio
 app.get('/', (req, res) => {
-    res.redirect('/cardapio');
+    res.redirect('/login');
 });
 
-// --- 7. Inicia o Servidor ---
 server.listen(PORT, () => {
     console.log(`Servidor rodando!`);
-    console.log(`Acesse o cardápio em http://localhost:${PORT}/cardapio` );
-    console.log(`Acesse o painel em http://localhost:${PORT}/gerencia` );
+    console.log(`Acesse o painel em http://localhost:${PORT}/login` );
 });

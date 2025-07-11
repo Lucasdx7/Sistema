@@ -130,3 +130,271 @@ button:hover {
 .hidden {
     display: none;
 }
+
+.item-list li.dragging {
+    opacity: 0.5;
+    background-color: #e0e0e0;
+}
+/* Em Frontend/Pagina gerencia/adm.css */
+
+/* Estilos para o novo cabeçalho principal */
+.main-header {
+    background-color: #4b2e2e; /* Mesma cor do seu tema */
+    color: white;
+    padding: 15px 20px;
+    text-align: center;
+    border-radius: 8px;
+    margin: 20px;
+    position: relative; /* Essencial para posicionar o botão de voltar */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.main-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+/* Estilos para o botão de voltar */
+.main-header .back-button {
+    position: absolute; /* Posiciona o botão em relação ao header */
+    left: 20px; /* Distância da borda esquerda */
+    top: 50%;
+    transform: translateY(-50%); /* Centraliza verticalmente */
+    
+    color: white;
+    text-decoration: none;
+    font-size: 1.5rem; /* Tamanho do ícone */
+    transition: transform 0.2s ease-in-out;
+}
+
+.main-header .back-button:hover {
+    transform: translateY(-50%) scale(1.1); /* Efeito de zoom ao passar o mouse */
+}
+
+
+/* =============================================== */
+/* --- Estilos para a Página Home (Dashboard) --- */
+/* =============================================== */
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between; /* Alinha o título à esquerda e o perfil à direita */
+    align-items: center;
+    padding: 20px 30px;
+    background-color: #4b2e2e;
+    color: white;
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.header-title h1 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.header-title p {
+    margin: 5px 0 0;
+    opacity: 0.8;
+}
+
+.profile-menu {
+    position: relative; /* Essencial para o posicionamento do dropdown */
+}
+
+.profile-menu-button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 2.2rem; /* Tamanho do ícone */
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.profile-dropdown {
+    position: absolute;
+    top: 120%; /* Posição abaixo do ícone */
+    right: 0;
+    background-color: white;
+    color: #333;
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    width: 220px;
+    z-index: 100;
+    overflow: hidden;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.profile-dropdown.hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none; /* Impede cliques quando escondido */
+}
+
+.dropdown-header {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.dropdown-header strong {
+    display: block;
+    font-size: 1rem;
+}
+
+.dropdown-header span {
+    font-size: 0.85rem;
+    color: #777;
+    text-transform: capitalize; /* Deixa 'geral' como 'Geral' */
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    text-decoration: none;
+    color: #333;
+    transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: #f4f7f6;
+}
+
+.dropdown-item i {
+    margin-right: 10px;
+    width: 20px; /* Alinha os ícones */
+    text-align: center;
+}
+
+/* --- Container Principal da Home --- */
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto; /* Centraliza o container */
+    padding: 40px 20px;
+}
+
+/* --- Cabeçalho da Página Home --- */
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.dashboard-header h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0 0 10px 0;
+}
+
+.dashboard-header p {
+    font-size: 1.1rem;
+    color: #a8a8a8;
+}
+
+/* --- Grid de Navegação (onde ficam os cartões) --- */
+.dashboard-nav-grid {
+    display: grid;
+    /* Cria colunas responsivas: tenta encaixar cartões de 280px, 
+       mas eles podem crescer para preencher o espaço (1fr) */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px; /* Espaçamento entre os cartões */
+}
+
+/* --- Estilo Base dos Cartões de Navegação --- */
+.nav-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 25px;
+    text-decoration: none;
+    color: #333;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-card:hover {
+    transform: translateY(-5px); /* Efeito de levantar o cartão */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); /* Sombra mais pronunciada */
+}
+
+/* --- Conteúdo Interno dos Cartões --- */
+.nav-card .card-icon {
+    font-size: 2.2rem;
+    margin-bottom: 15px;
+    color: #4b2e2e; /* Cor principal do tema */
+}
+
+.nav-card h2 {
+    font-size: 1.4rem;
+    margin: 0 0 10px 0;
+}
+
+.nav-card p {
+    font-size: 0.95rem;
+    color: #666;
+    line-height: 1.5;
+    flex-grow: 1; /* Faz o parágrafo ocupar o espaço para alinhar o rodapé */
+}
+
+.nav-card .card-footer {
+    margin-top: 20px;
+    font-weight: 600;
+    color: #4b2e2e; /* Cor principal do tema */
+    display: flex;
+    align-items: center;
+}
+
+.nav-card .card-footer span {
+    margin-right: 8px;
+}
+
+/* --- Estilo para cartões desativados --- */
+.nav-card.disabled {
+    background-color: #f9f9f9;
+    pointer-events: none; /* Impede o clique */
+    opacity: 0.6;
+}
+
+.nav-card.disabled .card-icon,
+.nav-card.disabled .card-footer {
+    color: #999;
+}
+
+.nav-card.disabled .card-footer::after {
+    content: '(Em breve)';
+    font-size: 0.8rem;
+    font-style: italic;
+    color: #999;
+    margin-left: auto;
+}
+
+/* Adicione ao final de /Frontend/Pagina gerencia/adm.css */
+
+.logs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.logs-table th, .logs-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+}
+.logs-table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+.logs-table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+.logs-table td:nth-child(1 ) { width: 20%; }
+.logs-table td:nth-child(2) { width: 15%; }
+.logs-table td:nth-child(3) { width: 20%; }
+
+

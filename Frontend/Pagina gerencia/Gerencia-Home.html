@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Gerenciamento - Skina 67</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="../Pagina gerencia/adm.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="header-title">
+                <h1>Painel de Controle</h1>
+                <p>Bem-vindo ao centro de gerenciamento do Skina 67.</p>
+            </div>
+            <div class="profile-menu">
+                <button id="profile-menu-btn" class="profile-menu-button">
+                    <i class="fas fa-user-circle"></i>
+                </button>
+                <div id="profile-dropdown" class="profile-dropdown hidden">
+                    <div class="dropdown-header">
+                        <strong id="dropdown-user-name">Nome do Usuário</strong>
+                        <span id="dropdown-user-role">Nível de Acesso</span>
+                    </div>
+                    <a href="#" id="logout-btn" class="dropdown-item">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Sair
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <nav class="dashboard-nav-grid">
+            <a href="/gerencia" class="nav-card card-cardapio">
+                <div class="card-icon"><i class="fas fa-utensils"></i></div>
+                <h2>Gerenciar Cardápio</h2>
+                <p>Adicione, remova ou edite categorias e produtos do cardápio em tempo real.</p>
+                <div class="card-footer"><span>Acessar</span><i class="fas fa-arrow-right"></i></div>
+            </a>
+            <a href="#" class="nav-card card-pedidos disabled">
+                <div class="card-icon"><i class="fas fa-receipt"></i></div>
+                <h2>Acompanhar Pedidos</h2>
+                <p>Visualize os pedidos em andamento, controle o status e gerencie as entregas.</p>
+                <div class="card-footer"><span class="em-breve-tag">Em breve</span><i class="fas fa-arrow-right"></i></div>
+            </a>
+            <a href="#" class="nav-card card-relatorios disabled permissao-geral">
+                <div class="card-icon"><i class="fas fa-chart-line"></i></div>
+                <h2>Relatórios de Vendas</h2>
+                <p>Analise o desempenho de vendas, veja os produtos mais vendidos e obtenha insights valiosos.</p>
+                <div class="card-footer"><span class="em-breve-tag">Em breve</span><i class="fas fa-arrow-right"></i></div>
+            </a>
+            <!-- CARD DE LOGS REMOVIDO -->
+            <a href="#" class="nav-card card-config disabled permissao-geral">
+                <div class="card-icon"><i class="fas fa-cog"></i></div>
+                <h2>Configurações</h2>
+                <p>Gerencie usuários, defina horários de funcionamento e outras configurações gerais do sistema.</p>
+                <div class="card-footer"><span class="em-breve-tag">Em breve</span><i class="fas fa-arrow-right"></i></div>
+            </a>
+        </nav>
+    </div>
+    <script src="../Pagina gerencia/gerencia-home.js"></script>
+</body>
+</html>

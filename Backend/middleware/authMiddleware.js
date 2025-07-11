@@ -1,33 +1,39 @@
 // /Backend/middleware/authMiddleware.js
-
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = 'seu_segredo_super_secreto_aqui'; // O mesmo segredo usado em auth.js
+const { query } = require('../db');
 
-function protegerRota(req, res, next) {
-    // O token geralmente é enviado no cabeçalho 'Authorization' no formato 'Bearer TOKEN'
-    // Mas para proteger páginas HTML, é mais fácil verificar um cookie ou o localStorage no frontend.
-    // Aqui, vamos criar uma lógica simples que pode ser expandida.
-    // Por enquanto, vamos focar em proteger as rotas da API.
+const protegerRota = async (req, res, next) => {
+    let token;
 
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Pega o token do 'Bearer TOKEN'
+    // Verifica se o cabeçalho de autorização existe e começa com "Bearer"
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            // 1. Extrai o token do cabeçalho (remove "Bearer ")
+            token = req.headers.authorization.split(' ')[1];
 
-    if (token == null) {
-        // Se não há token, o acesso é não autorizado.
-        return res.sendStatus(401); // Unauthorized
+            // 2. Verifica e decodifica o token usando a mesma chave secreta
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+            // 3. Busca o usuário no banco de dados pelo ID do token (sem a senha)
+            // e anexa ao objeto da requisição (req) para uso nas próximas rotas.
+            const [rows] = await query('SELECT id, nome, email, nivel_acesso FROM usuarios WHERE id = ?', [decoded.id]);
+            
+            if (rows) {
+                req.usuario = rows; // Anexa o objeto do usuário à requisição
+                next(); // Passa para a próxima etapa (a rota da API)
+            } else {
+                res.status(401).json({ message: 'Não autorizado, usuário não encontrado.' });
+            }
+
+        } catch (error) {
+            console.error('Erro na autenticação do token:', error);
+            res.status(401).json({ message: 'Não autorizado, token inválido.' });
+        }
     }
 
-    jwt.verify(token, JWT_SECRET, (err, usuario) => {
-        if (err) {
-            // Se o token for inválido (expirado, malformado), o acesso é proibido.
-            return res.sendStatus(403); // Forbidden
-        }
-
-        // Se o token for válido, salvamos os dados do usuário na requisição
-        // para que as próximas rotas possam usá-los (ex: verificar nível de acesso).
-        req.usuario = usuario;
-        next(); // Passa para a próxima etapa (a rota que o usuário queria acessar)
-    });
-}
+    if (!token) {
+        res.status(401).json({ message: 'Não autorizado, nenhum token fornecido.' });
+    }
+};
 
 module.exports = { protegerRota };

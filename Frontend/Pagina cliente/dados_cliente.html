@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identificação do Cliente - Skina 67</title>
+    <link rel="stylesheet" href="../Pagina cliente/Usuario.css">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>NOME DO SEU RESTAURANTE</h1>
+                <p>SISTEMA DE PEDIDOS</p>
+            </div>
+            <div class="welcome-message">
+                <h2 id="welcome-mesa-name">Bem-vindo!</h2>
+                <p>Só mais um passo antes de acessar o cardápio.</p>
+            </div>
+        </aside>
+
+        <main class="main-content login-main">
+            <div class="login-form-container">
+                <h2>Identifique-se para o Pedido</h2>
+                <p class="subtitle">Preencha seus dados para continuar.</p>
+                <form id="dados-cliente-form">
+                    <div class="input-group">
+                        <label for="nome">Seu Nome (Obrigatório)</label>
+                        <input type="text" id="nome" name="nome" placeholder="Digite seu nome completo" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="telefone">Telefone (Opcional)</label>
+                        <input type="tel" id="telefone" name="telefone" placeholder="(XX) XXXXX-XXXX">
+                    </div>
+                    <div class="input-group">
+                        <label for="cpf">CPF na nota? (Opcional)</label>
+                        <input type="text" id="cpf" name="cpf" placeholder="Digite seu CPF">
+                    </div>
+                    <button type="submit" class="login-button">Ver o Cardápio</button>
+                </form>
+            </div>
+        </main>
+    </div>
+    <script src="../Pagina cliente/dados_cliente.js"></script>
+</body>
+</html>

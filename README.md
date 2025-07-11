@@ -1,7 +1,7 @@
 # Sistema de Gestão de Cardápio e Pedidos
 
 ![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow )
-![Progresso](https://img.shields.io/badge/progresso-55%40-orange )
+![Progresso](https://img.shields.io/badge/progresso-40%25-orange )
 ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green )
 ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue )
 ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
@@ -19,7 +19,7 @@ O sistema utiliza WebSockets para garantir que qualquer alteração feita pela g
 
 ---
 
-## 🚀 Status Atual (Progresso: 55%)
+## 🚀 Status Atual (Progresso: 40%)
 
 O projeto avançou significativamente, com a implementação completa do fluxo de pedidos do cliente, desde o login da mesa até o fechamento da conta.
 

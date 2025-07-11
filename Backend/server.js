@@ -45,6 +45,11 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'login.html'));
 });
 
+app.get('/logs', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'logs.html'));
+});
+
+
 app.get('/gerencia-home', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'Gerencia-Home.html'));
 });

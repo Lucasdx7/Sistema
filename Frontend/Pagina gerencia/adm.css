@@ -178,6 +178,8 @@ button:hover {
 /* --- Estilos para a Página Home (Dashboard) --- */
 /* =============================================== */
 
+
+
 .dashboard-header {
     display: flex;
     justify-content: space-between; /* Alinha o título à esquerda e o perfil à direita */
@@ -374,27 +376,65 @@ button:hover {
     margin-left: auto;
 }
 
-/* Adicione ao final de /Frontend/Pagina gerencia/adm.css */
+/* Adicione no final do seu adm.css */
+.card-logs {
+    background-color: #ffffff;
+}
 
-.logs-table {
+/* Estilos para a tabela de logs */
+.logs-container {
+    padding: 20px;
+}
+#logs-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
-.logs-table th, .logs-table td {
+#logs-table th, #logs-table td {
     padding: 12px 15px;
     border-bottom: 1px solid #eee;
     text-align: left;
 }
-.logs-table thead th {
+#logs-table th {
     background-color: #f8f9fa;
     font-weight: 600;
 }
-.logs-table tbody tr:hover {
+#logs-table tbody tr:hover {
     background-color: #f1f1f1;
 }
-.logs-table td:nth-child(1 ) { width: 20%; }
-.logs-table td:nth-child(2) { width: 15%; }
-.logs-table td:nth-child(3) { width: 20%; }
+.log-action {
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-family: monospace;
+}
 
+.dashboard-header .header-title {
+    display: flex;
+    align-items: center; /* Alinha verticalmente o botão e o título */
+    gap: 15px; /* Adiciona um espaço entre o botão e o título */
+}
+
+/* Estilo principal do botão de voltar */
+.back-button {
+    color: #ffffff; /* Cor do ícone (branco) */
+    font-size: 24px; /* Tamanho do ícone, similar ao de perfil */
+    text-decoration: none;
+    padding: 5px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease-in-out;
+}
+
+/* Efeito de hover para dar feedback ao usuário */
+.back-button:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
 

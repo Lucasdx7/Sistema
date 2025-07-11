@@ -1,27 +1,32 @@
 document.getElementById('login-form').addEventListener('submit', async function(event) {
     event.preventDefault();
 
-    const usuario = document.getElementById('usuario').value;
-    const senha = document.getElementById('senha').value;
+    const usuarioInput = document.getElementById('usuario').value;
+    const senhaInput = document.getElementById('senha').value;
     const errorMessage = document.getElementById('error-message');
     errorMessage.textContent = ''; // Limpa erros antigos
 
     try {
-        const response = await fetch('/auth/login-cliente', { // Rota corrigida
+        const response = await fetch('/auth/login-cliente', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ usuario, senha })
+            
+            // --- CORREÇÃO APLICADA AQUI ---
+            // O nome do campo foi alterado de 'usuario' para 'nome_usuario'
+            // para corresponder ao que o backend espera.
+            body: JSON.stringify({ nome_usuario: usuarioInput, senha: senhaInput })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            // Salva o token e o nome da mesa
+            // Salva o token e os dados da mesa retornados pela API
             localStorage.setItem('token', data.token);
-            localStorage.setItem('nomeMesa', usuario);
+            // É melhor salvar os dados que a API retorna, para garantir consistência
+            localStorage.setItem('nomeMesa', data.mesa.nome_usuario);
             
-            // Redireciona para a NOVA PÁGINA de coleta de dados do cliente
-            window.location.href = '/dados-cliente'; // Rota corrigida
+            // Redireciona para a página de coleta de dados do cliente
+            window.location.href = '/dados-cliente';
         } else {
             errorMessage.textContent = data.message || 'Usuário ou senha inválidos.';
         }

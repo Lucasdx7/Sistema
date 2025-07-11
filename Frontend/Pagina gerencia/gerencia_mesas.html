@@ -15,27 +15,41 @@
             <h1>Gerenciamento de Mesas</h1>
         </header>
 
-        <main class="main-grid">
-            <!-- Painel para Adicionar Nova Mesa -->
-            <div class="panel">
-                <h2>Adicionar Nova Mesa</h2>
-                <form id="form-add-mesa" class="form-container">
-                    <input type="text" id="nome-mesa-input" placeholder="Nome de usuário (Ex: Mesa01 )" required>
-                    <input type="password" id="senha-mesa-input" placeholder="Senha de acesso" required>
-                    <button type="submit">Adicionar Mesa</button>
-                    <p id="form-message" class="message"></p>
-                </form>
+        <!-- Layout principal dividido em duas colunas -->
+        <div class="main-content-split">
+            <!-- Coluna da Esquerda: Lista de Mesas -->
+            <div class="split-panel-left">
+                <div class="panel">
+                    <h2>Adicionar Nova Mesa</h2>
+                    <form id="form-add-mesa" class="form-container">
+                        <input type="text" id="nome-mesa-input" placeholder="Nome (Ex: Mesa 01 )" required>
+                        <input type="password" id="senha-mesa-input" placeholder="Senha de acesso" required>
+                        <button type="submit">Adicionar Mesa</button>
+                        <p id="form-message" class="message"></p>
+                    </form>
+                </div>
+                <div class="panel">
+                    <h2>Mesas Cadastradas</h2>
+                    <ul id="lista-mesas" class="item-list clickable-list">
+                        <p>Carregando mesas...</p>
+                    </ul>
+                </div>
             </div>
 
-            <!-- Painel para Listar Mesas Ativas -->
-            <div class="panel">
-                <h2>Status das Mesas</h2>
-                <ul id="lista-mesas" class="item-list status-list"> <!-- Adicionada a classe status-list -->
-                    <!-- O status das mesas será inserido aqui -->
-                    <p>Carregando status...</p>
-                </ul>
+            <!-- Coluna da Direita: Detalhes da Mesa Selecionada -->
+            <div class="split-panel-right">
+                <div class="panel">
+                    <h2 id="detalhes-titulo">Selecione uma mesa para ver o histórico</h2>
+                    <div id="detalhes-conteudo" class="session-history">
+                        <!-- O histórico de sessões da mesa selecionada será inserido aqui -->
+                        <p class="placeholder-text">
+                            <i class="fas fa-info-circle"></i>
+                            Clique em uma mesa na lista à esquerda para ver os detalhes das sessões de clientes.
+                        </p>
+                    </div>
+                </div>
             </div>
-        </main>
+        </div>
     </div>
     <script src="../Pagina gerencia/gerencia_mesas.js"></script>
 </body>

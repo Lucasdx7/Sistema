@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerenciamento de Mesas - Skina 67</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="../Pagina gerencia/adm.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="main-header">
+            <a href="/gerencia-home" class="back-button" title="Voltar ao Painel">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h1>Gerenciamento de Mesas</h1>
+        </header>
+
+        <main class="main-grid">
+            <!-- Painel para Adicionar Nova Mesa -->
+            <div class="panel">
+                <h2>Adicionar Nova Mesa</h2>
+                <form id="form-add-mesa" class="form-container">
+                    <input type="text" id="nome-mesa-input" placeholder="Nome de usuário (Ex: Mesa01 )" required>
+                    <input type="password" id="senha-mesa-input" placeholder="Senha de acesso" required>
+                    <button type="submit">Adicionar Mesa</button>
+                    <p id="form-message" class="message"></p>
+                </form>
+            </div>
+
+            <!-- Painel para Listar Mesas Ativas -->
+            <div class="panel">
+                <h2>Status das Mesas</h2>
+                <ul id="lista-mesas" class="item-list status-list"> <!-- Adicionada a classe status-list -->
+                    <!-- O status das mesas será inserido aqui -->
+                    <p>Carregando status...</p>
+                </ul>
+            </div>
+        </main>
+    </div>
+    <script src="../Pagina gerencia/gerencia_mesas.js"></script>
+</body>
+</html>

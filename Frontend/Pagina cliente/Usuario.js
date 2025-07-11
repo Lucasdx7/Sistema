@@ -1,8 +1,39 @@
 // Frontend/Pagina cliente/Usuario.js
 
+// ==================================================================
+// NOVA FUNÇÃO DE VERIFICAÇÃO DE LOGIN
+// ==================================================================
+function verificarAutenticacao() {
+    const token = localStorage.getItem('token');
+    const nomeMesa = localStorage.getItem('nomeMesa');
+
+    // Se não houver token, o usuário não está logado.
+    // Redireciona para a página de login da mesa.
+    if (!token) {
+        console.log('Nenhum token encontrado, redirecionando para o login...');
+        window.location.href = 'login_cliente.html';
+        return false; // Interrompe a execução do resto do script
+    }
+
+    // Se chegou aqui, o usuário está autenticado.
+    console.log(`Acesso autorizado para: ${nomeMesa}`);
+    // Você pode usar o 'nomeMesa' para exibir na interface, se quiser.
+    // Ex: const displayMesa = document.getElementById('display-nome-mesa');
+    // if (displayMesa) displayMesa.textContent = nomeMesa;
+    
+    return true; // Autenticação OK
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Executa a verificação de login antes de qualquer outra coisa
+    const autenticado = verificarAutenticacao();
+    if (!autenticado) {
+        return; // Se não estiver autenticado, não carrega o resto da página
+    }
+
+    // O resto do seu código continua aqui...
     const API_URL = 'http://localhost:3000/api';
-    // URL para o WebSocket. 'ws' é o protocolo para WebSockets, similar ao 'http'.
     const WS_URL = 'ws://localhost:3000';
 
     const navMenu = document.querySelector('.nav-menu' );
@@ -39,35 +70,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Função para renderizar os produtos na lista principal (sem alterações)
     function renderizarProdutos(produtos) {
-    menuList.innerHTML = '';
-    if (produtos.length === 0) {
-        menuList.innerHTML = '<p>Nenhum produto encontrado nesta categoria.</p>';
-        return;
+        menuList.innerHTML = '';
+        if (produtos.length === 0) {
+            menuList.innerHTML = '<p>Nenhum produto encontrado nesta categoria.</p>';
+            return;
+        }
+        produtos.forEach(prod => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'menu-item';
+            itemDiv.dataset.category = prod.id_categoria;
+
+            const serveTexto = prod.serve_pessoas > 0 
+                ? `<span class="serves">Serve até ${prod.serve_pessoas} ${prod.serve_pessoas > 1 ? 'pessoas' : 'pessoa'}</span>` 
+                : '';
+
+            itemDiv.innerHTML = `
+                <img src="${prod.imagem_svg || 'https://via.placeholder.com/150x100'}" alt="${prod.nome}">
+                <div class="item-details">
+                    <h3>${prod.nome} ${serveTexto}</h3>
+                    <p>${prod.descricao}</p>
+                </div>
+                <div class="item-action">
+                    <button class="add-button">+</button>
+                    <span class="item-price">R$ ${parseFloat(prod.preco ).toFixed(2)}</span>
+                </div>
+            `;
+            menuList.appendChild(itemDiv);
+        });
     }
-    produtos.forEach(prod => {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'menu-item';
-        itemDiv.dataset.category = prod.id_categoria;
-
-        // Cria o texto "Serve até X pessoas" apenas se o valor for maior que 0
-        const serveTexto = prod.serve_pessoas > 0 
-            ? `<span class="serves">Serve até ${prod.serve_pessoas} ${prod.serve_pessoas > 1 ? 'pessoas' : 'pessoa'}</span>` 
-            : '';
-
-        itemDiv.innerHTML = `
-            <img src="${prod.imagem_svg || 'https://via.placeholder.com/150x100'}" alt="${prod.nome}">
-            <div class="item-details">
-                <h3>${prod.nome} ${serveTexto}</h3>
-                <p>${prod.descricao}</p>
-            </div>
-            <div class="item-action">
-                <button class="add-button">+</button>
-                <span class="item-price">R$ ${parseFloat(prod.preco ).toFixed(2)}</span>
-            </div>
-        `;
-        menuList.appendChild(itemDiv);
-    });
-}
 
     // Função para filtrar os produtos que já estão na tela (sem alterações)
     function filtrarProdutos(idCategoria) {
@@ -97,7 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 filtrarProdutos(primeiraCategoriaId);
             }
 
-            // Remove qualquer listener antigo para evitar duplicação
             navMenu.replaceWith(navMenu.cloneNode(true));
             const newNavMenu = document.querySelector('.nav-menu');
             newNavMenu.addEventListener('click', (e) => {
@@ -127,10 +156,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const message = JSON.parse(event.data);
             console.log('Mensagem recebida do servidor:', message);
 
-            // Se a mensagem for de atualização, recarrega o cardápio
             if (message.type === 'CARDAPIO_ATUALIZADO') {
                 console.log('Atualizando o cardápio em tempo real...');
-                inicializarCardapio(); // A mágica acontece aqui!
+                inicializarCardapio();
             }
         };
 
@@ -146,6 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- INICIALIZAÇÃO ---
-    inicializarCardapio(); // Carrega o cardápio pela primeira vez
-    conectarWebSocket(); // Inicia a conexão para ouvir as atualizações
+    inicializarCardapio();
+    conectarWebSocket();
 });

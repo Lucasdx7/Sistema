@@ -1,6 +1,7 @@
 // /Frontend/Pagina gerencia/app.js
 
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Constantes Globais ---
     const API_URL = 'http://localhost:3000/api';
     const WS_URL = 'ws://localhost:3000';
 
@@ -24,23 +25,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     let itemArrastado = null;
 
-    // --- Funções de Conversão e API ---
-    function fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    }
-
-    // VERSÃO ÚNICA E CORRETA DA FUNÇÃO apiCall
+    // ==================================================================
+    // --- VERSÃO ÚNICA E CORRETA DA FUNÇÃO apiCall ---
+    // ==================================================================
     async function apiCall(endpoint, method = 'GET', body = null) {
         const token = localStorage.getItem('authToken');
         if (!token) {
             // Se não houver token, não adianta nem tentar. Redireciona para o login.
             window.location.href = '/login';
-            return;
+            // Lança um erro para interromper a execução da função que chamou a apiCall
+            throw new Error('Token de autenticação não encontrado.');
         }
 
         const options = {
@@ -55,6 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`${API_URL}${endpoint}`, options);
 
+            // Se o token for inválido ou expirado (status 401 ou 403), o middleware no backend nos protege.
+            // O frontend deve reagir a isso.
             if (response.status === 401 || response.status === 403) {
                 alert('Sua sessão expirou ou você não tem permissão. Por favor, faça login novamente.');
                 localStorage.removeItem('authToken');
@@ -67,12 +63,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 const errorData = await response.json().catch(() => ({ message: response.statusText }));
                 throw new Error(`Erro na API: ${errorData.message}`);
             }
+            // Retorna um objeto vazio se a resposta não tiver corpo (ex: DELETE)
             return response.status === 204 ? {} : response.json();
         } catch (error) {
-            console.error('Falha na chamada da API:', error);
-            // Não mostra o alerta aqui para não poluir, o erro já será tratado por quem chamou.
+            // Propaga o erro para que a função que chamou a apiCall possa tratá-lo (ex: mostrar um alerta)
             throw error;
         }
+    }
+
+    // --- Funções de Conversão (sem alterações) ---
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
     }
 
     // --- Funções de Renderização ---
@@ -104,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             // A apiCall já redireciona se for erro de autenticação, então não precisa de alerta aqui.
-            console.error("Falha ao carregar categorias.", error);
+            console.error("Falha ao carregar categorias.", error.message);
         }
     }
 
@@ -153,7 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('delete-btn')) {
             const id = e.target.dataset.id;
             if (confirm('Tem certeza?')) {
-                await apiCall(`/categorias/${id}`, 'DELETE');
+                try {
+                    await apiCall(`/categorias/${id}`, 'DELETE');
+                } catch (error) {
+                    alert(`Falha ao deletar categoria: ${error.message}`);
+                }
             }
         } else {
             estado.categoriaSelecionada = { id: parseInt(li.dataset.id, 10), nome: li.dataset.nome };
@@ -252,12 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- INICIALIZAÇÃO ---
-    // Verifica se o usuário está logado antes de carregar qualquer coisa
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-        window.location.href = '/login';
-    } else {
-        carregarCategorias();
-        conectarWebSocketGerencia();
-    }
+    // A verificação do token já acontece dentro da primeira chamada da apiCall.
+    carregarCategorias();
+    conectarWebSocketGerencia();
 });

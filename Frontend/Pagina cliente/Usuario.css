@@ -121,3 +121,115 @@
             margin-bottom: 5px;
         }
         .item-price { font-size: 16px; font-weight: bold; color: #333; }
+
+
+        /* 
+1. IMPORTAÇÃO: Primeiro, importamos todos os estilos que você já criou.
+   Isso nos dá acesso a todas as classes como .container, .sidebar, .logo, etc.
+*/
+@import url('Usuario.css');
+
+/* 
+2. ESTILOS ESPECÍFICOS PARA A PÁGINA DE LOGIN:
+   Agora, adicionamos apenas o que é novo e necessário para o formulário.
+*/
+
+/* Centraliza o conteúdo do formulário na área principal */
+.login-main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    background-color: #f0ebe5; /* Mesma cor de fundo do body */
+}
+
+/* Container do formulário */
+.login-form-container {
+    width: 100%;
+    max-width: 450px;
+    padding: 40px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.login-form-container h2 {
+    color: #2b1515; /* Cor escura do sidebar */
+    margin-top: 0;
+    margin-bottom: 30px;
+    font-size: 28px;
+}
+
+/* Estilo para os grupos de input (label + campo) */
+.input-group {
+    margin-bottom: 25px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #333;
+    font-size: 16px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box; /* Garante que o padding não aumente a largura total */
+    transition: border-color 0.3s;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #2b1515; /* Destaca o campo com a cor principal */
+}
+
+/* Botão de login */
+.login-button {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: #d9534f; /* Cor vermelha de destaque */
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.login-button:hover {
+    background-color: #c9302c; /* Um tom de vermelho mais escuro */
+}
+
+/* Mensagem de erro */
+.error-message {
+    margin-top: 20px;
+    color: #d9534f;
+    font-weight: bold;
+    min-height: 20px; /* Garante espaço mesmo quando vazia */
+}
+
+/* Mensagem de boas-vindas na sidebar */
+.welcome-message {
+    padding: 30px 25px;
+    text-align: center;
+    color: #f0ebe5;
+}
+
+.welcome-message h2 {
+    margin-top: 0;
+    font-size: 24px;
+}
+
+.welcome-message p {
+    font-size: 16px;
+    line-height: 1.5;
+    color: #ccc;
+}

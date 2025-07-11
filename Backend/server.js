@@ -1,7 +1,7 @@
 // /Backend/server.js
 
 // --- 1. Módulos Necessários ---
-require('dotenv').config(); // <-- ESTA É A LINHA ADICIONADA. ELA DEVE SER A PRIMEIRA.
+require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
@@ -37,7 +37,6 @@ function broadcast(data) {
 }
 wss.on('connection', ws => console.log('Novo cliente conectado ao WebSocket!'));
 
-// Middleware para passar a função 'broadcast' para as rotas
 app.use((req, res, next) => {
     req.broadcast = broadcast;
     next();
@@ -45,14 +44,17 @@ app.use((req, res, next) => {
 
 // --- 6. Definição das Rotas ---
 
-// Rotas de Autenticação (públicas)
+// As rotas de autenticação agora são acessadas via /auth
+// Ex: /auth/login, /auth/register, /auth/login-cliente
 app.use('/auth', authRoutes);
 
 // Aplica o middleware 'protegerRota' a TODAS as rotas da API.
 app.use('/api', protegerRota, apiRoutes);
 
 // --- Rotas para servir as páginas HTML ---
-app.get('/login', (req, res) => {
+
+// --- PÁGINAS DA GERÊNCIA ---
+app.get('/login-gerencia', (req, res) => { // Renomeado para evitar conflito
     res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'login.html'));
 });
 app.get('/gerencia-home', (req, res) => {
@@ -61,14 +63,34 @@ app.get('/gerencia-home', (req, res) => {
 app.get('/gerencia', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'Gerencia.html'));
 });
+
+// NOVA ROTA PARA A PÁGINA DE GERENCIAMENTO DE MESAS
+app.get('/gerencia-mesas', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'gerencia_mesas.html'));
+});
+
 app.get('/logs', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'logs.html'));
 });
+
+// --- PÁGINAS DO CLIENTE (TABLET) ---
 app.get('/cardapio', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina cliente', 'Paginausuario.html'));
 });
 
-// Rota raiz: redireciona para a página de login
+// ==================================================================
+// NOVA ROTA PARA A PÁGINA DE LOGIN DO CLIENTE
+// ==================================================================
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina cliente', 'login_cliente.html'));
+});
+
+app.get('/dados-cliente', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina cliente', 'dados_cliente.html'));
+});
+
+
+// Rota raiz: redireciona para a página de login do CLIENTE
 app.get('/', (req, res) => {
     res.redirect('/login');
 });
@@ -76,6 +98,7 @@ app.get('/', (req, res) => {
 // --- 7. Inicia o Servidor ---
 server.listen(PORT, () => {
     console.log(`Servidor rodando!`);
-    console.log(`Acesse o painel em http://localhost:${PORT}/login` );
-    console.log(`Acesse o cardápio em http://localhost:${PORT}/cardapio` );
+    // Mensagens atualizadas para refletir as novas rotas
+    console.log(`Acesse o cardápio (login do cliente) em: http://localhost:${PORT}/login` );
+    console.log(`Acesse o painel (login da gerência) em: http://localhost:${PORT}/login-gerencia` );
 });

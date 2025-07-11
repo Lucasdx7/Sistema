@@ -14,16 +14,41 @@ const protegerRota = async (req, res, next) => {
             // 2. Verifica e decodifica o token usando a mesma chave secreta
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // 3. Busca o usuário no banco de dados pelo ID do token (sem a senha)
-            // e anexa ao objeto da requisição (req) para uso nas próximas rotas.
-            const [rows] = await query('SELECT id, nome, email, nivel_acesso FROM usuarios WHERE id = ?', [decoded.id]);
-            
-            if (rows) {
-                req.usuario = rows; // Anexa o objeto do usuário à requisição
-                next(); // Passa para a próxima etapa (a rota da API)
+            // 3. LÓGICA APRIMORADA: Verifica o 'role' (papel) dentro do token
+            //    para saber em qual tabela procurar.
+            if (decoded.role === 'cliente') {
+                // ===================================================
+                // CASO 1: O TOKEN É DE UM CLIENTE (MESA/TABLET)
+                // ===================================================
+                // Busca o ID na tabela 'mesas'.
+                const [mesa] = await query('SELECT id, nome_usuario FROM mesas WHERE id = ?', [decoded.id]);
+                
+                if (!mesa) {
+                    // Se a mesa foi deletada, mas o token ainda existe.
+                    return res.status(401).json({ message: 'Não autorizado, a mesa para este tablet não foi encontrada.' });
+                }
+                
+                // Anexa os dados da MESA à requisição.
+                // O objeto 'req.usuario' agora conterá as informações da mesa.
+                req.usuario = { id: mesa.id, nome: mesa.nome_usuario, role: 'cliente' };
+
             } else {
-                res.status(401).json({ message: 'Não autorizado, usuário não encontrado.' });
+                // ===================================================
+                // CASO 2: O TOKEN É DE UM GERENTE/FUNCIONÁRIO
+                // ===================================================
+                // Busca o ID na tabela 'usuarios'.
+                const [usuario] = await query('SELECT id, nome, email, nivel_acesso FROM usuarios WHERE id = ?', [decoded.id]);
+                
+                if (!usuario) {
+                    return res.status(401).json({ message: 'Não autorizado, usuário não encontrado.' });
+                }
+                
+                // Anexa os dados do USUÁRIO à requisição.
+                req.usuario = usuario;
             }
+
+            // 4. Se encontrou um usuário ou uma mesa, permite o acesso à rota.
+            next();
 
         } catch (error) {
             console.error('Erro na autenticação do token:', error);

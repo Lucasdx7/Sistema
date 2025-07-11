@@ -1,4 +1,5 @@
 // /Backend/routes/auth.js
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -76,6 +77,44 @@ router.post('/login', async (req, res) => {
         }
     } catch (error) {
         console.error("Erro no login:", error);
+        res.status(500).json({ message: 'Erro no servidor ao tentar fazer login.' });
+    }
+});
+
+// ==================================================================
+// ROTA CORRIGIDA PARA LOGIN DO CLIENTE (TABLET/MESA)
+// ==================================================================
+router.post('/login-cliente', async (req, res) => {
+    const { usuario, senha } = req.body;
+
+    if (!usuario || !senha) {
+        return res.status(400).json({ message: 'Usuário e senha são obrigatórios.' });
+    }
+
+    try {
+        // 1. Busca a mesa pelo nome de usuário na tabela 'mesas'
+        const [mesa] = await query('SELECT * FROM mesas WHERE nome_usuario = ?', [usuario]);
+
+        // 2. Verifica se a mesa existe E se a senha digitada corresponde à senha criptografada
+        if (mesa && (await bcrypt.compare(senha, mesa.senha))) {
+            // Sucesso! A senha é válida.
+            
+            // Gera um token JWT para a sessão da mesa
+            const token = jwt.sign({ id: mesa.id, nome: mesa.nome_usuario, role: 'cliente' }, process.env.JWT_SECRET, {
+                expiresIn: '12h',
+            });
+
+            res.json({
+                message: 'Login da mesa bem-sucedido!',
+                token: token
+            });
+
+        } else {
+            // Falha na autenticação (mesa não encontrada ou senha incorreta)
+            res.status(401).json({ message: 'Usuário da mesa ou senha inválida.' });
+        }
+    } catch (error) {
+        console.error("Erro no login da mesa:", error);
         res.status(500).json({ message: 'Erro no servidor ao tentar fazer login.' });
     }
 });

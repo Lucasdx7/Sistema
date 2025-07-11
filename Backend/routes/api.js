@@ -2,20 +2,19 @@
 const express = require('express');
 const router = express.Router();
 const { query, registrarLog } = require('../db');
+const bcrypt = require('bcryptjs'); // <-- LINHA ADICIONADA PARA CORRIGIR O ERRO
 
 // Função de middleware para verificar se o usuário está logado antes de registrar o log
 const checarUsuarioParaLog = (req, res, next) => {
     if (!req.usuario || !req.usuario.id || !req.usuario.nome) {
-        // Isso é uma falha de segurança ou de lógica interna, não deveria acontecer se o protegerRota estiver funcionando.
         console.error("Tentativa de ação de log sem um usuário autenticado.");
-        // Interrompe a requisição para evitar mais erros.
         return res.status(500).json({ message: "Erro interno: informações do usuário ausentes." });
     }
-    next(); // Se o usuário existir, continua para a próxima função (a rota em si).
+    next();
 };
 
 // --- ROTAS DE CATEGORIAS ---
-
+// (Seu código de categorias permanece o mesmo, sem alterações)
 // GET /categorias
 router.get('/categorias', async (req, res) => {
     try {
@@ -85,7 +84,7 @@ router.delete('/categorias/:id', checarUsuarioParaLog, async (req, res) => {
 
 
 // --- ROTAS DE PRODUTOS ---
-
+// (Seu código de produtos permanece o mesmo, sem alterações)
 // GET /categorias/:id/produtos
 router.get('/categorias/:id/produtos', async (req, res) => {
     try {
@@ -155,7 +154,8 @@ router.get('/produtos/todos', async (req, res) => {
     }
 });
 
-// GET /logs
+// --- ROTA DE LOGS ---
+// (Seu código de logs permanece o mesmo, sem alterações)
 router.get('/logs', checarUsuarioParaLog, async (req, res) => {
     if (req.usuario.nivel_acesso !== 'geral') {
         return res.status(403).json({ message: 'Acesso negado.' });
@@ -168,5 +168,149 @@ router.get('/logs', checarUsuarioParaLog, async (req, res) => {
         res.status(500).json({ message: 'Erro ao buscar logs', error: error.message });
     }
 });
+
+
+// ==================================================================
+// ROTAS PARA GERENCIAMENTO DE MESAS (VERSÃO CORRIGIDA E MELHORADA)
+// ==================================================================
+
+// GET /mesas - Rota para buscar todas as mesas cadastradas
+router.get('/mesas', checarUsuarioParaLog, async (req, res) => {
+    try {
+        const mesas = await query('SELECT id, nome_usuario, criado_em FROM mesas ORDER BY nome_usuario');
+        res.json(mesas);
+    } catch (error) {
+        console.error('Erro ao buscar mesas:', error);
+        res.status(500).json({ message: 'Erro no servidor ao buscar mesas.' });
+    }
+});
+
+// POST /mesas - Rota para adicionar uma nova mesa
+router.post('/mesas', checarUsuarioParaLog, async (req, res) => {
+    const { nome_usuario, senha } = req.body;
+
+    if (!nome_usuario || !senha) {
+        return res.status(400).json({ message: 'Nome de usuário e senha são obrigatórios.' });
+    }
+
+    try {
+        const salt = await bcrypt.genSalt(10);
+        const senhaHash = await bcrypt.hash(senha, salt);
+
+        const result = await query(
+            'INSERT INTO mesas (nome_usuario, senha) VALUES (?, ?)',
+            [nome_usuario, senhaHash]
+        );
+        
+        // Registra a ação no log do sistema
+        await registrarLog(req.usuario.id, req.usuario.nome, 'CRIOU_MESA', `Criou a mesa '${nome_usuario}'.`);
+        
+        res.status(201).json({
+            id: result.insertId,
+            nome_usuario: nome_usuario
+        });
+
+    } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ message: 'Este nome de mesa já está em uso.' });
+        }
+        console.error('Erro ao criar mesa:', error);
+        res.status(500).json({ message: 'Erro no servidor ao criar mesa.' });
+    }
+});
+
+// DELETE /mesas/:id - Rota para remover uma mesa
+router.delete('/mesas/:id', checarUsuarioParaLog, async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Busca o nome da mesa antes de deletar, para usar no log
+        const mesa = await query('SELECT nome_usuario FROM mesas WHERE id = ?', [id]);
+        const nomeMesa = mesa.length > 0 ? mesa[0].nome_usuario : `ID ${id}`;
+
+        const result = await query('DELETE FROM mesas WHERE id = ?', [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Mesa não encontrada.' });
+        }
+
+        // Registra a ação no log do sistema
+        await registrarLog(req.usuario.id, req.usuario.nome, 'DELETOU_MESA', `Deletou a mesa '${nomeMesa}'.`);
+
+        res.status(200).json({ message: 'Mesa removida com sucesso.' });
+    } catch (error) {
+        console.error('Erro ao remover mesa:', error);
+        res.status(500).json({ message: 'Erro no servidor ao remover mesa.' });
+    }
+});
+
+
+// ==================================================================
+// ROTA PARA INICIAR UMA NOVA SESSÃO DE CLIENTE
+// ==================================================================
+router.post('/sessoes/iniciar', async (req, res) => {
+    // O 'req.usuario' aqui vem do token JWT da MESA que foi logada.
+    // Ele contém o id e o nome da mesa.
+    const id_mesa = req.usuario.id; 
+    const { nome, telefone, cpf } = req.body;
+
+    if (!nome) {
+        return res.status(400).json({ message: 'O nome do cliente é obrigatório.' });
+    }
+
+    try {
+        // Insere a nova sessão na tabela sessoes_cliente
+        const result = await query(
+            'INSERT INTO sessoes_cliente (id_mesa, nome_cliente, telefone_cliente, cpf_cliente) VALUES (?, ?, ?, ?)',
+            [id_mesa, nome, telefone || null, cpf || null]
+        );
+
+        const novaSessaoId = result.insertId;
+
+        // Retorna o ID da nova sessão para o frontend.
+        // Isso é crucial para vincular os pedidos a esta sessão específica.
+        res.status(201).json({
+            message: 'Sessão iniciada com sucesso!',
+            sessaoId: novaSessaoId,
+            nomeCliente: nome
+        });
+
+    } catch (error) {
+        console.error('Erro ao iniciar sessão:', error);
+        res.status(500).json({ message: 'Erro no servidor ao iniciar a sessão do cliente.' });
+    }
+});
+
+// ==================================================================
+// ROTA PARA VISUALIZAR O STATUS ATUAL DE TODAS AS MESAS
+// ==================================================================
+router.get('/mesas/status', checarUsuarioParaLog, async (req, res) => {
+    try {
+        // Este comando SQL é mais complexo:
+        // 1. Pega todas as mesas da tabela `mesas`.
+        // 2. Usa um LEFT JOIN para buscar uma sessão correspondente na tabela `sessoes_cliente`.
+        // 3. A condição `sc.status = 'ativa'` garante que só pegamos a sessão se ela estiver em andamento.
+        const sql = `
+            SELECT 
+                m.id, 
+                m.nome_usuario,
+                sc.id AS sessao_id,
+                sc.nome_cliente,
+                sc.data_inicio
+            FROM 
+                mesas m
+            LEFT JOIN 
+                sessoes_cliente sc ON m.id = sc.id_mesa AND sc.status = 'ativa'
+            ORDER BY 
+                m.nome_usuario;
+        `;
+        
+        const statusMesas = await query(sql);
+        res.json(statusMesas);
+
+    } catch (error) {
+        console.error('Erro ao buscar status das mesas:', error);
+        res.status(500).json({ message: 'Erro no servidor ao buscar status das mesas.' });
+    }
+});
+
 
 module.exports = router;

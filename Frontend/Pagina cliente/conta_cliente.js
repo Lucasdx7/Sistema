@@ -91,31 +91,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Lida com a submissão do formulário de logout (VERSÃO CORRIGIDA)
+// /Frontend/Pagina cliente/conta_cliente.js
+
+// ... (seu código anterior permanece o mesmo)
+
+// Lida com a submissão do formulário de logout (VERSÃO CORRIGIDA)
 logoutForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const usuarioMesa = document.getElementById('mesa-usuario').value;
     const senhaMesa = document.getElementById('mesa-senha').value;
     
-    // --- LINHA DE DEBUG ADICIONADA ---
-    console.log("Enviando para a API:", { nome_usuario: usuarioMesa, senha: senhaMesa });
-    // ------------------------------------
-
     logoutMessage.textContent = 'Verificando credenciais...';
     logoutMessage.style.color = 'gray';
 
     try {
-        // 1. Verifica se as credenciais da MESA estão corretas
+        // 1. Autentica a mesa
         const authResponse = await fetch('/auth/login-cliente', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            // Agora o corpo da requisição envia os valores corretos
             body: JSON.stringify({ nome_usuario: usuarioMesa, senha: senhaMesa })
         });
         const authResult = await authResponse.json();
         if (!authResponse.ok) throw new Error(authResult.message);
 
-        // 2. Se as credenciais da mesa estiverem corretas, fecha a sessão atual
+        // 2. Fecha a sessão
         logoutMessage.textContent = 'Credenciais corretas! Encerrando sessão...';
         logoutMessage.style.color = 'green';
 
@@ -126,9 +126,19 @@ logoutForm.addEventListener('submit', async (e) => {
         const closeResult = await closeResponse.json();
         if (!closeResponse.ok) throw new Error(closeResult.message);
 
-        // 3. Limpa tudo e redireciona
+        // 3. Limpa os dados e redireciona
         alert('Sessão encerrada com sucesso!');
-        localStorage.clear();
+        
+        // --- CORREÇÃO APLICADA AQUI ---
+        // Em vez de localStorage.clear(), removemos apenas os itens da sessão do cliente.
+        // Isso preserva o token de login da gerência.
+        localStorage.removeItem('token');
+        localStorage.removeItem('sessaoId');
+        localStorage.removeItem('dadosCliente');
+        localStorage.removeItem('nomeMesa');
+        localStorage.removeItem('carrinho'); // Importante limpar o carrinho também
+        // ------------------------------------
+
         window.location.href = '/login';
 
     } catch (error) {
@@ -136,6 +146,7 @@ logoutForm.addEventListener('submit', async (e) => {
         logoutMessage.style.color = 'red';
     }
 });
+
 
     // --- Inicialização ---
     carregarConta();

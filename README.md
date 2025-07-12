@@ -1,7 +1,7 @@
 # Sistema de Gestão de Cardápio e Pedidos
 
 ![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow )
-![Progresso](https://img.shields.io/badge/progresso-40%25-orange )
+![Progresso](https://img.shields.io/badge/progresso-43%25-brightgreen )
 ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green )
 ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue )
 ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
@@ -19,32 +19,34 @@ O sistema utiliza WebSockets para garantir que qualquer alteração feita pela g
 
 ---
 
-## 🚀 Status Atual (Progresso: 40%)
+## 🚀 Status Atual (Progresso: 43%)
 
-O projeto avançou significativamente, com a implementação completa do fluxo de pedidos do cliente, desde o login da mesa até o fechamento da conta.
+O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de interação do cliente e as principais funcionalidades de gerenciamento implementadas e estáveis.
 
 ### Funcionalidades Concluídas:
 -   [x] **Backend:** Estrutura do servidor com Node.js e Express.
 -   [x] **Banco de Dados:** Schema robusto com tabelas para `usuarios`, `mesas`, `sessoes_cliente`, `pedidos`, `categorias` e `produtos`.
--   [x] **API Segura:** Endpoints protegidos que exigem autenticação JWT para acesso.
--   [x] **Sistema de Autenticação e Permissões:**
-    -   [x] Telas de login separadas para **Gerência** e **Mesas (Cliente)**.
-    -   [x] Criptografia de senhas no banco de dados (`bcrypt`).
-    -   [x] Autenticação baseada em Tokens JWT para ambos os tipos de acesso.
+-   [x] **API Segura e Middleware Inteligente:**
+    -   [x] Endpoints protegidos que exigem autenticação JWT para acesso.
+    -   [x] Middleware de autenticação (`authMiddleware`) capaz de diferenciar tokens de **Gerência** e de **Mesa**, direcionando as permissões corretamente.
+-   [x] **Sistema de Autenticação Robusto:**
+    -   [x] Telas de login separadas e seguras para **Gerência** e **Mesas (Cliente)**.
+    -   [x] Criptografia de senhas no banco de dados (`bcryptjs`).
+    -   [x] Autenticação baseada em Tokens JWT com diferentes papéis e tempos de expiração.
 -   [x] **Painel de Gerenciamento:**
     -   [x] **Gestão de Cardápio:** Adicionar, remover e ordenar categorias e produtos.
     -   [x] **Gestão de Mesas:**
         -   [x] Cadastrar e remover mesas (com usuário e senha próprios).
         -   [x] Painel interativo para visualizar o histórico de sessões de cada mesa.
         -   [x] Identificação de sessões ativas e finalizadas.
--   [x] **Interface do Cliente (Tablet):**
+-   [x] **Interface do Cliente (Ciclo Completo):**
     -   [x] **Login da Mesa:** Autenticação para iniciar uma sessão.
     -   [x] **Coleta de Dados:** Tela para identificação do cliente (nome, etc.).
     -   [x] **Cardápio Dinâmico:** Visualização de produtos e filtro por categorias.
     -   [x] **Carrinho de Pedidos:** Adição de itens para formar um pré-pedido.
     -   [x] **Confirmação de Pedido:** Tela de resumo para o cliente confirmar e enviar os itens para a cozinha.
     -   [x] **Conta do Cliente:** Visualização em tempo real de todos os pedidos feitos e do valor total da conta.
-    -   [x] **Fechamento de Conta Seguro:** Implementação de um modal na tela da conta para que um funcionário, com as credenciais da mesa, possa encerrar a sessão e liberar o tablet para o próximo cliente.
+    -   [x] **Fechamento de Conta Seguro:** Implementação de um modal na tela da conta para que um funcionário, com as credenciais da mesa, possa encerrar a sessão e liberar o tablet para o próximo cliente, sem interferir na sessão da gerência.
 -   [x] **Comunicação em Tempo Real:**
     -   [x] Atualização automática do cardápio do cliente quando o gerente faz alterações.
 

@@ -1,4 +1,4 @@
-// /Frontend/Pagina cliente/Usuario.js - VERSÃO CORRETA E COMPLETA
+// /Frontend/Pagina cliente/Usuario.js - VERSÃO FINAL E CORRIGIDA
 
 /**
  * Verifica se o token de autenticação da mesa e o ID da sessão do cliente existem.
@@ -7,31 +7,27 @@
  */
 function verificarAutenticacao() {
     const token = localStorage.getItem('token');
-    const sessaoId = localStorage.getItem('sessaoId'); // Essencial para vincular pedidos
+    const sessaoId = localStorage.getItem('sessaoId');
 
     if (!token || !sessaoId) {
         console.log('Autenticação ou sessão do cliente ausente, redirecionando para o login...');
-        // Corrigido para usar a rota do servidor em vez do arquivo direto
         window.location.href = '/login';
         return false;
     }
-    console.log(`Autenticação OK. Sessão ID: ${sessaoId}`);
     return true;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Interrompe a execução se a verificação falhar
     if (!verificarAutenticacao()) return;
 
     // --- Constantes e Variáveis de Estado ---
     const token = localStorage.getItem('token');
-    const sessaoId = localStorage.getItem('sessaoId'); // Pega o ID da sessão para o WebSocket
-    const API_URL = '/api'; // URL base da API
-
-    // O carrinho agora é a fonte da verdade para os itens pré-selecionados
+    const sessaoId = localStorage.getItem('sessaoId');
+    const API_URL = '/api';
     let carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
+    let cardapioCompleto = []; // Armazena todos os dados da API
 
-    // --- Elementos do DOM ---
+    // --- Elementos do DOM (CORRIGIDOS) ---
     const navMenu = document.querySelector('.nav-menu');
     const menuList = document.querySelector('.menu-list');
     const profileIcon = document.querySelector('.fa-user.icon');
@@ -39,27 +35,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartBadge = document.querySelector('.cart-icon .badge');
 
     // --- Funções de Interação com a API ---
-    async function apiCall(endpoint, method = 'GET', body = null) {
-        const options = {
-            method,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        };
-        if (body) { options.body = JSON.stringify(body); }
-
+    async function apiCall(endpoint) {
+        const options = { headers: { 'Authorization': `Bearer ${token}` } };
         try {
             const response = await fetch(`${API_URL}${endpoint}`, options);
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Erro na API');
-            }
-            return response.status === 204 ? {} : response.json();
+            if (!response.ok) throw new Error('Erro na API');
+            return response.json();
         } catch (error) {
             console.error(`Falha na chamada da API para ${endpoint}:`, error);
             throw error;
         }
+    }
+
+    // --- Funções de Lógica de Negócio ---
+    function isHappyHourAtivo(inicio, fim) {
+        if (!inicio || !fim) return false;
+        const agora = new Date();
+        const horaAtual = agora.getHours().toString().padStart(2, '0') + ":" + agora.getMinutes().toString().padStart(2, '0');
+        return horaAtual >= inicio.slice(0, 5) && horaAtual < fim.slice(0, 5);
     }
 
     // --- Funções do Carrinho ---
@@ -71,10 +64,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const addButton = document.querySelector(`.menu-item[data-product-id='${produto.id}'] .add-button`);
         if(addButton) {
             addButton.textContent = '✓';
-            addButton.style.backgroundColor = '#28a745';
+            addButton.classList.add('added');
             setTimeout(() => { 
                 addButton.textContent = '+';
-                addButton.style.backgroundColor = 'transparent'; 
+                addButton.classList.remove('added');
             }, 1000);
         }
     }
@@ -87,23 +80,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Funções de Renderização ---
     function renderizarCategorias(categorias) {
         navMenu.innerHTML = '';
-        categorias.forEach((cat, index) => {
+        categorias.forEach(cat => {
+            if (!cat.ativo) return;
+
             const li = document.createElement('li');
             li.className = 'nav-item';
             li.dataset.filter = cat.id;
             li.textContent = cat.nome;
-            if (index === 0) li.classList.add('active');
+
+            if (cat.is_happy_hour && !isHappyHourAtivo(cat.happy_hour_inicio, cat.happy_hour_fim)) {
+                li.classList.add('happy-hour-inativo');
+                li.title = `Happy Hour disponível das ${cat.happy_hour_inicio.slice(0,5)} às ${cat.happy_hour_fim.slice(0,5)}`;
+            }
+            
             navMenu.appendChild(li);
         });
     }
 
-    function renderizarProdutos(produtos) {
+    function renderizarProdutos(idCategoria) {
+        const categoria = cardapioCompleto.find(cat => cat.id == idCategoria);
         menuList.innerHTML = '';
-        if (produtos.length === 0) {
+
+        if (!categoria || categoria.produtos.length === 0) {
             menuList.innerHTML = '<p>Nenhum produto encontrado nesta categoria.</p>';
             return;
         }
-        produtos.forEach(prod => {
+
+        const happyHourInativo = categoria.is_happy_hour && !isHappyHourAtivo(categoria.happy_hour_inicio, categoria.happy_hour_fim);
+
+        categoria.produtos.forEach(prod => {
+            if (!prod.ativo) return;
+
             const itemDiv = document.createElement('div');
             itemDiv.className = 'menu-item';
             itemDiv.dataset.category = prod.id_categoria;
@@ -111,6 +118,10 @@ document.addEventListener('DOMContentLoaded', () => {
             itemDiv.dataset.productPrice = prod.preco;
 
             const serveTexto = prod.serve_pessoas > 0 ? `<span class="serves">Serve até ${prod.serve_pessoas} ${prod.serve_pessoas > 1 ? 'pessoas' : 'pessoa'}</span>` : '';
+            
+            const botaoAdicionar = happyHourInativo 
+                ? `<button class="add-button" disabled title="Disponível apenas durante o Happy Hour">+</button>`
+                : `<button class="add-button">+</button>`;
 
             itemDiv.innerHTML = `
                 <img src="${prod.imagem_svg || 'https://via.placeholder.com/150x100'}" alt="${prod.nome}">
@@ -119,30 +130,35 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>${prod.descricao}</p>
                 </div>
                 <div class="item-action">
-                    <button class="add-button">+</button>
+                    ${botaoAdicionar}
                     <span class="item-price">R$ ${parseFloat(prod.preco ).toFixed(2)}</span>
                 </div>
             `;
-            menuList.appendChild(itemDiv);
-        });
-    }
+            
+            if (happyHourInativo) {
+                itemDiv.classList.add('item-inativo');
+            }
 
-    function filtrarProdutos(idCategoria) {
-        document.querySelectorAll('.menu-item').forEach(item => {
-            item.style.display = item.dataset.category === idCategoria ? 'flex' : 'none';
+            menuList.appendChild(itemDiv);
         });
     }
 
     // --- Função Principal de Inicialização ---
     async function inicializarCardapio() {
         try {
-            const [categorias, produtos] = await Promise.all([
-                apiCall('/categorias'),
-                apiCall('/produtos/todos')
-            ]);
-            renderizarCategorias(categorias);
-            renderizarProdutos(produtos);
-            if (categorias.length > 0) filtrarProdutos(categorias[0].id.toString());
+            cardapioCompleto = await apiCall('/cardapio-completo');
+            
+            renderizarCategorias(cardapioCompleto);
+            
+            const primeiraCategoriaVisivel = cardapioCompleto.find(cat => cat.ativo && (!cat.is_happy_hour || isHappyHourAtivo(cat.happy_hour_inicio, cat.happy_hour_fim)));
+
+            if (primeiraCategoriaVisivel) {
+                renderizarProdutos(primeiraCategoriaVisivel.id);
+                const primeiroItemMenu = navMenu.querySelector(`li[data-filter='${primeiraCategoriaVisivel.id}']`);
+                if (primeiroItemMenu) primeiroItemMenu.classList.add('active');
+            } else {
+                menuList.innerHTML = '<p>Nenhum item disponível no cardápio no momento.</p>';
+            }
         } catch (error) {
             menuList.innerHTML = '<p>Não foi possível carregar o cardápio. Tente novamente mais tarde.</p>';
         }
@@ -157,8 +173,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         window.location.href = '/confirmar-pedido';
     });
+
     menuList.addEventListener('click', (e) => {
-        if (e.target.classList.contains('add-button')) {
+        if (e.target.classList.contains('add-button') && !e.target.disabled) {
             const menuItem = e.target.closest('.menu-item');
             const produto = {
                 id: menuItem.dataset.productId,
@@ -169,65 +186,43 @@ document.addEventListener('DOMContentLoaded', () => {
             adicionarAoCarrinho(produto);
         }
     });
+
     navMenu.addEventListener('click', (e) => {
         if (e.target && e.target.matches('li.nav-item')) {
             document.querySelectorAll('.nav-menu li').forEach(item => item.classList.remove('active'));
             e.target.classList.add('active');
-            filtrarProdutos(e.target.dataset.filter);
+            renderizarProdutos(e.target.dataset.filter);
         }
     });
 
-    // --- Lógica do WebSocket (VERSÃO ATUALIZADA) ---
+    // --- Lógica do WebSocket ---
     function conectarWebSocket() {
-        // Conecta ao WebSocket, passando a sessaoId na URL para identificação no backend.
         const socket = new WebSocket(`ws://${window.location.host}?sessaoId=${sessaoId}`);
-
-        socket.onopen = () => {
-            console.log(`Conectado ao servidor via WebSocket para a sessão: ${sessaoId}`);
-        };
-
-        // Listener principal de mensagens do servidor
+        socket.onopen = () => console.log(`Conectado ao servidor via WebSocket para a sessão: ${sessaoId}`);
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
-
             switch (data.type) {
-                // Caso 1: O gerente atualizou o cardápio
                 case 'CARDAPIO_ATUALIZADO':
                     console.log('Cardápio atualizado pelo gerente. Recarregando...');
                     inicializarCardapio();
                     break;
-
-                // Caso 2: O gerente fechou a conta deste cliente
                 case 'LOGOUT_FORCADO':
-                    console.warn('Recebido comando de logout forçado do servidor:', data.message);
-                    
-                    // Limpa todos os dados da sessão do cliente
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('sessaoId');
-                    localStorage.removeItem('dadosCliente');
-                    localStorage.removeItem('nomeMesa');
-                    localStorage.removeItem('carrinho');
-
-                    // Exibe um alerta e redireciona para a página de login
+                    console.warn('Recebido comando de logout forçado:', data.message);
+                    localStorage.clear();
                     alert(data.message || 'Sua sessão foi encerrada pela gerência.');
                     window.location.href = '/login';
                     break;
             }
         };
-
-        socket.onclose = () => {
-            console.log('Conexão WebSocket perdida. Tentando reconectar em 3 segundos...');
-            setTimeout(conectarWebSocket, 3000);
-        };
-
+        socket.onclose = () => setTimeout(conectarWebSocket, 3000);
         socket.onerror = (error) => {
             console.error('Erro no WebSocket:', error);
-            socket.close(); // Força o fechamento para acionar a tentativa de reconexão
+            socket.close();
         };
     }
 
     // --- INICIALIZAÇÃO ---
     atualizarBadgeCarrinho();
     inicializarCardapio();
-    conectarWebSocket(); // Inicia a conexão WebSocket com a nova lógica
+    conectarWebSocket();
 });

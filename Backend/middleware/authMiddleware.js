@@ -1,5 +1,3 @@
-// /Backend/middleware/authMiddleware.js - VERSÃO ATUALIZADA E CORRIGIDA
-
 const jwt = require('jsonwebtoken');
 const { query } = require('../db');
 

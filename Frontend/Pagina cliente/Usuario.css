@@ -621,4 +621,34 @@
 }
 
 
+/* Adicione estas classes ao seu arquivo CSS do cliente */
+
+/* Estilo para a categoria de Happy Hour inativa na barra lateral */
+.nav-item.happy-hour-inativo {
+    color: #999; /* Cor cinza para o texto */
+    cursor: not-allowed; /* Mostra um cursor de "proibido" */
+    background-color: #f0f0f0; /* Um fundo levemente diferente */
+}
+
+/* Estilo para o produto quando ele pertence a um Happy Hour inativo */
+.menu-item.item-inativo {
+    opacity: 0.6; /* Deixa o item inteiro um pouco transparente */
+    background-color: #fafafa;
+}
+
+/* Estilo para o botão de adicionar desabilitado */
+.menu-item .add-button:disabled {
+    background-color: #ccc !important; /* Cor cinza para o botão */
+    color: #666;
+    cursor: not-allowed; /* Cursor de "proibido" */
+    border-color: #ccc;
+}
+
+/* Estilo para o botão quando um item é adicionado com sucesso */
+.menu-item .add-button.added {
+    background-color: #28a745 !important; /* Verde */
+    color: white;
+    border-color: #28a745;
+}
+
 

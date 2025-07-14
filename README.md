@@ -1,6 +1,6 @@
 # Sistema de Gestão de Cardápio e Pedidos
 
-![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow ) ![Progresso](https://img.shields.io/badge/progresso-53%25-brightgreen ) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green ) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue ) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
+![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow  ) ![Progresso](https://img.shields.io/badge/progresso-55%25-brightgreen  ) <!-- ATUALIZADO --> ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green  ) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue  ) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet  )
 
 Sistema de gerenciamento completo para restaurante, com foco em segurança, usabilidade e atualizações em tempo real. A plataforma permite que a gerência administre o cardápio e as mesas de forma dinâmica, enquanto os clientes realizam seus pedidos diretamente pelo tablet.
 
@@ -15,7 +15,7 @@ O sistema utiliza WebSockets para garantir que qualquer alteração feita pela g
 
 ---
 
-## 🚀 Status Atual (Progresso: 53%)
+## 🚀 Status Atual (Progresso: 55%) <!-- ATUALIZADO -->
 
 O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de interação do cliente e as principais funcionalidades de gerenciamento implementadas e estáveis.
 
@@ -35,24 +35,25 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
         -   [x] Ordenar categorias com drag-and-drop.
         -   [x] **Controle de Status:** Ativar e desativar categorias e produtos individualmente.
         -   [x] **Happy Hour:** Definir categorias como "Happy Hour" com horário de início e fim.
-        -   [x] **NOVO: Sistema de Sugestões:** Marcar produtos específicos para serem sugeridos como acompanhamento na tela de confirmação do pedido.
+        -   [x] **Sistema de Sugestões:** Marcar produtos específicos para serem sugeridos como acompanhamento na tela de confirmação do pedido.
     -   [x] **Gestão de Mesas:**
         -   [x] Cadastrar e remover mesas.
         -   [x] Painel interativo para visualizar o histórico de sessões de cada mesa.
         -   [x] Cancelar itens de pedidos de uma sessão ativa.
         -   [x] Identificação e fechamento de sessões ativas.
+        -   [x] **<!-- NOVO --> Geração de Recibos em PDF:** Visualizar e salvar um modelo de recibo detalhado para cada sessão, incluindo dados do cliente (nome, CPF, telefone), itens consumidos e totais.
 -   [x] **Interface do Cliente (Ciclo Completo e Inteligente):**
-    -   [x] **Login da Mesa:** Autenticação para iniciar uma sessão.
+    -   [x] **Login da Mesa:** Autenticação para iniciar uma sessão, com coleta de dados do cliente (nome, telefone, CPF). <!-- ATUALIZADO -->
     -   [x] **Cardápio Dinâmico com Regras de Negócio:**
         -   [x] Itens desativados pela gerência **não são exibidos**.
         -   [x] Categorias de "Happy Hour" fora do horário têm seus produtos bloqueados.
         -   [x] Botão de detalhes em cada produto para abrir um modal com informações ampliadas.
     -   [x] **Confirmação de Pedido Profissional:**
-        -   [x] **NOVO: Controle de Quantidade:** Agrupar itens idênticos e permitir que o cliente aumente ou diminua a quantidade (`+` / `-`) diretamente na tela de resumo.
-        -   [x] **NOVO: Modal de Observação:** Adicionar observações a cada grupo de itens através de um modal limpo e intuitivo, acionado por um ícone.
-        -   [x] **NOVO: Sugestões de Acompanhamento:** Exibir até 3 produtos sugeridos em uma lista com rolagem vertical, com opções para adicionar ao pedido ou navegar para a categoria do item.
+        -   [x] **Controle de Quantidade:** Agrupar itens idênticos e permitir que o cliente aumente ou diminua a quantidade (`+` / `-`) diretamente na tela de resumo.
+        -   [x] **Modal de Observação:** Adicionar observações a cada grupo de itens através de um modal limpo e intuitivo, acionado por um ícone.
+        -   [x] **Sugestões de Acompanhamento:** Exibir até 3 produtos sugeridos em uma lista com rolagem vertical, com opções para adicionar ao pedido ou navegar para a categoria do item.
     -   [x] **Conta do Cliente:**
-        -   [x] **NOVO: Agrupamento de Pedidos:** Visualização da conta com itens idênticos agrupados por quantidade (ex: "3x Coca-Cola"), incluindo itens cancelados.
+        -   [x] **Agrupamento de Pedidos:** Visualização da conta com itens idênticos agrupados por quantidade (ex: "3x Coca-Cola"), incluindo itens cancelados.
         -   [x] Fechamento de conta seguro via modal.
 -   [x] **Comunicação em Tempo Real:**
     -   [x] Atualização automática do cardápio do cliente quando o gerente faz alterações.
@@ -62,6 +63,7 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
 -   [ ] **Relatórios:** Desenvolver um dashboard com indicadores de vendas para a gerência.
 -   [ ] **Logs de Auditoria:** Aprimorar o sistema de logs para rastrear todas as ações importantes.
 -   [ ] **Pagamentos:** Integrar um gateway de pagamento (PIX, cartão) na tela da conta.
+-   [ ] **Impressão Térmica:** Implementar a comunicação direta com impressoras térmicas para impressão física dos recibos. <!-- NOVO -->
 -   [ ] **Deployment:** Preparar o sistema para ser hospedado em um servidor online.
 
 ---
@@ -69,19 +71,20 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
 ## 🛠️ Tecnologias Utilizadas
 
 *   **Backend:**
-    *   [Node.js](https://nodejs.org/ ): Ambiente de execução JavaScript no servidor.
-    *   [Express.js](https://expressjs.com/ ): Framework para a construção da API.
-    *   [MySQL2](https://github.com/sidorares/node-mysql2 ): Driver para conectar o Node.js ao banco de dados MySQL.
-    *   [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken ): Para geração e validação de tokens de autenticação.
-    *   [bcryptjs](https://github.com/dcodeIO/bcrypt.js ): Para criptografia segura de senhas.
-    *   [ws](https://github.com/websockets/ws ): Biblioteca para implementação de WebSockets.
+    *   [Node.js](https://nodejs.org/  ): Ambiente de execução JavaScript no servidor.
+    *   [Express.js](https://expressjs.com/  ): Framework para a construção da API.
+    *   [MySQL2](https://github.com/sidorares/node-mysql2  ): Driver para conectar o Node.js ao banco de dados MySQL.
+    *   [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken  ): Para geração e validação de tokens de autenticação.
+    *   [bcryptjs](https://github.com/dcodeIO/bcrypt.js  ): Para criptografia segura de senhas.
+    *   [ws](https://github.com/websockets/ws  ): Biblioteca para implementação de WebSockets.
+    *   [pdfkit](https://pdfkit.org/ ): Biblioteca para criação de documentos PDF. <!-- NOVO -->
 
 *   **Frontend:**
     *   HTML5, CSS3, JavaScript (Vanilla)
-    *   [Font Awesome](https://fontawesome.com/ ): Para os ícones da interface.
+    *   [Font Awesome](https://fontawesome.com/  ): Para os ícones da interface.
 
 *   **Banco de Dados:**
-    *   [MySQL](https://www.mysql.com/ )
+    *   [MySQL](https://www.mysql.com/  )
 
 ---
 
@@ -90,8 +93,8 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
 Para rodar este projeto em sua máquina, siga os passos abaixo.
 
 ### Pré-requisitos:
-*   Ter o [Node.js](https://nodejs.org/ ) instalado.
-*   Ter um servidor [MySQL](https://www.mysql.com/ ) rodando localmente.
+*   Ter o [Node.js](https://nodejs.org/  ) instalado.
+*   Ter um servidor [MySQL](https://www.mysql.com/  ) rodando localmente.
 
 ### 1. Configuração do Banco de Dados
 -   Crie um banco de dados no seu MySQL com o nome `cardapio_db` (ou o nome que preferir).

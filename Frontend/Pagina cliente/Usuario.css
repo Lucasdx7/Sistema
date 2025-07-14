@@ -1488,4 +1488,15 @@
 }
 
 
+.observacao-info {
+    margin: 4px 0 0 0;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.observacao-info em {
+    font-style: italic;
+    color: #333;
+}
+
 

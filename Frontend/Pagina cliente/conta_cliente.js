@@ -1,6 +1,6 @@
 /**
- * Agrupa uma lista de pedidos por produto, somando as quantidades.
- * Itens cancelados são mantidos separados para exibição.
+ * Agrupa uma lista de pedidos por produto, status E observação.
+ * Itens com observações diferentes serão listados separadamente.
  * @param {Array} pedidos - A lista de pedidos vinda da API.
  * @returns {Array} - Uma lista de itens agrupados.
  */
@@ -12,23 +12,22 @@ function agruparPedidos(pedidos) {
     const itensAgrupados = {};
 
     pedidos.forEach(pedido => {
-        // Chave única para agrupar: ID do produto + status.
-        // Isso garante que um item normal e um cancelado do mesmo produto não se misturem.
-        const chave = `${pedido.id_produto}-${pedido.status}`;
+        // A chave única agora inclui a observação para garantir que itens
+        // com e sem observação (ou com observações diferentes) sejam agrupados separadamente.
+        const chave = `${pedido.nome_produto}-${pedido.status}-${pedido.observacao || ''}`;
 
         if (itensAgrupados[chave]) {
-            // Se já existe um grupo para este produto/status, soma a quantidade.
+            // Se já existe um grupo para este produto/status/observação, soma a quantidade.
             itensAgrupados[chave].quantidade += pedido.quantidade;
         } else {
             // Se não, cria um novo grupo.
             itensAgrupados[chave] = {
-                ...pedido, // Copia todas as propriedades do primeiro pedido encontrado
-                quantidade: pedido.quantidade // Inicia a contagem
+                ...pedido,
+                quantidade: pedido.quantidade
             };
         }
     });
 
-    // Converte o objeto de volta para um array.
     return Object.values(itensAgrupados);
 }
 
@@ -77,17 +76,19 @@ document.addEventListener('DOMContentLoaded', () => {
             listaPedidos.innerHTML = '';
             
             if (data.pedidos && data.pedidos.length > 0) {
-                // USA A FUNÇÃO DE AGRUPAMENTO ANTES DE RENDERIZAR
+                // USA A FUNÇÃO DE AGRUPAMENTO FINAL ANTES DE RENDERIZAR
                 const pedidosAgrupados = agruparPedidos(data.pedidos);
 
                 pedidosAgrupados.forEach(item => {
                     const li = document.createElement('li');
                     const isCanceled = item.status === 'cancelado';
+                    const temObservacao = item.observacao && item.observacao.trim() !== '';
                     
                     if (isCanceled) {
                         li.classList.add('cancelado');
                     }
 
+                    // ESTRUTURA HTML FINAL COM OBSERVAÇÃO
                     li.innerHTML = `
                         <div class="produto-info">
                             <img src="${item.imagem_svg || '/img/placeholder.svg'}" alt="${item.nome_produto}">
@@ -95,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <strong>${item.nome_produto}</strong>
                                 <span>${item.quantidade} x R$ ${parseFloat(item.preco_unitario).toFixed(2)}</span>
                                 ${isCanceled ? '<span class="cancelado-tag">Cancelado pela gerência</span>' : ''}
+                                ${temObservacao ? `<p class="observacao-info">Obs: <em>${item.observacao}</em></p>` : ''}
                             </div>
                         </div>
                         <span>R$ ${(item.quantidade * item.preco_unitario).toFixed(2)}</span>

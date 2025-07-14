@@ -381,14 +381,17 @@ router.post('/sessoes/iniciar', async (req, res) => {
 });
 
 // ROTA CORRIGIDA para a conta do cliente
+// Em Backend/routes/api.js
+
+// ROTA CORRIGIDA para a conta do cliente
 router.get('/sessoes/:id/conta', checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params;
     if (!id) return res.status(400).json({ message: 'O ID da sessão é obrigatório.' });
     try {
-        // A consulta agora busca TODOS os pedidos, incluindo os cancelados
+        // A consulta agora busca TODOS os pedidos, incluindo os cancelados e a observação.
         const sql = `
             SELECT 
-                p.id, p.quantidade, p.preco_unitario, p.status, 
+                p.id, p.quantidade, p.preco_unitario, p.status, p.observacao,
                 prod.nome AS nome_produto, prod.imagem_svg
             FROM pedidos p
             JOIN produtos prod ON p.id_produto = prod.id

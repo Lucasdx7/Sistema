@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const usuarioString = localStorage.getItem('usuario');
 
     if (!token || !usuarioString) {
-        window.location.href = '/login';
+         window.location.href = '/login-gerencia';
         return;
     }
 
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function fazerLogout() {
         localStorage.removeItem('authToken');
         localStorage.removeItem('usuario');
-        window.location.href = '/login';
+        window.location.href = '/login-gerencia';
     }
 
     // --- Event Listeners ---

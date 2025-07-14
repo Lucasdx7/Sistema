@@ -165,25 +165,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Função Principal de Inicialização ---
-    async function inicializarCardapio() {
-        try {
-            cardapioCompleto = await apiCall('/cardapio-completo');
-            
-            renderizarCategorias(cardapioCompleto);
-            
-            const primeiraCategoriaVisivel = cardapioCompleto.find(cat => cat.ativo && (!cat.is_happy_hour || isHappyHourAtivo(cat.happy_hour_inicio, cat.happy_hour_fim)));
+   // Em /Pagina cliente/Usuario.js
 
-            if (primeiraCategoriaVisivel) {
-                renderizarProdutos(primeiraCategoriaVisivel.id);
-                const primeiroItemMenu = navMenu.querySelector(`li[data-filter='${primeiraCategoriaVisivel.id}']`);
-                if (primeiroItemMenu) primeiroItemMenu.classList.add('active');
-            } else {
-                menuList.innerHTML = '<p>Nenhum item disponível no cardápio no momento.</p>';
-            }
-        } catch (error) {
-            menuList.innerHTML = '<p>Não foi possível carregar o cardápio. Tente novamente mais tarde.</p>';
+async function inicializarCardapio() {
+    try {
+        cardapioCompleto = await apiCall('/cardapio-completo');
+        renderizarCategorias(cardapioCompleto);
+
+        // --- LÓGICA ADICIONADA AQUI ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoriaIdDesejada = urlParams.get('categoria');
+        
+        let categoriaInicial = null;
+
+        if (categoriaIdDesejada) {
+            // Tenta encontrar a categoria vinda da URL
+            categoriaInicial = cardapioCompleto.find(cat => cat.id == categoriaIdDesejada && cat.ativo);
         }
+
+        // Se não encontrou (ou se não veio na URL), pega a primeira visível
+        if (!categoriaInicial) {
+            categoriaInicial = cardapioCompleto.find(cat => cat.ativo && (!cat.is_happy_hour || isHappyHourAtivo(cat.happy_hour_inicio, cat.happy_hour_fim)));
+        }
+        // --- FIM DA LÓGICA ADICIONADA ---
+
+        if (categoriaInicial) {
+            renderizarProdutos(categoriaInicial.id);
+            const itemMenuAtivo = navMenu.querySelector(`li[data-filter='${categoriaInicial.id}']`);
+            if (itemMenuAtivo) itemMenuAtivo.classList.add('active');
+        } else {
+            menuList.innerHTML = '<p>Nenhum item disponível no cardápio no momento.</p>';
+        }
+    } catch (error) {
+        menuList.innerHTML = '<p>Não foi possível carregar o cardápio. Tente novamente mais tarde.</p>';
     }
+}
+
 
     // --- Event Listeners ---
     profileIcon.addEventListener('click', () => { window.location.href = '/conta'; });

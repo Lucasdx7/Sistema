@@ -1,3 +1,38 @@
+/**
+ * Agrupa uma lista de pedidos por produto, somando as quantidades.
+ * Itens cancelados são mantidos separados para exibição.
+ * @param {Array} pedidos - A lista de pedidos vinda da API.
+ * @returns {Array} - Uma lista de itens agrupados.
+ */
+function agruparPedidos(pedidos) {
+    if (!pedidos || pedidos.length === 0) {
+        return [];
+    }
+
+    const itensAgrupados = {};
+
+    pedidos.forEach(pedido => {
+        // Chave única para agrupar: ID do produto + status.
+        // Isso garante que um item normal e um cancelado do mesmo produto não se misturem.
+        const chave = `${pedido.id_produto}-${pedido.status}`;
+
+        if (itensAgrupados[chave]) {
+            // Se já existe um grupo para este produto/status, soma a quantidade.
+            itensAgrupados[chave].quantidade += pedido.quantidade;
+        } else {
+            // Se não, cria um novo grupo.
+            itensAgrupados[chave] = {
+                ...pedido, // Copia todas as propriedades do primeiro pedido encontrado
+                quantidade: pedido.quantidade // Inicia a contagem
+            };
+        }
+    });
+
+    // Converte o objeto de volta para um array.
+    return Object.values(itensAgrupados);
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('token');
     const sessaoId = localStorage.getItem('sessaoId');
@@ -40,22 +75,25 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error(data.message);
 
             listaPedidos.innerHTML = '';
+            
             if (data.pedidos && data.pedidos.length > 0) {
-                data.pedidos.forEach(item => {
+                // USA A FUNÇÃO DE AGRUPAMENTO ANTES DE RENDERIZAR
+                const pedidosAgrupados = agruparPedidos(data.pedidos);
+
+                pedidosAgrupados.forEach(item => {
                     const li = document.createElement('li');
                     const isCanceled = item.status === 'cancelado';
                     
-                    // Adiciona uma classe 'cancelado' ao <li> se o item foi cancelado
                     if (isCanceled) {
                         li.classList.add('cancelado');
                     }
 
                     li.innerHTML = `
                         <div class="produto-info">
-                            <img src="${item.imagem_svg || 'https://via.placeholder.com/60'}" alt="${item.nome_produto}">
+                            <img src="${item.imagem_svg || '/img/placeholder.svg'}" alt="${item.nome_produto}">
                             <div>
                                 <strong>${item.nome_produto}</strong>
-                                <span>${item.quantidade} x R$ ${parseFloat(item.preco_unitario ).toFixed(2)}</span>
+                                <span>${item.quantidade} x R$ ${parseFloat(item.preco_unitario).toFixed(2)}</span>
                                 ${isCanceled ? '<span class="cancelado-tag">Cancelado pela gerência</span>' : ''}
                             </div>
                         </div>
@@ -67,9 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 listaPedidos.innerHTML = '<p>Ainda não há pedidos registrados nesta conta.</p>';
             }
 
-            // O total agora vem diretamente do backend, já calculado corretamente
             const subtotal = parseFloat(data.total) || 0;
-            const taxa = subtotal * 0.10; // A taxa de serviço é calculada sobre o subtotal correto
+            const taxa = subtotal * 0.10;
             const total = subtotal + taxa;
 
             subtotalEl.textContent = `R$ ${subtotal.toFixed(2)}`;
@@ -119,11 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!closeResponse.ok) throw new Error(closeResult.message);
 
             alert('Sessão encerrada com sucesso!');
-            localStorage.removeItem('token');
-            localStorage.removeItem('sessaoId');
-            localStorage.removeItem('dadosCliente');
-            localStorage.removeItem('nomeMesa');
-            localStorage.removeItem('carrinho');
+            localStorage.clear(); // Limpa todo o localStorage ao deslogar
             window.location.href = '/login';
 
         } catch (error) {

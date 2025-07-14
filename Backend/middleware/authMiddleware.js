@@ -49,4 +49,6 @@ const protegerRota = async (req, res, next) => {
     }
 };
 
+
+
 module.exports = { protegerRota };

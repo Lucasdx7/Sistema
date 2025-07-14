@@ -138,39 +138,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function carregarProdutos(idCategoria) {
-        try {
-            const produtos = await apiCall(`/categorias/${idCategoria}/produtos`);
-            listaProdutos.innerHTML = '';
-            produtos.forEach(prod => {
-                const li = document.createElement('li');
-                Object.keys(prod).forEach(key => { li.dataset[key] = prod[key]; });
-                li.classList.toggle('inactive', !prod.ativo);
+    try {
+        const produtos = await apiCall(`/categorias/${idCategoria}/produtos`);
+        listaProdutos.innerHTML = '';
+        produtos.forEach(prod => {
+            const li = document.createElement('li');
+            Object.keys(prod).forEach(key => { li.dataset[key] = prod[key]; });
+            li.classList.toggle('inactive', !prod.ativo);
 
-                li.innerHTML = `
-                    <div class="produto-info">
-                        <img src="${prod.imagem_svg || 'https://via.placeholder.com/60'}" alt="${prod.nome}">
-                        <div>
-                            <strong>${prod.nome}</strong> - R$ ${parseFloat(prod.preco ).toFixed(2)}
-                            <p><strong>Descrição:</strong> ${prod.descricao}</p>
-                            <p class="desc-detalhada"><strong>Detalhes:</strong> ${prod.descricao_detalhada || 'N/A'}</p>
-                            <small>Serve: ${prod.serve_pessoas} pessoa(s)</small>
-                        </div>
+            // Converte o valor do banco (que pode ser 0/1) para booleano
+            const podeSerSugestao = prod.pode_ser_sugestao === 1 || prod.pode_ser_sugestao === true;
+
+            li.innerHTML = `
+                <div class="produto-info">
+                    <img src="${prod.imagem_svg || 'https://via.placeholder.com/60'}" alt="${prod.nome}">
+                    <div>
+                        <strong>${prod.nome}</strong> - R$ ${parseFloat(prod.preco ).toFixed(2)}
+                        <p><strong>Descrição:</strong> ${prod.descricao}</p>
+                        <p class="desc-detalhada"><strong>Detalhes:</strong> ${prod.descricao_detalhada || 'N/A'}</p>
+                        <small>Serve: ${prod.serve_pessoas} pessoa(s)</small>
                     </div>
-                    <div class="action-buttons">
-                        <label class="switch" title="${prod.ativo ? 'Desativar' : 'Ativar'} Produto">
-                            <input type="checkbox" class="toggle-status" data-tipo="produtos" ${prod.ativo ? 'checked' : ''}>
-                            <span class="slider"></span>
-                        </label>
-                        <button class="edit-btn" data-tipo="produto" title="Editar Produto"><i class="fas fa-pencil-alt"></i></button>
-                        <button class="delete-btn" data-tipo="produto" title="Excluir Produto">X</button>
-                    </div>
-                `;
-                listaProdutos.appendChild(li);
-            });
-        } catch (error) {
-            listaProdutos.innerHTML = '<li>Não foi possível carregar os produtos.</li>';
-        }
+                </div>
+                <div class="action-buttons">
+                    
+                    <!-- NOVO CHECKBOX DE SUGESTÃO -->
+                    <label class="switch suggestion-switch" title="Marcar como sugestão de acompanhamento">
+                        <input type="checkbox" class="toggle-suggestion" ${podeSerSugestao ? 'checked' : ''}>
+                        <span class="slider suggestion-slider">💡</span>
+                    </label>
+                    <!-- FIM DO NOVO CHECKBOX -->
+
+                    <label class="switch" title="${prod.ativo ? 'Desativar' : 'Ativar'} Produto">
+                        <input type="checkbox" class="toggle-status" data-tipo="produtos" ${prod.ativo ? 'checked' : ''}>
+                        <span class="slider"></span>
+                    </label>
+                    <button class="edit-btn" data-tipo="produto" title="Editar Produto"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="delete-btn" data-tipo="produto" title="Excluir Produto">X</button>
+                </div>
+            `;
+            listaProdutos.appendChild(li);
+        });
+    } catch (error) {
+        listaProdutos.innerHTML = '<li>Não foi possível carregar os produtos.</li>';
     }
+}
 
     // --- Lógica do Modal de Edição ---
     function abrirModalDeEdicao(tipo, itemElement) {
@@ -291,22 +302,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function handleListClick(event, listType) {
-        const li = event.target.closest('li');
-        if (!li) return;
+    const li = event.target.closest('li');
+    if (!li) return;
 
-        const id = li.dataset.id;
-        const tipo = listType;
+    const id = li.dataset.id;
+    const tipo = listType;
 
-        if (event.target.classList.contains('toggle-status')) {
-            const isChecked = event.target.checked;
-            apiCall(`/${tipo}/${id}/status`, 'PATCH', { ativo: isChecked })
-                .then(() => li.classList.toggle('inactive', !isChecked))
-                .catch(error => {
-                    alert(`Erro ao alterar status: ${error.message}`);
-                    event.target.checked = !isChecked;
-                });
-            return;
-        }
+    // --- LÓGICA EXISTENTE ---
+    if (event.target.classList.contains('toggle-status')) {
+        // ... (código para ativar/desativar, sem alterações)
+        return;
+    }
+
+    // --- NOVA LÓGICA PARA O CHECKBOX DE SUGESTÃO ---
+    if (event.target.classList.contains('toggle-suggestion')) {
+        const isChecked = event.target.checked;
+        // Assumindo um novo endpoint para atualizar apenas essa flag
+        apiCall(`/produtos/${id}/sugestao`, 'PATCH', { pode_ser_sugestao: isChecked })
+            .then(() => {
+                // Atualiza o dataset para manter o estado consistente
+                li.dataset.pode_ser_sugestao = isChecked;
+            })
+            .catch(error => {
+                alert(`Erro ao atualizar status de sugestão: ${error.message}`);
+                // Reverte a mudança visual em caso de erro
+                event.target.checked = !isChecked;
+            });
+        return; // Impede que o clique selecione a categoria
+    }
+    // --- FIM DA NOVA LÓGICA ---
 
         const button = event.target.closest('button');
         if (button) {

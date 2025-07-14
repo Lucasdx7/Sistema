@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const usuarioString = localStorage.getItem('usuario');
 
     if (!token || !usuarioString) {
-        window.location.href = '/login';
+        window.location.href = '/login-gerencia';
         return;
     }
     const usuario = JSON.parse(usuarioString);

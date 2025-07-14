@@ -137,18 +137,17 @@ router.get('/produtos/todos', async (req, res) => {
 // POST /produtos
 router.post('/produtos', checarUsuarioParaLog, async (req, res) => {
     try {
-        // 1. EXTRAIA 'descricao_detalhada' AQUI
-        const { id_categoria, nome, descricao, descricao_detalhada, preco, imagem_svg, serve_pessoas } = req.body;
+        // Adicione 'pode_ser_sugestao' à desestruturação
+        const { id_categoria, nome, descricao, descricao_detalhada, preco, imagem_svg, serve_pessoas, pode_ser_sugestao } = req.body;
 
-        // A validação principal pode continuar a mesma
         if (!id_categoria || !nome || !descricao || preco === undefined) {
             return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos.' });
         }
         
-        // 2. ATUALIZE A QUERY SQL E OS PARÂMETROS PARA INCLUIR O NOVO CAMPO
+        // Atualize a query e os parâmetros
         const result = await query(
-            'INSERT INTO produtos (id_categoria, nome, descricao, descricao_detalhada, preco, imagem_svg, serve_pessoas) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [id_categoria, nome, descricao, descricao_detalhada || null, preco, imagem_svg || null, serve_pessoas || 1]
+            'INSERT INTO produtos (id_categoria, nome, descricao, descricao_detalhada, preco, imagem_svg, serve_pessoas, pode_ser_sugestao) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [id_categoria, nome, descricao, descricao_detalhada || null, preco, imagem_svg || null, serve_pessoas || 1, pode_ser_sugestao || false]
         );
 
         await registrarLog(req.usuario.id, req.usuario.nome, 'CRIOU_PRODUTO', `Criou o produto '${nome}' (ID: ${result.insertId}).`);
@@ -163,66 +162,47 @@ router.post('/produtos', checarUsuarioParaLog, async (req, res) => {
 // PUT /produtos/:id (EDITAR)
 router.put('/produtos/:id', checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params;
-    const novosDados = req.body; // Pegamos todos os novos dados de uma vez
+    const novosDados = req.body;
 
-    // Validação dos dados recebidos
-    if (!novosDados.nome || !novosDados.descricao || novosDados.preco === undefined || novosDados.serve_pessoas === undefined) {
-        return res.status(400).json({ message: 'Todos os campos do produto são obrigatórios.' });
-    }
+    // ... (validação existente)
 
     try {
-        // 1. BUSCAR O ESTADO ATUAL DO PRODUTO ANTES DE ATUALIZAR
         const [produtoAntigo] = await query('SELECT * FROM produtos WHERE id = ?', [id]);
-
         if (!produtoAntigo) {
             return res.status(404).json({ message: 'Produto não encontrado.' });
         }
 
-        // 2. ATUALIZAR O PRODUTO NO BANCO DE DADOS (seu código original)
-        // (Assumindo que você já aplicou a correção para 'descricao_detalhada' das respostas anteriores)
-        const sql = 'UPDATE produtos SET nome = ?, descricao = ?, descricao_detalhada = ?, preco = ?, serve_pessoas = ? WHERE id = ?';
+        // Atualize a query SQL para incluir o novo campo
+        const sql = 'UPDATE produtos SET nome = ?, descricao = ?, descricao_detalhada = ?, preco = ?, serve_pessoas = ?, pode_ser_sugestao = ? WHERE id = ?';
         const params = [
             novosDados.nome, 
             novosDados.descricao, 
             novosDados.descricao_detalhada || null, 
             parseFloat(novosDados.preco), 
-            parseInt(novosDados.serve_pessoas), 
+            parseInt(novosDados.serve_pessoas),
+            // Adicione o novo valor, convertendo para 0 ou 1 para o banco de dados
+            novosDados.pode_ser_sugestao ? 1 : 0,
             id
         ];
         await query(sql, params);
 
-        // 3. COMPARAR DADOS E GERAR A MENSAGEM DE LOG DETALHADA
+        // Adicione a comparação para o log detalhado
         let detalhesLog = `Editou o produto '${produtoAntigo.nome}' (ID: ${id}).`;
         const mudancas = [];
 
-        // Compara cada campo importante
-        if (produtoAntigo.nome !== novosDados.nome) {
-            mudancas.push(`nome de '${produtoAntigo.nome}' para '${novosDados.nome}'`);
-        }
-        if (parseFloat(produtoAntigo.preco).toFixed(2) !== parseFloat(novosDados.preco).toFixed(2)) {
-            mudancas.push(`preço de R$${parseFloat(produtoAntigo.preco).toFixed(2)} para R$${parseFloat(novosDados.preco).toFixed(2)}`);
-        }
-        if (produtoAntigo.descricao !== novosDados.descricao) {
-            mudancas.push("descrição curta foi alterada");
-        }
-        if ((produtoAntigo.descricao_detalhada || '') !== (novosDados.descricao_detalhada || '')) {
-            mudancas.push("descrição detalhada foi alterada");
-        }
-        if (produtoAntigo.serve_pessoas !== parseInt(novosDados.serve_pessoas)) {
-            mudancas.push(`serve de ${produtoAntigo.serve_pessoas} para ${novosDados.serve_pessoas} pessoa(s)`);
+        // ... (comparações existentes para nome, preço, etc.)
+
+        // Nova comparação para o log
+        if (!!produtoAntigo.pode_ser_sugestao !== !!novosDados.pode_ser_sugestao) {
+            mudancas.push(`marcado como sugestão foi alterado para '${!!novosDados.pode_ser_sugestao}'`);
         }
 
-        // Se houveram mudanças, formata a mensagem
         if (mudancas.length > 0) {
             detalhesLog += ` Alterações: ${mudancas.join(', ')}.`;
-        } else {
-            detalhesLog += ' Nenhuma alteração foi feita nos dados.';
         }
 
-        // 4. REGISTRAR O LOG COM A NOVA MENSAGEM
         await registrarLog(req.usuario.id, req.usuario.nome, 'EDITOU_PRODUTO', detalhesLog);
 
-        // O resto do seu código
         if (req.broadcast) req.broadcast({ type: 'CARDAPIO_ATUALIZADO' });
         res.json({ message: 'Produto atualizado com sucesso!', id, ...novosDados });
 
@@ -591,6 +571,73 @@ router.get('/sessoes/:id/pedidos', checarUsuarioParaLog, async (req, res) => {
         res.status(500).json({ message: 'Erro no servidor ao buscar os pedidos da sessão.' });
     }
 });
+
+
+// 2. CRIAR A NOVA ROTA PARA BUSCAR SUGESTÃO ALEATÓRIA
+// VERSÃO FINAL E CORRIGIDA DA ROTA DE SUGESTÃO
+router.get('/produtos/sugestao', checarUsuarioParaLog, async (req, res) => {
+    try {
+        // Query CORRIGIDA com JOIN e LIMIT 3
+        const sql = `
+            SELECT 
+                p.*, 
+                c.id AS id_categoria, 
+                c.nome AS nome_categoria 
+            FROM produtos p
+            JOIN categorias c ON p.id_categoria = c.id
+            WHERE p.ativo = 1 AND p.pode_ser_sugestao = 1 
+            ORDER BY RAND() 
+            LIMIT 5;
+        `;
+        
+        // Chamada CORRIGIDA usando a função 'query'
+        const sugestoes = await query(sql);
+
+        // Lógica CORRIGIDA para retornar um array
+        if (sugestoes.length > 0) {
+            res.json(sugestoes); // Retorna o array completo de sugestões
+        } else {
+            res.status(404).json({ message: 'Nenhuma sugestão de produto disponível no momento.' });
+        }
+    } catch (error) {
+        console.error('Erro ao buscar sugestão de produto:', error);
+        res.status(500).json({ message: 'Erro interno ao buscar sugestão.' });
+    }
+});
+
+
+// Coloque esta rota perto das outras rotas PATCH de status
+
+router.patch('/produtos/:id/sugestao', checarUsuarioParaLog, async (req, res) => {
+    const { id } = req.params;
+    const { pode_ser_sugestao } = req.body;
+
+    if (pode_ser_sugestao === undefined) {
+        return res.status(400).json({ message: "O status 'pode_ser_sugestao' é obrigatório." });
+    }
+
+    try {
+        const sql = `UPDATE produtos SET pode_ser_sugestao = ? WHERE id = ?`;
+        // AQUI ESTÁ O PROBLEMA PROVÁVEL
+        const result = await query(sql, [pode_ser_sugestao, id]); 
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Produto não encontrado.' });
+        }
+
+        const acao = pode_ser_sugestao ? 'MARCOU_COMO_SUGESTAO' : 'DESMARCOU_COMO_SUGESTAO';
+        await registrarLog(req.usuario.id, req.usuario.nome, acao, `Alterou o status de sugestão do produto ID ${id}.`);
+        
+        if (req.broadcast) req.broadcast({ type: 'CARDAPIO_ATUALIZADO' });
+        res.json({ message: 'Status de sugestão atualizado com sucesso.' });
+
+    } catch (error) {
+        // O erro está sendo capturado aqui!
+        res.status(500).json({ message: 'Erro no servidor ao atualizar status de sugestão.', error: error.message });
+    }
+});
+
+
 
 
 

@@ -344,15 +344,32 @@ router.get('/sessoes/:id/conta', checarUsuarioParaLog, async (req, res) => {
     }
 });
 
-// POST /sessoes/:id/fechar
+// ==================================================================
+// ROTA PARA FECHAR A CONTA DE UMA SESSÃO (VERSÃO FINAL E CORRIGIDA)
+// ==================================================================
 router.post('/sessoes/:id/fechar', checarUsuarioParaLog, async (req, res) => {
-    const { id } = req.params;
+    const { id } = req.params; // id da sessão
     try {
-        const result = await query("UPDATE sessoes_cliente SET status = 'finalizada', data_fim = NOW() WHERE id = ? AND status = 'ativa'", [id]);
-        if (result.affectedRows === 0) return res.status(404).json({ message: 'Sessão não encontrada ou já está finalizada.' });
-        await registrarLog(req.usuario.id, req.usuario.nome, 'FECHOU_SESSAO', `Fechou a sessão ID ${id}.`);
+        const result = await query(
+            "UPDATE sessoes_cliente SET status = 'finalizada', data_fim = NOW() WHERE id = ? AND status = 'ativa'",
+            [id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Sessão não encontrada ou já está finalizada.' });
+        }
+
+        // --- CORREÇÃO APLICADA AQUI ---
+        // Determina qual nome usar para o log: 'nome' para gerentes, 'nome_usuario' para mesas.
+        const nomeParaLog = req.usuario.nome || req.usuario.nome_usuario;
+
+        // Agora, passamos a variável correta para a função de log.
+        await registrarLog(req.usuario.id, nomeParaLog, 'FECHOU_SESSAO', `Fechou a sessão ID ${id}.`);
+        // ------------------------------------
+
         res.json({ message: 'Conta fechada com sucesso!' });
     } catch (error) {
+        console.error('Erro ao fechar sessão:', error);
         res.status(500).json({ message: 'Erro no servidor ao fechar a conta.' });
     }
 });

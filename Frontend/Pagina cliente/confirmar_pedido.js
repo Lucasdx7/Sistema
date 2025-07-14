@@ -1,16 +1,16 @@
-// /Frontend/Pagina cliente/confirmar_pedido.js
-
 document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('token');
     const sessaoId = localStorage.getItem('sessaoId');
     if (!token || !sessaoId) {
-        window.location.href = 'login_cliente.html';
+        alert('Sessão inválida. Redirecionando...');
+        window.location.href = '/login';
         return;
     }
 
-    const carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
+    // O carrinho agora é a nossa fonte da verdade para a página
+    let carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
 
-    // IDs e Classes
+    // --- Elementos do DOM ---
     const listaResumo = document.getElementById('lista-resumo-pedido');
     const subtotalEl = document.getElementById('subtotal-valor');
     const totalEl = document.getElementById('total-valor');
@@ -19,22 +19,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartBadge = document.querySelector('.cart-icon .badge');
     const profileIcon = document.getElementById('profile-icon');
 
+    /**
+     * Renderiza a página inteira com base no estado atual do carrinho.
+     */
     function renderizarPagina() {
+        listaResumo.innerHTML = ''; // Limpa a lista antes de redesenhar
+        let subtotal = 0;
+
         if (carrinho.length === 0) {
-            listaResumo.innerHTML = '<p>Seu carrinho de pré-pedido está vazio. Volte ao cardápio para adicionar itens.</p>';
-            confirmarBtn.disabled = true; // Desabilita o botão se não houver itens
+            listaResumo.innerHTML = '<p class="empty-cart-message">Seu carrinho de pré-pedido está vazio. Volte ao cardápio para adicionar itens.</p>';
+            confirmarBtn.disabled = true;
+            confirmarBtn.style.opacity = '0.6';
+        } else {
+            confirmarBtn.disabled = false;
+            confirmarBtn.style.opacity = '1';
         }
 
-        let subtotal = 0;
-        listaResumo.innerHTML = '';
-        carrinho.forEach(item => {
+        carrinho.forEach((item, index) => {
             const li = document.createElement('li');
+            li.className = 'order-item';
+            li.dataset.index = index; // Usa o índice do array como identificador
+
             li.innerHTML = `
-                <div class="item-details">
+                <img src="${item.imagem_svg || 'https://via.placeholder.com/80'}" alt="${item.nome}" class="order-item-image">
+                <div class="order-item-details">
                     <h3>${item.nome}</h3>
-                    <p>${item.descricao || 'Item sem descrição adicional.'}</p>
+                    <span class="item-price">R$ ${parseFloat(item.preco ).toFixed(2)}</span>
+                    <input type="text" class="observation-input" placeholder="Alguma observação? (Ex: sem cebola)" value="${item.observacao || ''}">
                 </div>
-                <span class="item-price">R$ ${parseFloat(item.preco).toFixed(2)}</span>
+                <button class="remove-item-btn" title="Remover item"><i class="fas fa-times"></i></button>
             `;
             listaResumo.appendChild(li);
             subtotal += parseFloat(item.preco);
@@ -47,34 +60,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Função aprimorada para confirmar o pedido com tratamento de erro detalhado.
+     * Atualiza o carrinho no localStorage e redesenha a página.
+     */
+    function atualizarCarrinho(novoCarrinho) {
+        carrinho = novoCarrinho;
+        localStorage.setItem('carrinho', JSON.stringify(carrinho));
+        renderizarPagina();
+    }
+
+    /**
+     * Lida com os eventos na lista de pedidos (remover item e salvar observação).
+     */
+    listaResumo.addEventListener('click', (e) => {
+        if (e.target.closest('.remove-item-btn')) {
+            const itemLi = e.target.closest('.order-item');
+            const indexParaRemover = parseInt(itemLi.dataset.index, 10);
+            
+            if (confirm(`Tem certeza que deseja remover "${carrinho[indexParaRemover].nome}" do seu pedido?`)) {
+                const novoCarrinho = carrinho.filter((_, index) => index !== indexParaRemover);
+                atualizarCarrinho(novoCarrinho);
+            }
+        }
+    });
+
+    listaResumo.addEventListener('input', (e) => {
+        if (e.target.classList.contains('observation-input')) {
+            const itemLi = e.target.closest('.order-item');
+            const indexParaAtualizar = parseInt(itemLi.dataset.index, 10);
+            carrinho[indexParaAtualizar].observacao = e.target.value;
+            // Salva a observação no localStorage sem redesenhar a tela inteira
+            localStorage.setItem('carrinho', JSON.stringify(carrinho));
+        }
+    });
+
+    /**
+     * Envia o pedido final para a API.
      */
     async function confirmarPedido() {
         confirmarBtn.disabled = true;
-        confirmarBtn.textContent = 'Enviando...';
+        confirmarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
 
         const pedidosParaEnviar = carrinho.map(item => ({
             id_sessao: sessaoId,
             id_produto: item.id,
-            preco_unitario: item.preco
+            preco_unitario: item.preco,
+            observacao: item.observacao || null
         }));
 
         try {
-            // Usamos Promise.all para enviar todas as requisições em paralelo.
-            // É mais rápido, mas se uma falhar, todas falham (o que é bom nesse caso).
             const promessasDePedidos = pedidosParaEnviar.map(pedido =>
                 fetch('/api/pedidos', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify(pedido)
                 }).then(async response => {
-                    // **MELHORIA CRÍTICA**: Verificamos CADA resposta.
                     if (!response.ok) {
-                        // Tentamos pegar a mensagem de erro específica da API.
-                        const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido no servidor.' }));
+                        const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido.' }));
                         throw new Error(errorData.message);
                     }
                     return response.json();
@@ -83,27 +124,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await Promise.all(promessasDePedidos);
             
-            localStorage.removeItem('carrinho'); // Limpa o carrinho SÓ SE TUDO DER CERTO
+            atualizarCarrinho([]); // Limpa o carrinho local e o localStorage
             alert('Pedido confirmado com sucesso e enviado para a cozinha!');
-            window.location.href = '/cardapio'; // Volta para o cardápio
+            window.location.href = '/cardapio';
 
         } catch (error) {
-            // **MELHORIA CRÍTICA**: Exibe o erro específico que veio da API.
             console.error('Falha ao confirmar pedido:', error);
             alert(`Houve um erro ao confirmar seu pedido:\n\n${error.message}\n\nPor favor, tente novamente ou chame um garçom.`);
         } finally {
-            // Garante que o botão seja reativado, mesmo se der erro.
             confirmarBtn.disabled = false;
-            confirmarBtn.textContent = 'Confirmar e Enviar';
+            confirmarBtn.innerHTML = '<i class="fas fa-check"></i> Confirmar e Enviar';
         }
     }
 
-    // Event Listeners
-    voltarBtn.addEventListener('click', () => {
-        window.location.href = '/cardapio';
-    });
+    // --- Event Listeners Iniciais ---
+    voltarBtn.addEventListener('click', () => window.location.href = '/cardapio');
     confirmarBtn.addEventListener('click', confirmarPedido);
     profileIcon.addEventListener('click', () => window.location.href = '/conta');
 
+    // --- Renderização Inicial ---
     renderizarPagina();
 });

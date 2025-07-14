@@ -1,5 +1,3 @@
-// /Frontend/Pagina cliente/conta_cliente.js
-
 document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('token');
     const sessaoId = localStorage.getItem('sessaoId');
@@ -19,8 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const subtotalEl = document.getElementById('subtotal-valor');
     const taxaEl = document.getElementById('taxa-servico');
     const totalEl = document.getElementById('total-valor');
-    
-    // --- Elementos do Modal de Logout (NOVOS) ---
     const hiddenButton = document.getElementById('hidden-logout-button');
     const logoutModal = document.getElementById('logout-modal');
     const closeModalBtn = document.getElementById('close-modal-btn');
@@ -47,12 +43,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.pedidos && data.pedidos.length > 0) {
                 data.pedidos.forEach(item => {
                     const li = document.createElement('li');
+                    const isCanceled = item.status === 'cancelado';
+                    
+                    // Adiciona uma classe 'cancelado' ao <li> se o item foi cancelado
+                    if (isCanceled) {
+                        li.classList.add('cancelado');
+                    }
+
                     li.innerHTML = `
                         <div class="produto-info">
                             <img src="${item.imagem_svg || 'https://via.placeholder.com/60'}" alt="${item.nome_produto}">
                             <div>
                                 <strong>${item.nome_produto}</strong>
                                 <span>${item.quantidade} x R$ ${parseFloat(item.preco_unitario ).toFixed(2)}</span>
+                                ${isCanceled ? '<span class="cancelado-tag">Cancelado pela gerência</span>' : ''}
                             </div>
                         </div>
                         <span>R$ ${(item.quantidade * item.preco_unitario).toFixed(2)}</span>
@@ -63,8 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 listaPedidos.innerHTML = '<p>Ainda não há pedidos registrados nesta conta.</p>';
             }
 
+            // O total agora vem diretamente do backend, já calculado corretamente
             const subtotal = parseFloat(data.total) || 0;
-            const taxa = subtotal * 0.10;
+            const taxa = subtotal * 0.10; // A taxa de serviço é calculada sobre o subtotal correto
             const total = subtotal + taxa;
 
             subtotalEl.textContent = `R$ ${subtotal.toFixed(2)}`;
@@ -77,76 +82,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Lógica do Modal de Logout ---
-
-    // Abre o modal ao clicar no botão escondido
     hiddenButton.addEventListener('click', () => {
         logoutModal.classList.remove('hidden');
     });
 
-    // Fecha o modal
     closeModalBtn.addEventListener('click', () => {
         logoutModal.classList.add('hidden');
         logoutForm.reset();
         logoutMessage.textContent = '';
     });
 
-    // Lida com a submissão do formulário de logout (VERSÃO CORRIGIDA)
-// /Frontend/Pagina cliente/conta_cliente.js
+    logoutForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const usuarioMesa = document.getElementById('mesa-usuario').value;
+        const senhaMesa = document.getElementById('mesa-senha').value;
+        logoutMessage.textContent = 'Verificando credenciais...';
+        logoutMessage.style.color = 'gray';
 
-// ... (seu código anterior permanece o mesmo)
+        try {
+            const authResponse = await fetch('/auth/login-cliente', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome_usuario: usuarioMesa, senha: senhaMesa })
+            });
+            const authResult = await authResponse.json();
+            if (!authResponse.ok) throw new Error(authResult.message);
 
-// Lida com a submissão do formulário de logout (VERSÃO CORRIGIDA)
-logoutForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const usuarioMesa = document.getElementById('mesa-usuario').value;
-    const senhaMesa = document.getElementById('mesa-senha').value;
-    
-    logoutMessage.textContent = 'Verificando credenciais...';
-    logoutMessage.style.color = 'gray';
+            logoutMessage.textContent = 'Credenciais corretas! Encerrando sessão...';
+            logoutMessage.style.color = 'green';
 
-    try {
-        // 1. Autentica a mesa
-        const authResponse = await fetch('/auth/login-cliente', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nome_usuario: usuarioMesa, senha: senhaMesa })
-        });
-        const authResult = await authResponse.json();
-        if (!authResponse.ok) throw new Error(authResult.message);
+            const closeResponse = await fetch(`/api/sessoes/${sessaoId}/fechar`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const closeResult = await closeResponse.json();
+            if (!closeResponse.ok) throw new Error(closeResult.message);
 
-        // 2. Fecha a sessão
-        logoutMessage.textContent = 'Credenciais corretas! Encerrando sessão...';
-        logoutMessage.style.color = 'green';
+            alert('Sessão encerrada com sucesso!');
+            localStorage.removeItem('token');
+            localStorage.removeItem('sessaoId');
+            localStorage.removeItem('dadosCliente');
+            localStorage.removeItem('nomeMesa');
+            localStorage.removeItem('carrinho');
+            window.location.href = '/login';
 
-        const closeResponse = await fetch(`/api/sessoes/${sessaoId}/fechar`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const closeResult = await closeResponse.json();
-        if (!closeResponse.ok) throw new Error(closeResult.message);
-
-        // 3. Limpa os dados e redireciona
-        alert('Sessão encerrada com sucesso!');
-        
-        // --- CORREÇÃO APLICADA AQUI ---
-        // Em vez de localStorage.clear(), removemos apenas os itens da sessão do cliente.
-        // Isso preserva o token de login da gerência.
-        localStorage.removeItem('token');
-        localStorage.removeItem('sessaoId');
-        localStorage.removeItem('dadosCliente');
-        localStorage.removeItem('nomeMesa');
-        localStorage.removeItem('carrinho'); // Importante limpar o carrinho também
-        // ------------------------------------
-
-        window.location.href = '/login';
-
-    } catch (error) {
-        logoutMessage.textContent = `Erro: ${error.message}`;
-        logoutMessage.style.color = 'red';
-    }
-});
-
+        } catch (error) {
+            logoutMessage.textContent = `Erro: ${error.message}`;
+            logoutMessage.style.color = 'red';
+        }
+    });
 
     // --- Inicialização ---
     carregarConta();

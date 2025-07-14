@@ -17,9 +17,7 @@
         </header>
 
         <main class="main-grid">
-            <!-- ================================================================== -->
-            <!-- SEÇÃO DE CATEGORIAS (VERSÃO CORRIGIDA E ÚNICA ) -->
-            <!-- ================================================================== -->
+            <!-- Seção de Categorias -->
             <section class="panel" id="categorias-panel">
                 <h2>Categorias</h2>
                 <div class="form-container" id="form-categoria-container">
@@ -45,21 +43,29 @@
                 </ul>
             </section>
 
-            <!-- ================================================================== -->
-            <!-- SEÇÃO DE PRODUTOS (SEM ALTERAÇÕES) -->
-            <!-- ================================================================== -->
+            <!-- Seção de Produtos -->
             <section class="panel" id="produtos-panel">
                 <h2>Produtos da Categoria: <span id="nome-categoria-selecionada">Nenhuma</span></h2>
+                
+                <!-- ================================================================== -->
+                <!-- --- FORMULÁRIO DE PRODUTO ATUALIZADO --- -->
+                <!-- ================================================================== -->
                 <div id="form-produto-container" class="hidden">
                     <h3>Adicionar Novo Produto</h3>
-                    <input type="text" id="input-nome-produto" placeholder="Nome do produto">
-                    <textarea id="input-descricao-produto" placeholder="Descrição do produto"></textarea>
-                    <input type="number" id="input-preco-produto" placeholder="Preço (ex: 25.50)">
+                    <input type="text" id="input-nome-produto" placeholder="Nome do produto" required>
+                    <textarea id="input-descricao-produto" placeholder="Descrição curta (para o cardápio )" required></textarea>
+                    
+                    <!-- NOVO CAMPO ADICIONADO AQUI -->
+                    <textarea id="input-descricao-detalhada" placeholder="Descrição detalhada (para o modal do cliente)"></textarea>
+                    
+                    <input type="number" id="input-preco-produto" placeholder="Preço (ex: 25.50)" required>
                     <input type="number" id="input-serve-pessoas" placeholder="Serve quantas pessoas? (ex: 2)" min="1">
                     <label for="input-imagem-produto">Imagem (SVG, PNG, JPG):</label>
                     <input type="file" id="input-imagem-produto" accept="image/*">
                     <button id="btn-add-produto">Salvar Produto</button>
                 </div>
+                <!-- ================================================================== -->
+
                 <ul id="lista-produtos" class="item-list">
                     <!-- Os produtos serão carregados aqui pelo JavaScript -->
                 </ul>
@@ -67,9 +73,7 @@
         </main>
     </div>
 
-    <!-- ================================================================== -->
-    <!-- MODAL GENÉRICO PARA EDIÇÃO (JÁ ESTAVA CORRETO) -->
-    <!-- ================================================================== -->
+    <!-- Modal Genérico para Edição -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close-btn">&times;</span>

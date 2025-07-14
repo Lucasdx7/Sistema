@@ -652,3 +652,384 @@
 }
 
 
+/* Estilos para o item de pedido cancelado na conta do cliente */
+#lista-pedidos li.cancelado {
+    opacity: 0.5; /* Deixa o item meio transparente */
+}
+
+#lista-pedidos li.cancelado .produto-info strong,
+#lista-pedidos li.cancelado span {
+    text-decoration: line-through; /* Risca o texto */
+    color: #777; /* Deixa o texto cinza */
+}
+
+/* Estilo para a tag "Cancelado pela gerência" */
+.cancelado-tag {
+    display: block;
+    font-size: 0.8em;
+    font-style: italic;
+    color: #e74c3c; /* Vermelho */
+    text-decoration: none !important; /* Remove o risco da tag */
+}
+
+
+/* ======================================================= */
+/* --- ESTILOS FINAIS E ROBUSTOS PARA O MODAL DE EDIÇÃO --- */
+/* ======================================================= */
+
+/* O contêiner que escurece a tela inteira */
+.modal-overlay {
+    position: fixed !important; /* Força o modal a flutuar sobre a página */
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1000 !important; /* Garante que ele fique na frente de tudo */
+    
+    display: flex !important; /* Usa flexbox para centralizar o conteúdo */
+    justify-content: center !important;
+    align-items: center !important;
+
+    background-color: rgba(0, 0, 0, 0.6); /* Fundo escuro semi-transparente */
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* Classe para esconder o modal suavemente */
+.modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none; /* Impede cliques quando o modal está escondido */
+}
+
+/* O conteúdo branco do modal */
+.modal-content {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 500px;
+    transform: scale(1);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.hidden .modal-content {
+    transform: scale(0.9);
+}
+
+/* --- Estilos para o conteúdo dentro do modal --- */
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.modal-header h3 { margin: 0; font-size: 1.4em; color: #333; }
+
+.modal-close-btn { background: none; border: none; font-size: 2em; line-height: 1; cursor: pointer; color: #888; }
+.modal-close-btn:hover { color: #333; }
+
+.modal-body ul { list-style: none; padding: 0; max-height: 60vh; overflow-y: auto; }
+
+.modal-body .pedido-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 8px; border-bottom: 1px solid #f0f0f0; }
+.modal-body .pedido-item:last-child { border-bottom: none; }
+
+.modal-body .pedido-item.cancelado { text-decoration: line-through; color: #999; opacity: 0.7; }
+
+.modal-body .cancel-item-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 1.2em; padding: 5px; }
+.modal-body .cancel-item-btn:hover { color: #c0392b; }
+
+.modal-body .motivo-cancelamento { font-style: italic; font-size: 0.9em; color: #e74c3c; }
+
+
+
+/* ======================================================= */
+/* --- ESTILOS PROFISSIONAIS PARA A PÁGINA DE CONFIRMAÇÃO --- */
+/* ======================================================= */
+
+/* Ajusta a lista de itens do pedido */
+#lista-resumo-pedido {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Estilo para cada item na lista de resumo */
+.order-item {
+    display: flex;
+    padding: 16px 8px;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 15px; /* Espaçamento entre imagem e conteúdo */
+    position: relative; /* Necessário para o botão de remover */
+}
+
+.order-item:last-child {
+    border-bottom: none;
+}
+
+.order-item-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0; /* Impede que a imagem encolha */
+}
+
+.order-item-details {
+    flex-grow: 1; /* Ocupa o espaço restante */
+}
+
+.order-item-details h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.1em;
+    color: #333;
+}
+
+.order-item-details .item-price {
+    font-weight: bold;
+    color: #27ae60; /* Verde */
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Estilo para o campo de observação */
+.observation-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9em;
+    margin-top: 8px;
+    box-sizing: border-box; /* Garante que o padding não quebre o layout */
+    transition: border-color 0.2s;
+}
+
+.observation-input:focus {
+    outline: none;
+    border-color: #c0392b; /* Cor do tema */
+}
+
+/* Botão para remover o item */
+.remove-item-btn {
+    position: absolute;
+    top: 10px;
+    right: 5px;
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.remove-item-btn:hover {
+    color: #e74c3c; /* Vermelho ao passar o mouse */
+}
+
+
+/* ======================================================= */
+/* --- ESTILOS PROFISSIONAIS PARA A LISTA DE PEDIDOS (MINHA CONTA) --- */
+/* ======================================================= */
+
+/* Remove os marcadores da lista de pedidos */
+#lista-pedidos {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Estilo para cada item (<li>) na lista de pedidos */
+#lista-pedidos li {
+    display: flex; /* Ativa o Flexbox para alinhar os itens */
+    align-items: center; /* Alinha verticalmente imagem e texto */
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0; /* Linha separadora sutil */
+}
+
+#lista-pedidos li:last-child {
+    border-bottom: none; /* Remove a linha do último item */
+}
+
+/* Contêiner para a imagem e os detalhes do texto */
+#lista-pedidos .produto-info {
+    display: flex;
+    align-items: center;
+    flex-grow: 1; /* Faz esta parte ocupar todo o espaço disponível */
+    gap: 15px; /* Espaçamento entre a imagem e o bloco de texto */
+}
+
+/* --- A CORREÇÃO PRINCIPAL: CONTROLE DA IMAGEM --- */
+#lista-pedidos .produto-info img {
+    width: 60px;       /* Largura fixa */
+    height: 60px;      /* Altura fixa */
+    object-fit: cover; /* Garante que a imagem cubra a área sem distorcer */
+    border-radius: 8px;/* Bordas arredondadas para um visual moderno */
+    flex-shrink: 0;    /* Impede que a imagem seja espremida */
+}
+/* -------------------------------------------------- */
+
+#lista-pedidos .produto-info div {
+    display: flex;
+    flex-direction: column; /* Empilha o nome e o preço/quantidade */
+}
+
+#lista-pedidos .produto-info strong {
+    font-size: 1em;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+#lista-pedidos .produto-info span {
+    font-size: 0.9em;
+    color: #666;
+}
+
+/* Estilo para o preço total do item, alinhado à direita */
+#lista-pedidos > li > span {
+    font-weight: bold;
+    font-size: 1em;
+    color: #333;
+    margin-left: 15px; /* Garante um espaçamento do conteúdo à esquerda */
+}
+
+/* Estilo para itens cancelados */
+#lista-pedidos li.cancelado {
+    opacity: 0.6; /* Deixa o item inteiro um pouco transparente */
+}
+
+#lista-pedidos li.cancelado .produto-info strong,
+#lista-pedidos li.cancelado > span {
+    text-decoration: line-through; /* Risca o nome e o preço */
+}
+
+.cancelado-tag {
+    font-size: 0.8em !important;
+    font-style: italic;
+    color: #e74c3c !important; /* Vermelho para destaque */
+    margin-top: 5px;
+}
+
+
+/* ======================================================= */
+/* --- ESTILOS PROFISSIONAIS E ROBUSTOS PARA O MODAL DE DETALHES DO PRODUTO --- */
+/* ======================================================= */
+
+/* Estilos específicos para o modal de produto */
+.modal-content.product-modal {
+    max-width: 480px; /* Tamanho ideal para visualização */
+    padding: 0; 
+    overflow: hidden; /* **IMPORTANTE**: Impede que a imagem "vaze" das bordas arredondadas */
+}
+
+.product-modal .modal-body {
+    padding: 0;
+}
+
+/* Contêiner da imagem para controle total */
+.product-modal-image-container {
+    width: 100%;
+    height: 250px; /* Altura fixa para a imagem de destaque */
+    background-color: #f0f0f0; /* Cor de fundo enquanto a imagem carrega */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-modal-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* **A PROPRIEDADE MAIS IMPORTANTE**: Garante que a imagem cubra a área sem distorcer, cortando o excesso se necessário. */
+    display: block; /* Remove qualquer espaço extra abaixo da imagem */
+}
+
+.product-modal-content {
+    padding: 25px 30px; /* Espaçamento interno generoso para o texto */
+}
+
+.product-modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 2em; /* Título com mais destaque */
+    color: #2c3e50; /* Cor mais escura e sóbria */
+    line-height: 1.2;
+}
+
+.product-modal-content .serves {
+    display: block;
+    font-size: 0.95em;
+    color: #7f8c8d; /* Cor secundária suave */
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+.product-modal-content p {
+    font-size: 1.05em;
+    line-height: 1.7; /* Espaçamento entre linhas para melhor legibilidade */
+    color: #34495e;
+}
+
+/* ======================================================= */
+/* --- ESTILOS PARA O MODAL DE DETALHES DO PRODUTO --- */
+/* ======================================================= */
+
+/* Botão de detalhes ao lado do botão de adicionar */
+.details-button {
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 1.2em;
+    padding: 5px;
+    transition: color 0.2s ease;
+}
+
+.details-button:hover {
+    color: #c0392b; /* Cor do tema */
+}
+
+/* Estilos específicos para o modal de produto */
+.modal-content.product-modal {
+    max-width: 500px; /* Um pouco maior para caber a imagem */
+    padding: 0; /* Remove padding para a imagem encostar no topo */
+}
+
+.product-modal .modal-body {
+    padding: 0;
+}
+
+.product-modal-image {
+    width: 100%;
+    height: 250px; /* Altura fixa para a imagem de destaque */
+    object-fit: cover;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.product-modal-content {
+    padding: 20px 25px; /* Espaçamento interno para o texto */
+}
+
+.product-modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.8em;
+    color: #333;
+}
+
+.product-modal-content .serves {
+    display: block;
+    font-size: 0.9em;
+    color: #777;
+    margin-bottom: 15px;
+}
+
+.product-modal-content p {
+    font-size: 1em;
+    line-height: 1.6;
+    color: #555;
+}
+

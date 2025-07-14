@@ -3,20 +3,15 @@ const router = express.Router();
 const { query, registrarLog } = require('../db');
 const bcrypt = require('bcryptjs');
 
+const authMiddleware = require('../middleware/authMiddleware'); 
+
 // --- Middleware de verificação ---
+// Middleware de verificação (seu código original, mantido como está)
 const checarUsuarioParaLog = (req, res, next) => {
-    // Verifica se o objeto 'usuario' existe e tem um 'id'
-    if (req.usuario && req.usuario.id) {
-        // Agora, verifica de onde pegar o nome
-        // Se for um gerente, pega de 'req.usuario.nome'
-        // Se for uma mesa, pega de 'req.usuario.nome_usuario'
-        if (req.usuario.nome || req.usuario.nome_usuario) {
-            return next(); // Sucesso! Encontrou um nome válido.
-        }
+    if (req.usuario && (req.usuario.nome || req.usuario.nome_usuario)) {
+        return next();
     }
-    
-    // Se qualquer uma das condições acima falhar, ele cai aqui.
-    console.error("Tentativa de ação de log sem um usuário autenticado ou com informações incompletas.");
+    console.error("Tentativa de ação de log sem um usuário autenticado.");
     return res.status(500).json({ message: "Erro interno: informações do usuário ausentes." });
 };
 
@@ -142,16 +137,24 @@ router.get('/produtos/todos', async (req, res) => {
 // POST /produtos
 router.post('/produtos', checarUsuarioParaLog, async (req, res) => {
     try {
-        const { id_categoria, nome, descricao, preco, imagem_svg, serve_pessoas } = req.body;
-        if (!id_categoria || !nome || !descricao || preco === undefined) return res.status(400).json({ message: 'Todos os campos são obrigatórios.' });
+        // 1. EXTRAIA 'descricao_detalhada' AQUI
+        const { id_categoria, nome, descricao, descricao_detalhada, preco, imagem_svg, serve_pessoas } = req.body;
+
+        // A validação principal pode continuar a mesma
+        if (!id_categoria || !nome || !descricao || preco === undefined) {
+            return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos.' });
+        }
         
+        // 2. ATUALIZE A QUERY SQL E OS PARÂMETROS PARA INCLUIR O NOVO CAMPO
         const result = await query(
-            'INSERT INTO produtos (id_categoria, nome, descricao, preco, imagem_svg, serve_pessoas) VALUES (?, ?, ?, ?, ?, ?)',
-            [id_categoria, nome, descricao, preco, imagem_svg || null, serve_pessoas || 1]
+            'INSERT INTO produtos (id_categoria, nome, descricao, descricao_detalhada, preco, imagem_svg, serve_pessoas) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [id_categoria, nome, descricao, descricao_detalhada || null, preco, imagem_svg || null, serve_pessoas || 1]
         );
+
         await registrarLog(req.usuario.id, req.usuario.nome, 'CRIOU_PRODUTO', `Criou o produto '${nome}' (ID: ${result.insertId}).`);
         if (req.broadcast) req.broadcast({ type: 'CARDAPIO_ATUALIZADO' });
         res.status(201).json({ id: result.insertId, ...req.body });
+
     } catch (error) {
         res.status(500).json({ message: 'Erro ao adicionar produto', error: error.message });
     }
@@ -160,19 +163,69 @@ router.post('/produtos', checarUsuarioParaLog, async (req, res) => {
 // PUT /produtos/:id (EDITAR)
 router.put('/produtos/:id', checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params;
-    const { nome, descricao, preco, serve_pessoas } = req.body;
-    if (!nome || !descricao || preco === undefined || serve_pessoas === undefined) {
+    const novosDados = req.body; // Pegamos todos os novos dados de uma vez
+
+    // Validação dos dados recebidos
+    if (!novosDados.nome || !novosDados.descricao || novosDados.preco === undefined || novosDados.serve_pessoas === undefined) {
         return res.status(400).json({ message: 'Todos os campos do produto são obrigatórios.' });
     }
+
     try {
-        const result = await query(
-            'UPDATE produtos SET nome = ?, descricao = ?, preco = ?, serve_pessoas = ? WHERE id = ?',
-            [nome, descricao, preco, serve_pessoas, id]
-        );
-        if (result.affectedRows === 0) return res.status(404).json({ message: 'Produto não encontrado.' });
-        await registrarLog(req.usuario.id, req.usuario.nome, 'EDITOU_PRODUTO', `Editou o produto '${nome}' (ID: ${id}).`);
+        // 1. BUSCAR O ESTADO ATUAL DO PRODUTO ANTES DE ATUALIZAR
+        const [produtoAntigo] = await query('SELECT * FROM produtos WHERE id = ?', [id]);
+
+        if (!produtoAntigo) {
+            return res.status(404).json({ message: 'Produto não encontrado.' });
+        }
+
+        // 2. ATUALIZAR O PRODUTO NO BANCO DE DADOS (seu código original)
+        // (Assumindo que você já aplicou a correção para 'descricao_detalhada' das respostas anteriores)
+        const sql = 'UPDATE produtos SET nome = ?, descricao = ?, descricao_detalhada = ?, preco = ?, serve_pessoas = ? WHERE id = ?';
+        const params = [
+            novosDados.nome, 
+            novosDados.descricao, 
+            novosDados.descricao_detalhada || null, 
+            parseFloat(novosDados.preco), 
+            parseInt(novosDados.serve_pessoas), 
+            id
+        ];
+        await query(sql, params);
+
+        // 3. COMPARAR DADOS E GERAR A MENSAGEM DE LOG DETALHADA
+        let detalhesLog = `Editou o produto '${produtoAntigo.nome}' (ID: ${id}).`;
+        const mudancas = [];
+
+        // Compara cada campo importante
+        if (produtoAntigo.nome !== novosDados.nome) {
+            mudancas.push(`nome de '${produtoAntigo.nome}' para '${novosDados.nome}'`);
+        }
+        if (parseFloat(produtoAntigo.preco).toFixed(2) !== parseFloat(novosDados.preco).toFixed(2)) {
+            mudancas.push(`preço de R$${parseFloat(produtoAntigo.preco).toFixed(2)} para R$${parseFloat(novosDados.preco).toFixed(2)}`);
+        }
+        if (produtoAntigo.descricao !== novosDados.descricao) {
+            mudancas.push("descrição curta foi alterada");
+        }
+        if ((produtoAntigo.descricao_detalhada || '') !== (novosDados.descricao_detalhada || '')) {
+            mudancas.push("descrição detalhada foi alterada");
+        }
+        if (produtoAntigo.serve_pessoas !== parseInt(novosDados.serve_pessoas)) {
+            mudancas.push(`serve de ${produtoAntigo.serve_pessoas} para ${novosDados.serve_pessoas} pessoa(s)`);
+        }
+
+        // Se houveram mudanças, formata a mensagem
+        if (mudancas.length > 0) {
+            detalhesLog += ` Alterações: ${mudancas.join(', ')}.`;
+        } else {
+            detalhesLog += ' Nenhuma alteração foi feita nos dados.';
+        }
+
+        // 4. REGISTRAR O LOG COM A NOVA MENSAGEM
+        await registrarLog(req.usuario.id, req.usuario.nome, 'EDITOU_PRODUTO', detalhesLog);
+
+        // O resto do seu código
         if (req.broadcast) req.broadcast({ type: 'CARDAPIO_ATUALIZADO' });
-        res.json({ message: 'Produto atualizado com sucesso!', id, ...req.body });
+        res.json({ message: 'Produto atualizado com sucesso!', id, ...novosDados });
+
     } catch (error) {
         res.status(500).json({ message: 'Erro interno do servidor ao atualizar o produto.', error: error.message });
     }
@@ -240,7 +293,7 @@ router.get('/mesas', checarUsuarioParaLog, async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Erro no servidor ao buscar mesas.' });
     }
-});
+}); 
 
 // POST /mesas
 router.post('/mesas', checarUsuarioParaLog, async (req, res) => {
@@ -289,21 +342,44 @@ router.get('/mesas/status', checarUsuarioParaLog, async (req, res) => {
     }
 });
 
-// GET /mesas/:id/sessoes
+// ==================================================================
+// --- ROTA DE SESSÕES COM A CONSULTA DO TOTAL CORRIGIDA ---
+// ==================================================================
 router.get('/mesas/:id/sessoes', checarUsuarioParaLog, async (req, res) => {
-    const { id } = req.params;
+    const { id } = req.params; // ID da mesa
     try {
+        // --- CONSULTA SQL CORRIGIDA E MAIS ROBUSTA ---
+        // Esta consulta agora calcula o 'total_gasto' de forma explícita,
+        // somando apenas os pedidos onde o status é DIFERENTE de 'cancelado'.
         const sql = `
-            SELECT sc.id, sc.nome_cliente, sc.data_inicio, sc.data_fim, sc.\`status\`,
-                   (SELECT SUM(p.quantidade * p.preco_unitario) FROM pedidos p WHERE p.id_sessao = sc.id) AS total_gasto
+            SELECT 
+                sc.id, 
+                sc.nome_cliente, 
+                sc.data_inicio, 
+                sc.data_fim, 
+                sc.status,
+                (
+                    SELECT SUM(p.quantidade * p.preco_unitario) 
+                    FROM pedidos p 
+                    WHERE p.id_sessao = sc.id AND p.status != 'cancelado'
+                ) AS total_gasto
             FROM sessoes_cliente sc
             WHERE sc.id_mesa = ?
             ORDER BY sc.data_inicio DESC;
         `;
+        
         const sessoes = await query(sql, [id]);
-        const sessoesFormatadas = sessoes.map(s => ({ ...s, total_gasto: parseFloat(s.total_gasto) || 0 }));
+
+        // Formata o resultado para garantir que o total seja um número
+        const sessoesFormatadas = sessoes.map(s => ({
+            ...s,
+            total_gasto: parseFloat(s.total_gasto) || 0 
+        }));
+        
         res.json(sessoesFormatadas);
+
     } catch (error) {
+        console.error(`Erro ao buscar sessões da mesa ID ${id}:`, error);
         res.status(500).json({ message: 'Erro no servidor ao buscar o histórico da mesa.' });
     }
 });
@@ -324,22 +400,31 @@ router.post('/sessoes/iniciar', async (req, res) => {
     }
 });
 
-// GET /sessoes/:id/conta
+// ROTA CORRIGIDA para a conta do cliente
 router.get('/sessoes/:id/conta', checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params;
     if (!id) return res.status(400).json({ message: 'O ID da sessão é obrigatório.' });
     try {
+        // A consulta agora busca TODOS os pedidos, incluindo os cancelados
         const sql = `
-            SELECT p.id, p.quantidade, p.preco_unitario, prod.nome AS nome_produto, prod.imagem_svg
+            SELECT 
+                p.id, p.quantidade, p.preco_unitario, p.status, 
+                prod.nome AS nome_produto, prod.imagem_svg
             FROM pedidos p
             JOIN produtos prod ON p.id_produto = prod.id
             WHERE p.id_sessao = ?
             ORDER BY p.data_pedido ASC;
         `;
         const pedidos = await query(sql, [id]);
-        const total = pedidos.reduce((acc, item) => acc + (item.quantidade * item.preco_unitario), 0);
+
+        // O total agora é calculado no backend, somando apenas os itens NÃO cancelados
+        const total = pedidos
+            .filter(item => item.status !== 'cancelado')
+            .reduce((acc, item) => acc + (item.quantidade * item.preco_unitario), 0);
+
         res.json({ pedidos, total: total.toFixed(2) });
     } catch (error) {
+        console.error("Erro ao buscar conta do cliente:", error);
         res.status(500).json({ message: 'Erro no servidor ao buscar a conta.' });
     }
 });
@@ -378,21 +463,25 @@ router.post('/sessoes/:id/fechar', checarUsuarioParaLog, async (req, res) => {
 // --- ROTAS DE PEDIDOS ---
 // ==================================================================
 
+// ROTA DE PEDIDOS ATUALIZADA
 router.post('/pedidos', checarUsuarioParaLog, async (req, res) => {
-    const { id_sessao, id_produto, preco_unitario } = req.body;
+    // Adicionamos 'observacao' à desestruturação
+    const { id_sessao, id_produto, preco_unitario, observacao } = req.body;
     if (!id_sessao || !id_produto || preco_unitario === undefined) {
         return res.status(400).json({ message: 'Dados do pedido incompletos ou inválidos.' });
     }
     try {
-        const result = await query(
-            'INSERT INTO pedidos (id_sessao, id_produto, preco_unitario, quantidade) VALUES (?, ?, ?, ?)',
-            [id_sessao, id_produto, preco_unitario, 1]
-        );
+        // Atualizamos a query e os parâmetros para incluir a observacao
+        const sql = 'INSERT INTO pedidos (id_sessao, id_produto, preco_unitario, quantidade, observacao) VALUES (?, ?, ?, ?, ?)';
+        const params = [id_sessao, id_produto, preco_unitario, 1, observacao || null];
+        
+        const result = await query(sql, params);
         res.status(201).json({ message: 'Produto adicionado ao pedido com sucesso!', pedidoId: result.insertId });
     } catch (error) {
         res.status(500).json({ message: 'Erro interno no servidor ao tentar salvar o pedido.' });
     }
 });
+
 
 // ==================================================================
 // --- ROTA DE LOGS ---
@@ -435,5 +524,77 @@ router.get('/cardapio-completo', async (req, res) => {
         res.status(500).json({ message: 'Erro ao buscar o cardápio completo', error: error.message });
     }
 });
+
+
+
+// **ROTA AJUSTADA** POST /pedidos/:id/cancelar (Cancela um item de pedido específico)
+router.post('/pedidos/:id/cancelar', checarUsuarioParaLog, async (req, res) => {
+    const { id } = req.params; // ID do item do pedido
+    const { motivo } = req.body;
+
+    // Verificação de Permissão
+    if (req.usuario.nivel_acesso !== 'geral') {
+        return res.status(403).json({ message: 'Acesso negado. Apenas a gerência pode cancelar itens.' });
+    }
+
+    if (!motivo || motivo.trim() === '') {
+        return res.status(400).json({ message: 'O motivo do cancelamento é obrigatório.' });
+    }
+
+    try {
+        // Verifica se o pedido existe
+        const [pedido] = await query('SELECT * FROM pedidos WHERE id = ?', [id]);
+        if (!pedido) {
+            return res.status(404).json({ message: 'Item do pedido não encontrado.' });
+        }
+        if (pedido.status === 'cancelado') {
+            return res.status(400).json({ message: 'Este item já foi cancelado.' });
+        }
+
+        // Atualiza o status do item no banco de dados
+        await query(
+            "UPDATE pedidos SET status = 'cancelado', motivo_cancelamento = ? WHERE id = ?",
+            [motivo.trim(), id]
+        );
+        
+        // Registra o log da ação
+        const nomeGerente = req.usuario.nome;
+        await registrarLog(req.usuario.id, nomeGerente, 'CANCELOU_PEDIDO', `Cancelou o item de pedido ID ${id} pelo motivo: "${motivo.trim()}".`);
+
+        // A query que causava o erro foi REMOVIDA daqui.
+
+        res.json({ message: 'Item do pedido cancelado com sucesso!' });
+
+    } catch (error) {
+        console.error('Erro ao cancelar item do pedido:', error);
+        res.status(500).json({ message: 'Erro interno no servidor.' });
+    }
+});
+
+// **ROTA FINAL** GET /sessoes/:id/pedidos (Busca todos os pedidos de uma sessão)
+router.get('/sessoes/:id/pedidos', checarUsuarioParaLog, async (req, res) => {
+    // 1. ADICIONAR ESTA VERIFICAÇÃO DE PERMISSÃO
+    if (req.usuario.nivel_acesso !== 'geral') {
+        return res.status(403).json({ message: 'Acesso negado. Rota exclusiva para gerentes.' });
+    }
+    // 2. O RESTO DO CÓDIGO PERMANECE IGUAL
+    const { id } = req.params;
+    try {
+        const sql = `
+            SELECT p.id, p.quantidade, p.preco_unitario, p.status, p.motivo_cancelamento, prod.nome AS nome_produto
+            FROM pedidos AS p JOIN produtos AS prod ON p.id_produto = prod.id
+            WHERE p.id_sessao = ? ORDER BY p.data_pedido ASC;
+        `;
+        const pedidos = await query(sql, [id]);
+        res.json(pedidos);
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no servidor ao buscar os pedidos da sessão.' });
+    }
+});
+
+
+
+
+
 
 module.exports = router;

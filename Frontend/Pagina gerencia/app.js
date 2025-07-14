@@ -1,12 +1,12 @@
-// /Frontend/Pagina gerencia/app.js - VERSÃO FINAL E CORRETA
+// /Frontend/Pagina gerencia/app.js - VERSÃO FINAL E COMPLETA
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- Constantes Globais ---
-    const API_URL = 'http://localhost:3000/api';
-    const WS_URL = 'ws://localhost:3000';
+    const API_URL = '/api'; // URL relativa para produção
+    const WS_URL = `ws://${window.location.host}`; // WebSocket relativo
 
     // --- Elementos do DOM ---
-    const listaCategorias = document.getElementById('lista-categorias' );
+    const listaCategorias = document.getElementById('lista-categorias');
     const listaProdutos = document.getElementById('lista-produtos');
     const nomeCategoriaSelecionada = document.getElementById('nome-categoria-selecionada');
     const formProdutoContainer = document.getElementById('form-produto-container');
@@ -19,9 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputHappyHourInicio = document.getElementById('input-happy-hour-inicio');
     const inputHappyHourFim = document.getElementById('input-happy-hour-fim');
 
-    // Formulário de Adicionar Produto
+    // Formulário de Adicionar Produto (com o novo campo)
     const inputNomeProduto = document.getElementById('input-nome-produto');
     const inputDescricaoProduto = document.getElementById('input-descricao-produto');
+    const inputDescricaoDetalhada = document.getElementById('input-descricao-detalhada'); // NOVO
     const inputPrecoProduto = document.getElementById('input-preco-produto');
     const inputImagemProduto = document.getElementById('input-imagem-produto');
     const inputServePessoas = document.getElementById('input-serve-pessoas');
@@ -45,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function apiCall(endpoint, method = 'GET', body = null) {
         const token = localStorage.getItem('authToken');
         if (!token) {
-            window.location.href = '/login';
+            window.location.href = '/login-gerencia';
             throw new Error('Token de autenticação não encontrado.');
         }
         const options = {
@@ -62,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Sua sessão expirou. Por favor, faça login novamente.');
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('usuario');
-                window.location.href = '/login';
+                window.location.href = '/login-gerencia';
                 throw new Error('Sessão inválida');
             }
             if (!response.ok) {
@@ -118,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
                 
-                if (estado.categoriaSelecionada && cat.id === estado.categoriaSelecionada.id) {
+                if (estado.categoriaSelecionada && cat.id == estado.categoriaSelecionada.id) {
                     li.classList.add('selected');
                     categoriaAtivaAindaExiste = true;
                 }
@@ -150,7 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <img src="${prod.imagem_svg || 'https://via.placeholder.com/60'}" alt="${prod.nome}">
                         <div>
                             <strong>${prod.nome}</strong> - R$ ${parseFloat(prod.preco ).toFixed(2)}
-                            <p>${prod.descricao}</p>
+                            <p><strong>Descrição:</strong> ${prod.descricao}</p>
+                            <p class="desc-detalhada"><strong>Detalhes:</strong> ${prod.descricao_detalhada || 'N/A'}</p>
                             <small>Serve: ${prod.serve_pessoas} pessoa(s)</small>
                         </div>
                     </div>
@@ -205,10 +207,16 @@ document.addEventListener('DOMContentLoaded', () => {
             modalBody.innerHTML = `
                 <label for="editNome">Nome do Produto:</label>
                 <input type="text" id="editNome" name="nome" value="${itemElement.dataset.nome}" required>
-                <label for="editDescricao">Descrição:</label>
+                
+                <label for="editDescricao">Descrição Curta (para o cardápio):</label>
                 <textarea id="editDescricao" name="descricao" required>${itemElement.dataset.descricao}</textarea>
+                
+                <label for="editDescricaoDetalhada">Descrição Detalhada (para o modal do cliente):</label>
+                <textarea id="editDescricaoDetalhada" name="descricao_detalhada">${itemElement.dataset.descricao_detalhada || ''}</textarea>
+                
                 <label for="editPreco">Preço (R$):</label>
                 <input type="number" id="editPreco" name="preco" step="0.01" value="${itemElement.dataset.preco}" required>
+                
                 <label for="editServePessoas">Serve Pessoas:</label>
                 <input type="number" id="editServePessoas" name="serve_pessoas" value="${itemElement.dataset.serve_pessoas}" required min="1">
             `;
@@ -237,6 +245,11 @@ document.addEventListener('DOMContentLoaded', () => {
             await apiCall(url, 'PUT', body);
             alert('Salvo com sucesso!');
             fecharModal();
+            // Recarrega para refletir as mudanças
+            await carregarCategorias();
+            if (estado.categoriaSelecionada) {
+                await carregarProdutos(estado.categoriaSelecionada.id);
+            }
         } catch (error) {
             alert(`Erro ao salvar: ${error.message}`);
         }
@@ -271,6 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
             happyHourFields.classList.add('hidden');
             inputHappyHourInicio.value = '';
             inputHappyHourFim.value = '';
+            await carregarCategorias();
         } catch (error) {
             alert(`Falha ao adicionar categoria: ${error.message}`);
         }
@@ -300,7 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 abrirModalDeEdicao(tipo.slice(0, -1), li);
             } else if (button.classList.contains('delete-btn')) {
                 if (confirm(`Tem certeza que deseja excluir?`)) {
-                    apiCall(`/${tipo}/${id}`, 'DELETE').catch(error => alert(`Falha ao deletar: ${error.message}`));
+                    apiCall(`/${tipo}/${id}`, 'DELETE')
+                        .then(() => li.remove())
+                        .catch(error => alert(`Falha ao deletar: ${error.message}`));
                 }
             }
             return;
@@ -324,18 +340,28 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const nome = inputNomeProduto.value.trim();
         const descricao = inputDescricaoProduto.value.trim();
+        const descricao_detalhada = inputDescricaoDetalhada.value.trim(); // NOVO
         const preco = parseFloat(inputPrecoProduto.value.replace(',', '.'));
         const serve_pessoas = parseInt(inputServePessoas.value, 10) || 1;
         const imagemFile = inputImagemProduto.files[0];
 
-        if (!nome || !descricao || isNaN(preco)) return alert('Preencha todos os campos do produto.');
+        if (!nome || !descricao || isNaN(preco)) return alert('Preencha os campos obrigatórios do produto.');
         
         try {
             const imagem_svg = imagemFile ? await fileToBase64(imagemFile) : null;
-            const produto = { id_categoria: estado.categoriaSelecionada.id, nome, descricao, preco, imagem_svg, serve_pessoas };
+            const produto = { 
+                id_categoria: estado.categoriaSelecionada.id, 
+                nome, 
+                descricao, 
+                descricao_detalhada, // NOVO
+                preco, 
+                imagem_svg, 
+                serve_pessoas 
+            };
             await apiCall('/produtos', 'POST', produto);
             
-            [inputNomeProduto, inputDescricaoProduto, inputPrecoProduto, inputImagemProduto, inputServePessoas].forEach(input => input.value = '');
+            [inputNomeProduto, inputDescricaoProduto, inputDescricaoDetalhada, inputPrecoProduto, inputImagemProduto, inputServePessoas].forEach(input => input.value = '');
+            await carregarProdutos(estado.categoriaSelecionada.id);
         } catch (error) {
             alert(`Falha ao adicionar produto: ${error.message}`);
         }

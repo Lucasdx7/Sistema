@@ -1,6 +1,6 @@
 # Sistema de Gestão de Cardápio e Pedidos
 
-![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow ) ![Progresso](https://img.shields.io/badge/progresso-45%25-brightgreen ) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green ) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue ) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
+![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow ) ![Progresso](https://img.shields.io/badge/progresso-50%25-brightgreen ) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green ) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue ) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
 
 Sistema de gerenciamento completo para restaurante, com foco em segurança, usabilidade e atualizações em tempo real. A plataforma permite que a gerência administre o cardápio e as mesas de forma dinâmica, enquanto os clientes realizam seus pedidos diretamente pelo tablet.
 
@@ -15,7 +15,7 @@ O sistema utiliza WebSockets para garantir que qualquer alteração feita pela g
 
 ---
 
-## 🚀 Status Atual (Progresso: 45%)
+## 🚀 Status Atual (Progresso: 50%)
 
 O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de interação do cliente e as principais funcionalidades de gerenciamento implementadas e estáveis.
 
@@ -33,12 +33,15 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
 -   [x] **Painel de Gerenciamento (CRUD Completo):**
     -   [x] **Gestão de Cardápio:**
         -   [x] Adicionar, **Editar** e Remover categorias e produtos através de um modal dinâmico.
+        -   [x] **NOVO:** Adicionar e editar uma **descrição detalhada** para produtos, ideal para modais informativos.
         -   [x] Ordenar categorias com drag-and-drop.
         -   [x] **Controle de Status:** Ativar e desativar categorias e produtos individualmente com um interruptor (toggle).
         -   [x] **Happy Hour:** Definir categorias como "Happy Hour" com horário de início e fim.
     -   [x] **Gestão de Mesas:**
         -   [x] Cadastrar e remover mesas (com usuário e senha próprios).
         -   [x] Painel interativo para visualizar o histórico de sessões de cada mesa.
+        -   [x] **NOVO:** Cancelar itens de pedidos de uma sessão ativa, com registro de motivo.
+        -   [x] **NOVO:** Visualizar detalhes de sessões finalizadas em um modal profissional.
         -   [x] Identificação e fechamento de sessões ativas.
 -   [x] **Interface do Cliente (Ciclo Completo e Inteligente):**
     -   [x] **Login da Mesa:** Autenticação para iniciar uma sessão.
@@ -46,9 +49,12 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
     -   [x] **Cardápio Dinâmico com Regras de Negócio:**
         -   [x] Itens (categorias/produtos) desativados pela gerência **não são exibidos**.
         -   [x] Categorias de "Happy Hour" fora do horário são exibidas em cinza, e seus produtos **não podem ser adicionados** ao carrinho.
+        -   [x] **NOVO:** Botão de detalhes em cada produto para abrir um modal com informações e imagem ampliadas.
     -   [x] **Carrinho de Pedidos:** Adição de itens para formar um pré-pedido.
-    -   [x] **Confirmação de Pedido:** Tela de resumo para o cliente confirmar e enviar os itens para a cozinha.
-    -   [x] **Conta do Cliente:** Visualização em tempo real de todos os pedidos feitos e do valor total da conta.
+    -   [x] **Confirmação de Pedido Profissional:**
+        -   [x] **NOVO:** Remover itens do carrinho diretamente na tela de confirmação.
+        -   [x] **NOVO:** Adicionar observações a cada item do pedido (ex: "sem cebola").
+    -   [x] **Conta do Cliente:** Visualização em tempo real de todos os pedidos feitos e do valor total da conta, com indicação visual de itens cancelados.
     -   [x] **Fechamento de Conta Seguro:** Implementação de um modal na tela da conta para que um funcionário, com as credenciais da mesa, possa encerrar a sessão e liberar o tablet.
 -   [x] **Comunicação em Tempo Real:**
     -   [x] Atualização automática do cardápio do cliente quando o gerente faz alterações.
@@ -92,6 +98,9 @@ Para rodar este projeto em sua máquina, siga os passos abaixo.
 ### 1. Configuração do Banco de Dados
 -   Crie um banco de dados no seu MySQL com o nome `cardapio_db`.
 -   Execute os scripts SQL necessários para criar todas as tabelas (`usuarios`, `mesas`, `sessoes_cliente`, `pedidos`, `categorias`, `produtos`, `logs`).
+-   **Importante:** Certifique-se de que suas tabelas `pedidos` e `produtos` contêm as colunas mais recentes:
+    -   Na tabela `pedidos`: `status`, `motivo_cancelamento`, `observacao`.
+    -   Na tabela `produtos`: `descricao_detalhada`.
 -   No arquivo `Backend/db.js`, configure suas credenciais do MySQL.
 -   Crie um arquivo `.env` na pasta `Backend` e defina as variáveis `JWT_SECRET` e `REGISTER_SECRET_TOKEN`.
 
@@ -113,5 +122,5 @@ Para rodar este projeto em sua máquina, siga os passos abaixo.
 -   Se tudo estiver correto, você verá mensagens indicando que o servidor está rodando na porta 3000.
 
 ### 4. Acessando o Sistema
--   **Painel de Gerenciamento:** Abra seu navegador e acesse [http://localhost:3000/login-gerencia](http://localhost:3000/login-gerencia )
--   **Interface do Cliente:** Abra outra aba e acesse [http://localhost:3000/login](http://localhost:3000/login )
+-   **Painel de Gerenciamento:** Abra seu navegador e acesse `http://localhost:3000/login-gerencia`
+-   **Interface do Cliente:** Abra outra aba e acesse `http://localhost:3000/login`

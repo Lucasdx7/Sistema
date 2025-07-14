@@ -18,6 +18,10 @@
     "express-session": "^1.18.1",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.14.1",
+    "node-fetch": "^2.7.0",
+    "node-thermal-printer": "^4.5.0",
+    "pdfkit": "^0.17.1",
+    "usb": "^2.15.0",
     "ws": "^8.18.3"
   },
   "description": ""

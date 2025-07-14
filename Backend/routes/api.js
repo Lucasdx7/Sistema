@@ -5,6 +5,15 @@ const bcrypt = require('bcryptjs');
 
 const authMiddleware = require('../middleware/authMiddleware'); 
 
+const PDFDocument = require('pdfkit');
+const fs = require('fs'); 
+
+const fetch = require('node-fetch');
+
+// NOVA LINHA DE IMPORTAÇÃO - MAIS ROBUSTA
+const thermalPrinter = require('node-thermal-printer');
+
+
 // --- Middleware de verificação ---
 // Middleware de verificação (seu código original, mantido como está)
 const checarUsuarioParaLog = (req, res, next) => {
@@ -645,6 +654,56 @@ router.patch('/produtos/:id/sugestao', checarUsuarioParaLog, async (req, res) =>
 
 
 
+// Função auxiliar para agrupar pedidos (deve estar no mesmo arquivo)
+function agruparPedidos(pedidos) {
+    if (!pedidos || pedidos.length === 0) return [];
+    const itensAgrupados = {};
+    pedidos.forEach(pedido => {
+        const chave = `${pedido.nome_produto}-${pedido.observacao || ''}`;
+        if (itensAgrupados[chave]) {
+            itensAgrupados[chave].quantidade += pedido.quantidade;
+        } else {
+            itensAgrupados[chave] = { ...pedido };
+        }
+    });
+    return Object.values(itensAgrupados);
+}
+
+
+
+
+// ==================================================================
+// --- ROTA PARA BUSCAR INFORMAÇÕES DE UMA SESSÃO ESPECÍFICA ---
+// ==================================================================
+router.get('/sessoes/:id/info', checarUsuarioParaLog, async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Esta query busca os dados do cliente e o nome da mesa associada à sessão
+        const sql = `
+            SELECT 
+                sc.nome_cliente, 
+                sc.telefone_cliente, 
+                sc.cpf_cliente, 
+                m.nome_usuario 
+            FROM sessoes_cliente sc 
+            JOIN mesas m ON sc.id_mesa = m.id 
+            WHERE sc.id = ?;
+        `;
+        const [sessaoInfo] = await query(sql, [id]);
+        
+        if (!sessaoInfo) {
+            // Retorna 404 se a sessão não for encontrada, para o frontend saber
+            return res.status(404).json({ message: 'Informações da sessão não encontradas.' });
+        }
+        
+        // Retorna os dados encontrados como JSON
+        res.json(sessaoInfo);
+
+    } catch (error) {
+        console.error(`Erro ao buscar informações da sessão ID ${id}:`, error);
+        res.status(500).json({ message: 'Erro no servidor ao buscar informações da sessão.' });
+    }
+});
 
 
 module.exports = router;

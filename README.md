@@ -8,10 +8,10 @@ Sistema de gerenciamento completo para restaurante, com foco em segurança, usab
 
 O objetivo deste sistema é modernizar a experiência do cliente e otimizar a gestão do restaurante. Ele é dividido em duas interfaces principais:
 
-1.  **Painel de Gerenciamento:** Uma área administrativa segura onde a equipe gerencial pode administrar o cardápio, cadastrar e visualizar o status das mesas, e acompanhar o histórico de sessões de clientes.
+1.  **Painel de Gerenciamento:** Uma área administrativa segura onde a equipe gerencial pode administrar o cardápio, mesas, chamados de garçom e acompanhar o histórico de sessões de clientes.
 2.  **Interface do Cliente (Tablet):** Um sistema completo que guia o cliente desde o login da mesa, passando pela visualização do cardápio, montagem do pedido, até o fechamento da conta com a assistência de um funcionário.
 
-O sistema utiliza WebSockets para garantir que qualquer alteração feita pela gerência (como no cardápio ou status de um item) seja refletida **em tempo real** em todas as telas de clientes, sem a necessidade de recarregar a página.
+O sistema utiliza WebSockets para garantir que qualquer alteração feita pela gerência ou solicitação do cliente seja refletida **em tempo real** em todas as telas conectadas, sem a necessidade de recarregar a página.
 
 ---
 
@@ -21,49 +21,44 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
 
 ### Funcionalidades Concluídas:
 -   [x] **Backend:** Estrutura do servidor com Node.js e Express.
--   [x] **Banco de Dados:** Schema robusto com tabelas para `usuarios`, `mesas`, `sessoes_cliente`, `pedidos`, `categorias` e `produtos`.
+-   [x] **Banco de Dados:** Schema robusto com tabelas para `usuarios`, `mesas`, `sessoes_cliente`, `pedidos`, `categorias`, `produtos` e `chamados`.
 -   [x] **API Segura e Middleware Inteligente:**
     -   [x] Endpoints protegidos que exigem autenticação JWT para acesso.
     -   [x] Middleware de autenticação (`authMiddleware`) capaz de diferenciar tokens de **Gerência** e de **Mesa**.
 -   [x] **Sistema de Autenticação Robusto:**
-    -   [x] Telas de login separadas e seguras para **Gerência** (`/login-gerencia`) e **Mesas** (`/login`).
+    -   [x] Telas de login separadas e seguras para **Gerência** e **Mesas**.
     -   [x] Criptografia de senhas no banco de dados (`bcryptjs`).
-    -   [x] Logout seguro e com redirecionamento correto para cada tipo de usuário.
+    -   [x] Logout seguro que não interfere em outras sessões ativas (ex: logout de cliente não desloga gerente).
 -   [x] **Painel de Gerenciamento (CRUD Completo):**
-    -   [x] **Gestão de Cardápio:**
-        -   [x] Adicionar, **Editar** e Remover categorias e produtos através de um modal dinâmico.
-        -   [x] Ordenar categorias com drag-and-drop.
-        -   [x] **Controle de Status:** Ativar e desativar categorias e produtos individualmente.
-        -   [x] **Happy Hour:** Definir categorias como "Happy Hour" com horário de início e fim.
-        -   [x] **Sistema de Sugestões:** Marcar produtos específicos para serem sugeridos como acompanhamento na tela de confirmação do pedido.
+    -   [x] **Gestão de Cardápio:** Adicionar, editar, remover, ordenar e controlar status de categorias e produtos. Inclui sistema de sugestões e configuração de Happy Hour.
     -   [x] **Gestão de Mesas:**
         -   [x] Cadastrar e remover mesas.
         -   [x] Painel interativo para visualizar o histórico de sessões de cada mesa.
         -   [x] Cancelar itens de pedidos de uma sessão ativa.
-        -   [x] Identificação e fechamento de sessões ativas.
-        -   [x] **<!-- NOVO --> Geração de Recibos em PDF:** Visualizar e salvar um modelo de recibo detalhado para cada sessão, incluindo dados do cliente (nome, CPF, telefone), itens consumidos e totais.
+    -   [x] **<!-- NOVO --> Gestão de Chamados:**
+        -   [x] Página dedicada para visualizar chamados de garçom em tempo real, exibidos em formato de cards.
+        -   [x] Contador de chamados pendentes no menu principal para visibilidade imediata.
+        -   [x] Funcionalidade para marcar um chamado como "Atendido", alterando seu status visualmente.
+    -   [x] **<!-- NOVO --> Geração de Recibos Profissionais:**
+        -   [x] Geração de recibo com layout otimizado para **impressoras térmicas de 80mm**.
+        -   [x] Impressão direta acionada pelo navegador, sem abrir novas abas.
+        -   [x] Recibo inclui todos os dados da sessão: cliente, telefone, CPF, itens, totais e **forma de pagamento**.
 -   [x] **Interface do Cliente (Ciclo Completo e Inteligente):**
-    -   [x] **Login da Mesa:** Autenticação para iniciar uma sessão, com coleta de dados do cliente (nome, telefone, CPF). <!-- ATUALIZADO -->
-    -   [x] **Cardápio Dinâmico com Regras de Negócio:**
-        -   [x] Itens desativados pela gerência **não são exibidos**.
-        -   [x] Categorias de "Happy Hour" fora do horário têm seus produtos bloqueados.
-        -   [x] Botão de detalhes em cada produto para abrir um modal com informações ampliadas.
-    -   [x] **Confirmação de Pedido Profissional:**
-        -   [x] **Controle de Quantidade:** Agrupar itens idênticos e permitir que o cliente aumente ou diminua a quantidade (`+` / `-`) diretamente na tela de resumo.
-        -   [x] **Modal de Observação:** Adicionar observações a cada grupo de itens através de um modal limpo e intuitivo, acionado por um ícone.
-        -   [x] **Sugestões de Acompanhamento:** Exibir até 3 produtos sugeridos em uma lista com rolagem vertical, com opções para adicionar ao pedido ou navegar para a categoria do item.
+    -   [x] **Login da Mesa:** Autenticação para iniciar uma sessão, com coleta de dados do cliente (nome, telefone, CPF).
+    -   [x] **Cardápio Dinâmico:** Itens e categorias são exibidos ou bloqueados com base em regras de negócio (status, happy hour).
+    -   [x] **Confirmação de Pedido Profissional:** Controle de quantidade, adição de observações e sugestões de acompanhamento.
     -   [x] **Conta do Cliente:**
-        -   [x] **Agrupamento de Pedidos:** Visualização da conta com itens idênticos agrupados por quantidade (ex: "3x Coca-Cola"), incluindo itens cancelados.
-        -   [x] Fechamento de conta seguro via modal.
--   [x] **Comunicação em Tempo Real:**
-    -   [x] Atualização automática do cardápio do cliente quando o gerente faz alterações.
+        -   [x] **<!-- NOVO --> Chamado de Garçom:** Botão para solicitar atendimento, que notifica todas as telas da gerência em tempo real.
+        -   [x] **<!-- NOVO --> Fechamento de Conta com Pagamento:** Ao encerrar a sessão, o funcionário registra a forma de pagamento (Dinheiro, Cartão ou PIX).
+-   [x] **Comunicação em Tempo Real (WebSockets):**
+    -   [x] Atualização automática do cardápio do cliente.
+    -   [x] Notificação instantânea de chamados de garçom para a gerência.
 
 ### Próximos Passos (Roadmap):
 -   [ ] **Cozinha:** Criar uma interface para a cozinha visualizar os pedidos que chegam em tempo real.
--   [ ] **Relatórios:** Desenvolver um dashboard com indicadores de vendas para a gerência.
+-   [ ] **Relatórios:** Desenvolver um dashboard com indicadores de vendas (ex: por forma de pagamento, produtos mais vendidos).
 -   [ ] **Logs de Auditoria:** Aprimorar o sistema de logs para rastrear todas as ações importantes.
 -   [ ] **Pagamentos:** Integrar um gateway de pagamento (PIX, cartão) na tela da conta.
--   [ ] **Impressão Térmica:** Implementar a comunicação direta com impressoras térmicas para impressão física dos recibos. <!-- NOVO -->
 -   [ ] **Deployment:** Preparar o sistema para ser hospedado em um servidor online.
 
 ---
@@ -77,11 +72,11 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
     *   [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken ): Para geração e validação de tokens de autenticação.
     *   [bcryptjs](https://github.com/dcodeIO/bcrypt.js ): Para criptografia segura de senhas.
     *   [ws](https://github.com/websockets/ws ): Biblioteca para implementação de WebSockets.
-    *   [pdfkit](https://pdfkit.org/ ): Biblioteca para criação de documentos PDF. <!-- NOVO -->
 
 *   **Frontend:**
     *   HTML5, CSS3, JavaScript (Vanilla)
     *   [Font Awesome](https://fontawesome.com/ ): Para os ícones da interface.
+    *   [SweetAlert2](https://sweetalert2.github.io/ ): Para notificações e modais elegantes.
 
 *   **Banco de Dados:**
     *   [MySQL](https://www.mysql.com/ )
@@ -98,8 +93,7 @@ Para rodar este projeto em sua máquina, siga os passos abaixo.
 
 ### 1. Configuração do Banco de Dados
 -   Crie um banco de dados no seu MySQL com o nome `cardapio_db` (ou o nome que preferir).
--   Execute os scripts SQL necessários para criar todas as tabelas.
--   **Importante:** Certifique-se de que sua tabela `produtos` contém a coluna `pode_ser_sugestao BOOLEAN DEFAULT FALSE`.
+-   Execute os scripts SQL necessários para criar todas as tabelas (`usuarios`, `mesas`, `categorias`, `produtos`, `sessoes_cliente`, `pedidos`, `chamados`, `logs`).
 -   No arquivo `Backend/db.js`, configure suas credenciais do MySQL.
 -   Crie um arquivo `.env` na pasta `Backend` e defina as variáveis `JWT_SECRET` e `REGISTER_SECRET_TOKEN`.
 

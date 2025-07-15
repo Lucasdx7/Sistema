@@ -1,6 +1,6 @@
 # Sistema de Gestão de Cardápio e Pedidos
 
-![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow ) ![Progresso](https://img.shields.io/badge/progresso-59%25-brightgreen ) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green ) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue ) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
+![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow ) ![Progresso](https://img.shields.io/badge/progresso-60%25-brightgreen ) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green ) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue ) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
 
 Sistema de gerenciamento completo para restaurante, com foco em segurança, usabilidade e atualizações em tempo real. A plataforma permite que a gerência administre o cardápio e as mesas de forma dinâmica, enquanto os clientes realizam seus pedidos diretamente pelo tablet.
 
@@ -15,7 +15,7 @@ O sistema utiliza WebSockets para garantir que qualquer alteração feita pela g
 
 ---
 
-## 🚀 Status Atual (Progresso: 59%)
+## 🚀 Status Atual (Progresso: 60%)
 
 O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de interação do cliente e as principais funcionalidades de gerenciamento implementadas e estáveis.
 
@@ -46,8 +46,9 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
 -   [x] **Interface do Cliente (Ciclo Completo e Inteligente):**
     -   [x] **Login da Mesa:** Autenticação para iniciar uma sessão.
     -   [x] **Coleta de Dados do Cliente:** Formulário para inserir nome, telefone e CPF.
-    -   [x] **<!-- NOVO --> Teclado Virtual Customizado:**
-        -   [x] Implementado nas telas de **Login do Cliente** e **Dados do Cliente** para facilitar a digitação em tablets sem teclado físico.
+    -   [x] **Teclado Virtual Customizado (100% Integrado):**
+        -   [x] Implementado em **todas** as telas de input do cliente: Login, Dados do Cliente, Confirmação de Pedido (observações) e Conta do Cliente (logout).
+        -   [x] Garante uma experiência de usuário consistente e adaptada para tablets sem teclado físico.
     -   [x] **Cardápio Dinâmico:** Itens e categorias são exibidos ou bloqueados com base em regras de negócio (status, happy hour).
     -   [x] **Confirmação de Pedido Profissional:** Controle de quantidade, adição de observações e sugestões de acompanhamento.
     -   [x] **Conta do Cliente:**
@@ -58,7 +59,6 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
     -   [x] Notificação instantânea de chamados de garçom para a gerência.
 
 ### Próximos Passos (Roadmap):
--   [ ] **Teclado Virtual:** Implementar o teclado virtual nas telas de **Conta do Cliente** (modal de logout) e **Confirmação de Pedido** (campo de observações).
 -   [ ] **Cozinha:** Criar uma interface para a cozinha visualizar os pedidos que chegam em tempo real.
 -   [ ] **Relatórios:** Desenvolver um dashboard com indicadores de vendas (ex: por forma de pagamento, produtos mais vendidos).
 -   [ ] **Logs de Auditoria:** Aprimorar o sistema de logs para rastrear todas as ações importantes.
@@ -81,7 +81,6 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
     *   HTML5, CSS3, JavaScript (Vanilla)
     *   [Font Awesome](https://fontawesome.com/ ): Para os ícones da interface.
     *   [SweetAlert2](https://sweetalert2.github.io/ ): Para notificações e modais elegantes.
-    *   [Simple-Keyboard](https://simple-keyboard.com/ ): Para o teclado virtual na interface do cliente.
 
 *   **Banco de Dados:**
     *   [MySQL](https://www.mysql.com/ )

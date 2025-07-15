@@ -1675,3 +1675,114 @@ body.keyboard-active {
   .vk button{width:48px;height:48px;font-size:18px;border:1px solid #ccc;border-radius:6px;background:#f5f5f5;cursor:pointer}
   .vk-action{background:#dfeaff;width:auto;padding:0 12px}
   .vk.hidden{display:none}
+
+
+  /* =================================
+   ESTILOS DOS TECLADOS VIRTUAIS (VERSÃO CORRIGIDA E UNIFICADA)
+   ================================= */
+
+/* Estilo para inputs que abrem teclados virtuais */
+.numeric-input, .alpha-input, .virtual-input {
+    cursor: pointer; /* Indica que o campo é clicável */
+}
+
+/* Contêiner principal de TODOS os teclados */
+.virtual-keyboard-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #212121; /* Seu fundo cinza escuro */
+    color: white;
+    padding: 10px;
+    box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+    z-index: 1000;
+    transform: translateY(100%); /* Começa escondido */
+    transition: transform 0.3s ease-in-out;
+}
+
+.virtual-keyboard-container.visible {
+    transform: translateY(0); /* Anima para a posição visível */
+}
+
+/* Classe para esconder o teclado (usada pelo JS) */
+.virtual-keyboard-container.hidden {
+    /* A transição já cuida do "esconder", então 'display: none' não é ideal aqui.
+       O JS adiciona/remove a classe 'visible' para controlar a animação. */
+}
+
+.keyboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 0 10px;
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+.keyboard-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2em;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.keyboard-keys {
+    display: grid;
+    gap: 5px; /* Espaçamento entre as teclas */
+}
+
+.keyboard-key {
+    padding: 10px 5px;
+    font-size: 1.5em;
+    background-color: #424242; /* Cor da tecla */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.keyboard-key:active {
+    background-color: #616161; /* Efeito ao clicar */
+}
+
+.keyboard-key.key-special {
+    background-color: #333; /* Cor para teclas especiais (OK, Shift, etc) */
+    font-size: 1.2em;
+}
+
+/* --- Layout para o teclado numérico --- */
+#virtual-keyboard .keyboard-keys {
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: minmax(60px, auto); /* Linhas um pouco mais altas */
+}
+
+/* --- Layout para TODOS os teclados alfabéticos/alfanuméricos --- */
+/* A MUDANÇA PRINCIPAL ESTÁ AQUI */
+#virtual-keyboard-alpha .keyboard-keys,
+#virtual-keyboard-alphanumeric .keyboard-keys {
+    grid-template-columns: repeat(10, 1fr);
+    grid-auto-rows: minmax(50px, auto); /* Altura das linhas */
+}
+
+/* Regras de layout para teclas especiais em teclados QWERTY */
+.key-space {
+    grid-column: span 8; /* Faz a tecla de espaço ocupar mais colunas */
+}
+
+#confirm-alpha, #confirm-key {
+    grid-column: span 2; /* Faz o OK ocupar 2 colunas */
+}
+
+/* Estilo do Shift quando ativo */
+#shift-key.active {
+    background-color: #a0a0a0; /* Cor do Shift quando ativo */
+    color: #000;
+}

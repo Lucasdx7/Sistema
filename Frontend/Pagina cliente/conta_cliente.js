@@ -2,40 +2,49 @@
  * ==================================================================
  * SCRIPT DA PÁGINA DA CONTA DO CLIENTE (conta_cliente.html)
  * ==================================================================
- * Exibe o resumo dos pedidos, permite o logout e o chamado de garçom.
+ * Exibe o resumo dos pedidos, permite o logout (com teclado virtual)
+ * e o chamado de garçom.
  *
  * Depende do objeto `Notificacao` fornecido por `notificacoes.js`.
  */
 
+/**
+ * Agrupa pedidos com o mesmo nome, status e observação para exibição.
+ * @param {Array} pedidos - A lista de pedidos vinda da API.
+ * @returns {Array} - A lista de pedidos agrupados.
+ */
 function agruparPedidos(pedidos) {
-    // ... (função agruparPedidos permanece a mesma)
     if (!pedidos || pedidos.length === 0) return [];
+
     const itensAgrupados = {};
     pedidos.forEach(pedido => {
+        // A chave de agrupamento considera o produto, status e observação
         const chave = `${pedido.nome_produto}-${pedido.status}-${pedido.observacao || ''}`;
         if (itensAgrupados[chave]) {
             itensAgrupados[chave].quantidade += pedido.quantidade;
         } else {
-            itensAgrupados[chave] = { ...pedido, quantidade: pedido.quantidade };
+            // Clona o objeto para evitar mutações inesperadas
+            itensAgrupados[chave] = { ...pedido };
         }
     });
     return Object.values(itensAgrupados);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Autenticação ---
+    // --- Autenticação e Dados da Sessão ---
     const token = localStorage.getItem('token');
     const sessaoId = localStorage.getItem('sessaoId');
     const dadosCliente = JSON.parse(localStorage.getItem('dadosCliente'));
     const nomeMesa = localStorage.getItem('nomeMesa');
 
+    // Se não houver token ou sessão, o acesso é inválido.
     if (!token || !sessaoId) {
         Notificacao.erro('Sessão não encontrada', 'Redirecionando para a tela de login.')
             .then(() => window.location.href = '/login');
-        return;
+        return; // Esta linha para a execução de todo o script
     }
 
-    // --- Elementos do DOM ---
+    // --- Seletores de Elementos do DOM ---
     const clienteNomeEl = document.getElementById('cliente-nome');
     const clienteMesaEl = document.getElementById('cliente-mesa');
     const listaPedidos = document.getElementById('lista-pedidos');
@@ -46,21 +55,109 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutModal = document.getElementById('logout-modal');
     const closeModalBtn = document.getElementById('close-modal-btn');
     const logoutForm = document.getElementById('logout-form');
-    
-    // ==================================================
-    // NOVO ELEMENTO DO DOM
-const chamarGarcomBtn = document.querySelector('.call-waiter-btn');
+    const chamarGarcomBtn = document.querySelector('.call-waiter-btn');
+    const paymentOptions = document.querySelector('.payment-options');
+    const formaPagamentoInput = document.getElementById('forma-pagamento-input');
 
-    // ==================================================
-
-    // --- Preenche os detalhes do cliente ---
+    // --- Preenche os detalhes do cliente na tela ---
     if (clienteNomeEl) clienteNomeEl.textContent = dadosCliente?.nome || 'Cliente';
     if (clienteMesaEl) clienteMesaEl.textContent = nomeMesa || 'Mesa';
 
-    // --- Funções ---
+    // ==================================================================
+    // INÍCIO DA LÓGICA DO TECLADO VIRTUAL
+    // ==================================================================
+    const keyboard = document.getElementById('virtual-keyboard-alphanumeric');
+    const inputs = document.querySelectorAll('.virtual-input'); // Inputs que ativarão o teclado
+    const shiftKey = document.getElementById('shift-key');
+    const alphaKeys = keyboard.querySelectorAll('.keyboard-key[data-key]');
 
+    let activeInput = null;
+    let isShiftActive = false;
+
+    const showKeyboard = (inputElement) => {
+        activeInput = inputElement;
+        const label = document.querySelector(`label[for=${activeInput.id}]`);
+        const keyboardLabel = keyboard.querySelector('#keyboard-target-label');
+        
+        if (keyboardLabel && label) {
+            keyboardLabel.textContent = `Digite: ${label.textContent}`;
+        }
+
+        keyboard.classList.remove('hidden');
+        setTimeout(() => keyboard.classList.add('visible'), 10); // Pequeno delay para a transição CSS
+        document.body.classList.add('keyboard-active');
+    };
+
+    const hideKeyboard = () => {
+        if (!keyboard.classList.contains('visible')) return;
+        keyboard.classList.remove('visible');
+        setTimeout(() => keyboard.classList.add('hidden'), 300); // Espera a transição de saída
+        document.body.classList.remove('keyboard-active');
+        activeInput = null;
+    };
+
+    const toggleShift = () => {
+        isShiftActive = !isShiftActive;
+        shiftKey.classList.toggle('active', isShiftActive);
+        alphaKeys.forEach(key => {
+            const char = key.dataset.key;
+            // Altera apenas caracteres alfabéticos
+            if (char.length === 1 && char.match(/[a-zç]/i)) {
+                key.textContent = isShiftActive ? char.toUpperCase() : char.toLowerCase();
+            }
+        });
+    };
+
+    // Adiciona o evento de clique para cada input que deve abrir o teclado
+    inputs.forEach(input => {
+        input.addEventListener('click', (e) => {
+            e.stopPropagation(); // Impede que o clique se propague e feche o teclado
+            showKeyboard(input);
+        });
+    });
+
+    // Gerenciador de cliques centralizado para o teclado
+    keyboard.addEventListener('click', (e) => {
+        if (!activeInput) return;
+        const target = e.target.closest('.keyboard-key');
+        if (!target) return;
+
+        const key = target.dataset.key;
+
+        if (key) { // Se for uma tecla de caractere (letra, número, espaço)
+            let char = key;
+            if (isShiftActive) {
+                activeInput.value += char.toUpperCase();
+                toggleShift(); // Desativa o shift automaticamente após um uso
+            } else {
+                activeInput.value += char;
+            }
+        } else if (target.id === 'shift-key') {
+            toggleShift();
+        } else if (target.id === 'backspace-key') {
+            activeInput.value = activeInput.value.slice(0, -1);
+        } else if (target.id === 'confirm-key') {
+            hideKeyboard();
+        }
+    });
+
+    // Fecha o teclado se o usuário clicar fora dele
+    document.addEventListener('click', (e) => {
+        if (activeInput && !keyboard.contains(e.target) && !e.target.matches('.virtual-input')) {
+            hideKeyboard();
+        }
+    });
+    
+    // Fecha o teclado pelo botão "X" no cabeçalho
+    keyboard.querySelector('.keyboard-close-btn').addEventListener('click', hideKeyboard);
+    // ==================================================================
+    // FIM DA LÓGICA DO TECLADO VIRTUAL
+    // ==================================================================
+
+    /**
+     * Carrega os dados da conta (pedidos e totais) da API.
+     */
     async function carregarConta() {
-        // ... (função carregarConta permanece a mesma)
         listaPedidos.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Carregando sua conta...</p>';
         try {
             const response = await fetch(`/api/sessoes/${sessaoId}/conta`, {
@@ -110,11 +207,10 @@ const chamarGarcomBtn = document.querySelector('.call-waiter-btn');
         }
     }
 
-    // ==================================================
-    // NOVA FUNÇÃO PARA CHAMAR O GARÇOM
-    // ==================================================
+    /**
+     * Envia uma notificação para a cozinha/bar para chamar um garçom.
+     */
     async function chamarGarcom() {
-        // Desabilita o botão para evitar múltiplos cliques
         chamarGarcomBtn.disabled = true;
         chamarGarcomBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chamando...';
 
@@ -125,7 +221,6 @@ const chamarGarcomBtn = document.querySelector('.call-waiter-btn');
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 }
-                // Não precisamos enviar corpo (body), pois o token já identifica a mesa.
             });
 
             const result = await response.json();
@@ -133,120 +228,112 @@ const chamarGarcomBtn = document.querySelector('.call-waiter-btn');
                 throw new Error(result.message || 'Não foi possível completar a chamada.');
             }
 
-            // Notifica o cliente que a chamada foi feita com sucesso.
             Notificacao.sucesso('Chamado Enviado!', 'Um garçom foi notificado e virá até sua mesa em breve.');
 
         } catch (error) {
             Notificacao.erro('Falha na Chamada', error.message);
         } finally {
-            // Reabilita o botão após 10 segundos para evitar spam
+            // Adiciona um cooldown para evitar spam de chamadas
             setTimeout(() => {
                 chamarGarcomBtn.disabled = false;
                 chamarGarcomBtn.innerHTML = '<i class="fas fa-bell"></i> Chamar Garçom';
-            }, 10000); // 10 segundos de cooldown
+            }, 10000); // 10 segundos
         }
     }
-    // ==================================================
 
-    // --- Lógica do Modal de Logout ---
+    /**
+     * Fecha o modal de logout e reseta o formulário.
+     */
     function fecharModalLogout() {
-        // ... (função fecharModalLogout permanece a mesma)
+        hideKeyboard(); // Garante que o teclado seja fechado junto com o modal
         logoutModal.classList.add('hidden');
         logoutForm.reset();
+        // Limpa a seleção visual dos botões de pagamento
+        paymentOptions.querySelectorAll('.payment-btn').forEach(btn => btn.classList.remove('selected'));
     }
 
+    // --- Event Listeners ---
+
+    // Botão "secreto" para abrir o modal de logout
     hiddenButton.addEventListener('click', () => {
-        // ... (lógica do botão de logout permanece a mesma)
         logoutModal.classList.remove('hidden');
     });
 
+    // Botão para fechar o modal
     closeModalBtn.addEventListener('click', fecharModalLogout);
 
-    logoutForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const submitButton = logoutForm.querySelector('button[type="submit"]');
-    const usuarioMesa = document.getElementById('mesa-usuario').value;
-    const senhaMesa = document.getElementById('mesa-senha').value;
-    const formaPagamento = formaPagamentoInput.value; // Pega o valor do pagamento
-
-    if (!usuarioMesa || !senhaMesa) {
-        return Notificacao.erro('Campos Vazios', 'Usuário e senha da mesa são obrigatórios.');
-    }
-    // Validação da forma de pagamento
-    if (!formaPagamento) {
-        return Notificacao.erro('Campo Obrigatório', 'Por favor, selecione a forma de pagamento.');
-    }
-
-    submitButton.disabled = true;
-    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
-
-    try {
-        // 1. Autentica as credenciais da mesa (sem alterações aqui)
-        const authResponse = await fetch('/auth/login-cliente', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nome_usuario: usuarioMesa, senha: senhaMesa })
-        });
-        const authResult = await authResponse.json();
-        if (!authResponse.ok) throw new Error(authResult.message);
-
-        // 2. Se a autenticação for bem-sucedida, fecha a conta ENVIANDO A FORMA DE PAGAMENTO
-        const closeResponse = await fetch(`/api/sessoes/${sessaoId}/fechar`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json', // Adiciona o header
-                'Authorization': `Bearer ${token}` 
-            },
-            body: JSON.stringify({ forma_pagamento: formaPagamento }) // Envia o dado no corpo
-        });
-        const closeResult = await closeResponse.json();
-        if (!closeResponse.ok) throw new Error(closeResult.message);
-
-        // 3. Limpa o localStorage e redireciona (sem alterações aqui)
-        localStorage.removeItem('token');
-        localStorage.removeItem('sessaoId');
-        localStorage.removeItem('mesaId');
-        localStorage.removeItem('nomeMesa');
-        localStorage.removeItem('dadosCliente');
-        localStorage.removeItem('carrinho');
-
-        Notificacao.sucesso('Sessão Encerrada!', 'Obrigado pela preferência e volte sempre.');
-
-        setTimeout(() => {
-            window.location.href = '/login';
-        }, 2500);
-
-    } catch (error) {
-        Notificacao.erro('Falha no Logout', error.message);
-    } finally {
-        submitButton.disabled = false;
-        submitButton.innerHTML = 'Confirmar e Sair';
-    }
-});
-
-    const paymentOptions = document.querySelector('.payment-options');
-const formaPagamentoInput = document.getElementById('forma-pagamento-input');
-
-// Adicione este event listener para os botões de pagamento
-paymentOptions.addEventListener('click', (e) => {
-    const selectedBtn = e.target.closest('.payment-btn');
-    if (!selectedBtn) return;
-
-    // Remove a seleção de todos os botões
-    paymentOptions.querySelectorAll('.payment-btn').forEach(btn => btn.classList.remove('selected'));
-    // Adiciona a seleção ao botão clicado
-    selectedBtn.classList.add('selected');
-    // Guarda o valor no input escondido
-    formaPagamentoInput.value = selectedBtn.dataset.payment;
-});
-
-    // --- Inicialização ---
-    carregarConta();
-    
-    // ==================================================
-    // NOVO EVENT LISTENER
+    // Botão para chamar o garçom
     if (chamarGarcomBtn) {
         chamarGarcomBtn.addEventListener('click', chamarGarcom);
     }
-    // ==================================================
+
+    // Lógica para os botões de seleção de pagamento
+    paymentOptions.addEventListener('click', (e) => {
+        const selectedBtn = e.target.closest('.payment-btn');
+        if (!selectedBtn) return;
+
+        paymentOptions.querySelectorAll('.payment-btn').forEach(btn => btn.classList.remove('selected'));
+        selectedBtn.classList.add('selected');
+        formaPagamentoInput.value = selectedBtn.dataset.payment;
+    });
+
+    // Submissão do formulário de logout
+    logoutForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideKeyboard(); // Garante que o teclado feche ao submeter
+
+        const submitButton = logoutForm.querySelector('button[type="submit"]');
+        const usuarioMesa = document.getElementById('mesa-usuario').value;
+        const senhaMesa = document.getElementById('mesa-senha').value;
+        const formaPagamento = formaPagamentoInput.value;
+
+        if (!usuarioMesa || !senhaMesa) {
+            return Notificacao.erro('Campos Vazios', 'Usuário e senha da mesa são obrigatórios.');
+        }
+        if (!formaPagamento) {
+            return Notificacao.erro('Campo Obrigatório', 'Por favor, selecione a forma de pagamento.');
+        }
+
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+
+        try {
+            // 1. Autentica as credenciais da mesa
+            const authResponse = await fetch('/auth/login-cliente', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome_usuario: usuarioMesa, senha: senhaMesa })
+            });
+            const authResult = await authResponse.json();
+            if (!authResponse.ok) throw new Error(authResult.message);
+
+            // 2. Se autenticado, fecha a conta enviando a forma de pagamento
+            const closeResponse = await fetch(`/api/sessoes/${sessaoId}/fechar`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ forma_pagamento: formaPagamento })
+            });
+            const closeResult = await closeResponse.json();
+            if (!closeResponse.ok) throw new Error(closeResult.message);
+
+            // 3. Limpa o localStorage e redireciona para a tela de login
+            localStorage.clear(); // Limpa tudo para garantir uma saída limpa
+
+            await Notificacao.sucesso('Sessão Encerrada!', 'Obrigado pela preferência e volte sempre.');
+
+            window.location.href = '/login';
+
+        } catch (error) {
+            Notificacao.erro('Falha no Logout', error.message);
+        } finally {
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Confirmar e Encerrar';
+        }
+    });
+
+    // --- Inicialização da Página ---
+    carregarConta();
 });

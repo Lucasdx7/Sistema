@@ -1,6 +1,6 @@
 # Sistema de Gestão de Cardápio e Pedidos
 
-![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow ) ![Progresso](https://img.shields.io/badge/progresso-57%25-brightgreen ) <!-- ATUALIZADO --> ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green ) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue ) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
+![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow ) ![Progresso](https://img.shields.io/badge/progresso-59%25-brightgreen ) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green ) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue ) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
 
 Sistema de gerenciamento completo para restaurante, com foco em segurança, usabilidade e atualizações em tempo real. A plataforma permite que a gerência administre o cardápio e as mesas de forma dinâmica, enquanto os clientes realizam seus pedidos diretamente pelo tablet.
 
@@ -15,7 +15,7 @@ O sistema utiliza WebSockets para garantir que qualquer alteração feita pela g
 
 ---
 
-## 🚀 Status Atual (Progresso: 57%) <!-- ATUALIZADO -->
+## 🚀 Status Atual (Progresso: 59%)
 
 O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de interação do cliente e as principais funcionalidades de gerenciamento implementadas e estáveis.
 
@@ -35,26 +35,30 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
         -   [x] Cadastrar e remover mesas.
         -   [x] Painel interativo para visualizar o histórico de sessões de cada mesa.
         -   [x] Cancelar itens de pedidos de uma sessão ativa.
-    -   [x] **<!-- NOVO --> Gestão de Chamados:**
+    -   [x] **Gestão de Chamados:**
         -   [x] Página dedicada para visualizar chamados de garçom em tempo real, exibidos em formato de cards.
         -   [x] Contador de chamados pendentes no menu principal para visibilidade imediata.
         -   [x] Funcionalidade para marcar um chamado como "Atendido", alterando seu status visualmente.
-    -   [x] **<!-- NOVO --> Geração de Recibos Profissionais:**
+    -   [x] **Geração de Recibos Profissionais:**
         -   [x] Geração de recibo com layout otimizado para **impressoras térmicas de 80mm**.
         -   [x] Impressão direta acionada pelo navegador, sem abrir novas abas.
         -   [x] Recibo inclui todos os dados da sessão: cliente, telefone, CPF, itens, totais e **forma de pagamento**.
 -   [x] **Interface do Cliente (Ciclo Completo e Inteligente):**
-    -   [x] **Login da Mesa:** Autenticação para iniciar uma sessão, com coleta de dados do cliente (nome, telefone, CPF).
+    -   [x] **Login da Mesa:** Autenticação para iniciar uma sessão.
+    -   [x] **Coleta de Dados do Cliente:** Formulário para inserir nome, telefone e CPF.
+    -   [x] **<!-- NOVO --> Teclado Virtual Customizado:**
+        -   [x] Implementado nas telas de **Login do Cliente** e **Dados do Cliente** para facilitar a digitação em tablets sem teclado físico.
     -   [x] **Cardápio Dinâmico:** Itens e categorias são exibidos ou bloqueados com base em regras de negócio (status, happy hour).
     -   [x] **Confirmação de Pedido Profissional:** Controle de quantidade, adição de observações e sugestões de acompanhamento.
     -   [x] **Conta do Cliente:**
-        -   [x] **<!-- NOVO --> Chamado de Garçom:** Botão para solicitar atendimento, que notifica todas as telas da gerência em tempo real.
-        -   [x] **<!-- NOVO --> Fechamento de Conta com Pagamento:** Ao encerrar a sessão, o funcionário registra a forma de pagamento (Dinheiro, Cartão ou PIX).
+        -   [x] **Chamado de Garçom:** Botão para solicitar atendimento, que notifica todas as telas da gerência em tempo real.
+        -   [x] **Fechamento de Conta com Pagamento:** Ao encerrar a sessão, o funcionário registra a forma de pagamento (Dinheiro, Cartão ou PIX).
 -   [x] **Comunicação em Tempo Real (WebSockets):**
     -   [x] Atualização automática do cardápio do cliente.
     -   [x] Notificação instantânea de chamados de garçom para a gerência.
 
 ### Próximos Passos (Roadmap):
+-   [ ] **Teclado Virtual:** Implementar o teclado virtual nas telas de **Conta do Cliente** (modal de logout) e **Confirmação de Pedido** (campo de observações).
 -   [ ] **Cozinha:** Criar uma interface para a cozinha visualizar os pedidos que chegam em tempo real.
 -   [ ] **Relatórios:** Desenvolver um dashboard com indicadores de vendas (ex: por forma de pagamento, produtos mais vendidos).
 -   [ ] **Logs de Auditoria:** Aprimorar o sistema de logs para rastrear todas as ações importantes.
@@ -77,6 +81,7 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
     *   HTML5, CSS3, JavaScript (Vanilla)
     *   [Font Awesome](https://fontawesome.com/ ): Para os ícones da interface.
     *   [SweetAlert2](https://sweetalert2.github.io/ ): Para notificações e modais elegantes.
+    *   [Simple-Keyboard](https://simple-keyboard.com/ ): Para o teclado virtual na interface do cliente.
 
 *   **Banco de Dados:**
     *   [MySQL](https://www.mysql.com/ )
@@ -117,4 +122,3 @@ Para rodar este projeto em sua máquina, siga os passos abaixo.
 ### 4. Acessando o Sistema
 -   **Painel de Gerenciamento:** Abra seu navegador e acesse `http://localhost:3000/login-gerencia`
 -   **Interface do Cliente:** Abra outra aba e acesse `http://localhost:3000/login`
-

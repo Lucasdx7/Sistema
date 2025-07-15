@@ -1705,12 +1705,6 @@ body.keyboard-active {
     transform: translateY(0); /* Anima para a posição visível */
 }
 
-/* Classe para esconder o teclado (usada pelo JS) */
-.virtual-keyboard-container.hidden {
-    /* A transição já cuida do "esconder", então 'display: none' não é ideal aqui.
-       O JS adiciona/remove a classe 'visible' para controlar a animação. */
-}
-
 .keyboard-header {
     display: flex;
     justify-content: space-between;

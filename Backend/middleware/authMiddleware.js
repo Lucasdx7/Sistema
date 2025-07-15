@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { query } = require('../db');
+const { query } = require('../configurar/db');
 
 const protegerRota = async (req, res, next) => {
     let token;

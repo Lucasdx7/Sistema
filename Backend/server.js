@@ -4,6 +4,12 @@
 console.log('[DEBUG] 1. Iniciando o carregamento dos módulos...');
 require('dotenv').config();
 const express = require('express');
+const dbConfig = {
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+};
 const cors = require('cors');
 const path = require('path');
 const http = require('http' );

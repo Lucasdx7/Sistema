@@ -3,7 +3,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { query } = require('../db');
+const { query } = require('../configurar/db');
 const router = express.Router();
 
 // Função para gerar o token JWT para a GERÊNCIA

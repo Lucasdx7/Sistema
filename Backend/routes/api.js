@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { query, registrarLog } = require('../db');
+const { query, registrarLog } = require('../configurar/db');
 const bcrypt = require('bcryptjs');
 
 

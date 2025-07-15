@@ -1538,3 +1538,140 @@
     border-color: #007bff;
     font-weight: 600;
 }
+
+
+.simple-keyboard {
+            display: none; /* Oculta o teclado por padrão */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background-color: #eee; /* Adiciona um fundo para garantir visibilidade */
+            padding: 5px;
+        }
+
+
+        /* =================================
+   ESTILOS DOS TECLADOS VIRTUAIS
+   (Adicione ao final do seu Usuario.css)
+   ================================= */
+
+/* Estilo para inputs que abrem teclados virtuais */
+.numeric-input, .alpha-input {
+    cursor: pointer; /* Indica que o campo é clicável */
+}
+
+.virtual-keyboard-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #212121; /* Um cinza escuro para o fundo */
+    color: white;
+    padding: 10px;
+    box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+    z-index: 1000;
+    transform: translateY(100%); /* Começa escondido */
+    transition: transform 0.3s ease-in-out;
+}
+
+.virtual-keyboard-container.visible {
+    transform: translateY(0); /* Anima para a posição visível */
+}
+
+/* Classe para esconder/mostrar o teclado */
+.hidden {
+    display: none;
+}
+
+.keyboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 0 10px;
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+.keyboard-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2em;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.keyboard-keys {
+    display: grid;
+    gap: 5px; /* Espaçamento entre as teclas */
+}
+
+.keyboard-key {
+    padding: 10px 5px;
+    font-size: 1.5em;
+    background-color: #424242; /* Cor da tecla */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.keyboard-key:active {
+    background-color: #616161; /* Efeito ao clicar */
+}
+
+.keyboard-key.key-special {
+    background-color: #333; /* Cor para teclas especiais (OK, Shift, etc) */
+    font-size: 1.2em;
+}
+
+/* --- Layout específico para o teclado QWERTY --- */
+#virtual-keyboard-alpha .keyboard-keys {
+    grid-template-columns: repeat(10, 1fr);
+    grid-auto-rows: minmax(50px, auto); /* Altura das linhas */
+}
+
+#virtual-keyboard-alpha .key-space {
+    grid-column: span 8; /* Faz a tecla de espaço ocupar mais colunas */
+}
+
+#virtual-keyboard-alpha #confirm-alpha {
+    grid-column: span 2;
+}
+
+#virtual-keyboard-alpha #shift-key.active {
+    background-color: #a0a0a0; /* Cor do Shift quando ativo */
+    color: #000;
+}
+
+/* --- Layout para o teclado numérico --- */
+#virtual-keyboard .keyboard-keys {
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: minmax(60px, auto); /* Linhas um pouco mais altas */
+}
+
+/* ==================================================================
+   AJUSTE PARA VISIBILIDADE DO INPUT (Adicione ao seu CSS)
+   ================================================================== */
+
+/* Adiciona um espaço na parte inferior do body quando um teclado está ativo */
+body.keyboard-active {
+    padding-bottom: 300px; /* Ajuste este valor se o teclado for mais alto ou mais baixo */
+    transition: padding-bottom 0.3s ease-in-out;
+}
+
+
+
+
+
+.vk{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px}
+  .vk button{width:48px;height:48px;font-size:18px;border:1px solid #ccc;border-radius:6px;background:#f5f5f5;cursor:pointer}
+  .vk-action{background:#dfeaff;width:auto;padding:0 12px}
+  .vk.hidden{display:none}

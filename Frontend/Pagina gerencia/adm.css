@@ -1017,3 +1017,146 @@ li.inactive .slider {
 
 
 
+
+/* Estilo para a página de chamados (chamados.css) */
+
+.chamados-container {
+    padding: 2rem;
+}
+
+.chamados-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.chamado-card {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.chamado-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.chamado-card .card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    color: #fff;
+}
+
+.chamado-card .card-header .fa-bell {
+    font-size: 1.5rem;
+}
+
+.chamado-card .mesa-nome {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.chamado-card .card-body {
+    padding: 1.25rem;
+    flex-grow: 1;
+}
+
+.chamado-card .horario {
+    font-size: 0.95rem;
+    color: #555;
+    margin: 0;
+}
+
+.chamado-card .card-footer {
+    padding: 1.25rem;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    text-align: center;
+}
+
+/* Estilo do botão de atendimento */
+.btn-atender {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-atender:hover {
+    background-color: #0056b3;
+}
+
+.btn-atender:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Estilos de Status */
+.chamado-card.pendente .card-header {
+    background: linear-gradient(135deg, #ffc107, #ff9800); /* Laranja/Amarelo para pendente */
+}
+
+.chamado-card.atendido .card-header {
+    background: linear-gradient(135deg, #28a745, #218838); /* Verde para atendido */
+}
+
+.chamado-card.atendido .card-footer {
+    font-weight: 600;
+    color: #28a745;
+    font-size: 1.1rem;
+}
+
+.empty-message {
+    grid-column: 1 / -1; /* Ocupa todas as colunas */
+    text-align: center;
+    font-size: 1.2rem;
+    color: #6c757d;
+    padding: 3rem;
+    background-color: #f8f9fa;
+    border-radius: 12px;
+}
+
+
+/* Estilos para o contador de notificação nos cards do dashboard */
+/* Adicionar em /Pagina gerencia/adm.css */
+
+.nav-card .card-icon {
+    position: relative; /* Necessário para posicionar o badge corretamente */
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -10px;
+    background-color: #dc3545; /* Vermelho de perigo */
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease-in-out;
+}
+
+.notification-badge.hidden {
+    transform: scale(0);
+    display: flex; /* Mantém o flex para a animação funcionar melhor */
+}

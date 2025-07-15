@@ -6,15 +6,69 @@
  *
  * Depende do objeto `Notificacao` fornecido por `notificacoes.js`.
  */
-
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Autenticação e Permissão ---
+    // --- Elementos do DOM ---
+    const logsTableBody = document.querySelector('#logs-table tbody');
+    const profileMenuBtn = document.getElementById('profile-menu-btn');
+    const profileDropdown = document.getElementById('profile-dropdown');
+    const logoutBtn = document.getElementById('logout-btn');
+    const dropdownUserName = document.getElementById('dropdown-user-name');
+    const dropdownUserRole = document.getElementById('dropdown-user-role');
+
+    // --- Verificação de Autenticação e Permissão ---
     const token = localStorage.getItem('authToken');
-    if (!token) {
+    const usuarioString = localStorage.getItem('usuario');
+
+    // 1. Verifica se o usuário está logado
+    if (!token || !usuarioString) {
         Notificacao.erro('Acesso Negado', 'Você precisa estar logado para acessar esta página.')
-            .then(() => window.location.href = '/login-gerencia');
-        return;
+            .then(() => {
+                window.location.href = '/login-gerencia';
+            });
+        return; // Interrompe a execução
     }
+
+    const usuario = JSON.parse(usuarioString);
+if (dropdownUserName) dropdownUserName.textContent = usuario.nome;
+if (dropdownUserRole) dropdownUserRole.textContent = usuario.nivel_acesso;
+
+
+profileMenuBtn.addEventListener('click', () => {
+    profileDropdown.classList.toggle('hidden');
+});
+
+// Fecha o menu de perfil se o usuário clicar fora dele
+window.addEventListener('click', (e) => {
+    if (!profileMenuBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
+        profileDropdown.classList.add('hidden');
+    }
+});
+
+logoutBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    
+    // Pede confirmação antes de fazer o logout
+    const confirmado = await Notificacao.confirmar('Sair do Sistema', 'Você tem certeza que deseja fazer logout?');
+    
+    if (confirmado) {
+        fazerLogout();
+    }
+});
+
+function fazerLogout() {
+    // 1. Limpa os dados da sessão de gerência do armazenamento local.
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('usuario');
+    
+    // 2. Mostra a notificação de sucesso para o usuário.
+    Notificacao.sucesso('Logout realizado com sucesso!');
+
+    // 3. Aguarda um curto período (1.5 segundos) e DEPOIS redireciona.
+    setTimeout(() => {
+        window.location.href = '/login-gerencia';
+    }, 1500); // 1500 milissegundos = 1.5 segundos
+}
+
 
     // --- Elementos do DOM ---
     const listaMesas = document.getElementById('lista-mesas');
@@ -318,6 +372,55 @@ document.addEventListener('DOMContentLoaded', () => {
     editModalCloseBtn.addEventListener('click', () => editModal.classList.add('hidden'));
     editModal.addEventListener('click', (e) => { if (e.target === editModal) editModal.classList.add('hidden'); });
 
+     // ==================================================================
+    // --- NOVA SEÇÃO: CONEXÃO WEBSOCKET PARA NOTIFICAÇÕES EM TEMPO REAL ---
+    // ==================================================================
+    function conectarWebSocket() {
+        // Constrói a URL do WebSocket de forma segura (ws:// ou wss://)
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}`;
+        const ws = new WebSocket(wsUrl );
+
+        ws.onopen = () => {
+            console.log('Conexão WebSocket estabelecida para a gerência.');
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const mensagem = JSON.parse(event.data);
+
+                // Filtra e trata apenas as mensagens do tipo 'CHAMADO_GARCOM'
+                if (mensagem.type === 'CHAMADO_GARCOM') {
+                    // Usa o SweetAlert2 para uma notificação mais impactante
+                   Swal.fire({
+                            title: '<strong>Chamado!</strong>',
+                            html: `<h2>A <strong>${mensagem.nomeMesa}</strong> está solicitando atendimento.</h2>`,
+                            icon: 'warning', // Ícone mais chamativo (aviso)
+                            confirmButtonText: 'OK, Entendido!', // Texto do botão de confirmação
+                            allowOutsideClick: false, // Impede que o alerta seja fechado ao clicar fora dele
+                            allowEscapeKey: false, // Impede que o alerta seja fechado com a tecla 'Esc'
+                            // Removemos as opções 'toast', 'position', 'timer' e 'timerProgressBar'
+                        });
+                  
+                }
+            } catch (error) {
+                console.error('Erro ao processar mensagem WebSocket:', error);
+            }
+        };
+
+        ws.onclose = () => {
+            console.log('Conexão WebSocket fechada. Tentando reconectar em 5 segundos...');
+            // Tenta reconectar automaticamente em caso de queda
+            setTimeout(conectarWebSocket, 5000);
+        };
+
+        ws.onerror = (error) => {
+            console.error('Erro no WebSocket:', error);
+            ws.close(); // Fecha a conexão para acionar o 'onclose' e a tentativa de reconexão
+        };
+    }
+
     // --- INICIALIZAÇÃO ---
+   conectarWebSocket();
     carregarMesas();
 });

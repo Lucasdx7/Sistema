@@ -2,18 +2,13 @@
  * ==================================================================
  * SCRIPT DA PÁGINA DA CONTA DO CLIENTE (conta_cliente.html)
  * ==================================================================
- * Exibe o resumo dos pedidos da sessão atual e permite o logout.
+ * Exibe o resumo dos pedidos, permite o logout e o chamado de garçom.
  *
- * Depende do objeto `Notificacao` fornecido por `notificacoes.js` (versão cliente).
+ * Depende do objeto `Notificacao` fornecido por `notificacoes.js`.
  */
 
-/**
- * Agrupa uma lista de pedidos por produto, status E observação.
- * Itens com observações diferentes serão listados separadamente.
- * @param {Array} pedidos - A lista de pedidos vinda da API.
- * @returns {Array} - Uma lista de itens agrupados.
- */
 function agruparPedidos(pedidos) {
+    // ... (função agruparPedidos permanece a mesma)
     if (!pedidos || pedidos.length === 0) return [];
     const itensAgrupados = {};
     pedidos.forEach(pedido => {
@@ -51,15 +46,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutModal = document.getElementById('logout-modal');
     const closeModalBtn = document.getElementById('close-modal-btn');
     const logoutForm = document.getElementById('logout-form');
+    
+    // ==================================================
+    // NOVO ELEMENTO DO DOM
+const chamarGarcomBtn = document.querySelector('.call-waiter-btn');
+
+    // ==================================================
 
     // --- Preenche os detalhes do cliente ---
     if (clienteNomeEl) clienteNomeEl.textContent = dadosCliente?.nome || 'Cliente';
     if (clienteMesaEl) clienteMesaEl.textContent = nomeMesa || 'Mesa';
 
-    /**
-     * Carrega os dados da conta da API e renderiza na tela.
-     */
+    // --- Funções ---
+
     async function carregarConta() {
+        // ... (função carregarConta permanece a mesma)
         listaPedidos.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Carregando sua conta...</p>';
         try {
             const response = await fetch(`/api/sessoes/${sessaoId}/conta`, {
@@ -109,19 +110,60 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // ==================================================
+    // NOVA FUNÇÃO PARA CHAMAR O GARÇOM
+    // ==================================================
+    async function chamarGarcom() {
+        // Desabilita o botão para evitar múltiplos cliques
+        chamarGarcomBtn.disabled = true;
+        chamarGarcomBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Chamando...';
+
+        try {
+            const response = await fetch('/api/mesas/chamar-garcom', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+                // Não precisamos enviar corpo (body), pois o token já identifica a mesa.
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.message || 'Não foi possível completar a chamada.');
+            }
+
+            // Notifica o cliente que a chamada foi feita com sucesso.
+            Notificacao.sucesso('Chamado Enviado!', 'Um garçom foi notificado e virá até sua mesa em breve.');
+
+        } catch (error) {
+            Notificacao.erro('Falha na Chamada', error.message);
+        } finally {
+            // Reabilita o botão após 10 segundos para evitar spam
+            setTimeout(() => {
+                chamarGarcomBtn.disabled = false;
+                chamarGarcomBtn.innerHTML = '<i class="fas fa-bell"></i> Chamar Garçom';
+            }, 10000); // 10 segundos de cooldown
+        }
+    }
+    // ==================================================
+
     // --- Lógica do Modal de Logout ---
     function fecharModalLogout() {
+        // ... (função fecharModalLogout permanece a mesma)
         logoutModal.classList.add('hidden');
         logoutForm.reset();
     }
 
     hiddenButton.addEventListener('click', () => {
+        // ... (lógica do botão de logout permanece a mesma)
         logoutModal.classList.remove('hidden');
     });
 
     closeModalBtn.addEventListener('click', fecharModalLogout);
 
     logoutForm.addEventListener('submit', async (e) => {
+        // ... (lógica do formulário de logout permanece a mesma)
         e.preventDefault();
         const submitButton = logoutForm.querySelector('button[type="submit"]');
         const usuarioMesa = document.getElementById('mesa-usuario').value;
@@ -135,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
 
         try {
-            // 1. Autentica as credenciais da mesa para autorizar o fechamento
             const authResponse = await fetch('/auth/login-cliente', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -144,7 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const authResult = await authResponse.json();
             if (!authResponse.ok) throw new Error(authResult.message);
 
-            // 2. Se a autenticação for bem-sucedida, fecha a conta
             const closeResponse = await fetch(`/api/sessoes/${sessaoId}/fechar`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -152,29 +192,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const closeResult = await closeResponse.json();
             if (!closeResponse.ok) throw new Error(closeResult.message);
 
-            // 3. Limpa tudo e redireciona com notificação de sucesso
-          // Trecho corrigido em conta_cliente.js
-            // 3. Limpa APENAS os dados da sessão do cliente e redireciona
-            localStorage.removeItem('token');       // Token do cliente
-            localStorage.removeItem('sessaoId');    // ID da sessão do cliente
-            localStorage.removeItem('mesaId');      // ID da mesa do cliente
-            localStorage.removeItem('nomeMesa');    // Nome da mesa do cliente
-            localStorage.removeItem('dadosCliente'); // Dados do cliente
-            localStorage.removeItem('carrinho');    // Carrinho de compras
+            localStorage.removeItem('token');
+            localStorage.removeItem('sessaoId');
+            localStorage.removeItem('mesaId');
+            localStorage.removeItem('nomeMesa');
+            localStorage.removeItem('dadosCliente');
+            localStorage.removeItem('carrinho');
 
-            // Mostra a notificação de sucesso
             Notificacao.sucesso('Sessão Encerrada!', 'Obrigado pela preferência e volte sempre.');
 
-            // Aguarda 2.5 segundos e então redireciona para a página de login
             setTimeout(() => {
                 window.location.href = '/login';
             }, 2500);
 
-
         } catch (error) {
             Notificacao.erro('Falha no Logout', error.message);
         } finally {
-            // Reabilita o botão em caso de falha para permitir nova tentativa
             submitButton.disabled = false;
             submitButton.innerHTML = 'Confirmar e Sair';
         }
@@ -182,4 +215,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Inicialização ---
     carregarConta();
+    
+    // ==================================================
+    // NOVO EVENT LISTENER
+    if (chamarGarcomBtn) {
+        chamarGarcomBtn.addEventListener('click', chamarGarcom);
+    }
+    // ==================================================
 });

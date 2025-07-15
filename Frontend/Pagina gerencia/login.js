@@ -101,3 +101,55 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+
+ // ==================================================================
+    // --- NOVA SEÇÃO: CONEXÃO WEBSOCKET PARA NOTIFICAÇÕES EM TEMPO REAL ---
+    // ==================================================================
+    function conectarWebSocket() {
+        // Constrói a URL do WebSocket de forma segura (ws:// ou wss://)
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}`;
+        const ws = new WebSocket(wsUrl );
+
+        ws.onopen = () => {
+            console.log('Conexão WebSocket estabelecida para a gerência.');
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const mensagem = JSON.parse(event.data);
+
+                // Filtra e trata apenas as mensagens do tipo 'CHAMADO_GARCOM'
+                if (mensagem.type === 'CHAMADO_GARCOM') {
+                    // Usa o SweetAlert2 para uma notificação mais impactante
+                   Swal.fire({
+                            title: '<strong>Chamado!</strong>',
+                            html: `<h2>A <strong>${mensagem.nomeMesa}</strong> está solicitando atendimento.</h2>`,
+                            icon: 'warning', // Ícone mais chamativo (aviso)
+                            confirmButtonText: 'OK, Entendido!', // Texto do botão de confirmação
+                            allowOutsideClick: false, // Impede que o alerta seja fechado ao clicar fora dele
+                            allowEscapeKey: false, // Impede que o alerta seja fechado com a tecla 'Esc'
+                            // Removemos as opções 'toast', 'position', 'timer' e 'timerProgressBar'
+                        });
+                  
+                }
+            } catch (error) {
+                console.error('Erro ao processar mensagem WebSocket:', error);
+            }
+        };
+
+        ws.onclose = () => {
+            console.log('Conexão WebSocket fechada. Tentando reconectar em 5 segundos...');
+            // Tenta reconectar automaticamente em caso de queda
+            setTimeout(conectarWebSocket, 5000);
+        };
+
+        ws.onerror = (error) => {
+            console.error('Erro no WebSocket:', error);
+            ws.close(); // Fecha a conexão para acionar o 'onclose' e a tentativa de reconexão
+        };
+    }
+
+    // --- INICIALIZAÇÃO ---
+   conectarWebSocket();

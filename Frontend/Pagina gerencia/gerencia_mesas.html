@@ -10,11 +10,29 @@
 </head>
 <body>
     <div class="dashboard-container">
-        <header class="main-header">
-            <a href="/gerencia-home" class="back-button" title="Voltar ao Painel">
+         <header class="dashboard-header">
+            <a href="/gerencia-home" class="back-button">
                 <i class="fas fa-arrow-left"></i>
             </a>
-            <h1>Gerenciamento de Mesas</h1>
+            <div class="header-title">
+                <h1>Gerenciamento de Mesas</h1>
+                
+            </div>
+            <div class="profile-menu">
+                <button id="profile-menu-btn" class="profile-menu-button">
+                    <i class="fas fa-user-circle"></i>
+                </button>
+                <div id="profile-dropdown" class="profile-dropdown hidden">
+                    <div class="dropdown-header">
+                        <strong id="dropdown-user-name">Nome do Usuário</strong>
+                        <span id="dropdown-user-role">Nível de Acesso</span>
+                    </div>
+                    <a href="#" id="logout-btn" class="dropdown-item">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Sair
+                    </a>
+                </div>
+            </div>
         </header>
 
         <div class="main-content-split">

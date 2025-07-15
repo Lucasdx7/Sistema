@@ -38,19 +38,36 @@
                 <p>Adicione, remova ou edite categorias e produtos do cardápio em tempo real.</p>
                 <div class="card-footer"><span>Acessar</span><i class="fas fa-arrow-right"></i></div>
             </a>
-            <a href="/logs" class="nav-card card-logs permissao-geral">
-                <div class="card-icon"><i class="fas fa-history"></i></div>
-                <h2>Logs do Sistema</h2>
-                <p>Visualize o histórico de todas as alterações importantes feitas pelos gerentes no sistema.</p>
-                <div class="card-footer"><span>Acessar</span><i class="fas fa-arrow-right"></i></div>
-            </a>
             <a href="/gerencia-mesas" class="nav-card card-mesas permissao-geral">
                 <div class="card-icon"><i class="fas fa-tablet-alt"></i></div>
                 <h2>Gerenciar Mesas</h2>
                 <p>Adicione, remova e visualize os logins de acesso para os tablets das mesas.</p>
                 <div class="card-footer"><span>Acessar</span><i class="fas fa-arrow-right"></i></div>
             </a>
+            
+            <!-- ================================================== -->
+            <!-- NOVO CARD DE CHAMADOS DE GARÇOM ADICIONADO AQUI      -->
+            <!-- ================================================== -->
+            <!-- Em /Pagina gerencia/gerencia-home.html -->
+                <a href="/chamados" class="nav-card card-chamados permissao-geral">
+                    <div class="card-icon">
+                        <i class="fas fa-bell"></i>
+                        <!-- O contador de notificação -->
+                        <span id="chamados-count-badge" class="notification-badge hidden">0</span>
+                    </div>
+                    <h2>Chamados de Garçom</h2>
+                    <p>Acompanhe em tempo real as mesas que estão solicitando atendimento.</p>
+                    <div class="card-footer"><span>Acessar</span><i class="fas fa-arrow-right"></i></div>
+                </a>
 
+            <!-- ================================================== -->
+
+            <a href="/logs" class="nav-card card-logs permissao-geral">
+                <div class="card-icon"><i class="fas fa-history"></i></div>
+                <h2>Logs do Sistema</h2>
+                <p>Visualize o histórico de todas as alterações importantes feitas no sistema.</p>
+                <div class="card-footer"><span>Acessar</span><i class="fas fa-arrow-right"></i></div>
+            </a>
             <a href="#" class="nav-card card-pedidos disabled">
                 <div class="card-icon"><i class="fas fa-receipt"></i></div>
                 <h2>Acompanhar Pedidos</h2>
@@ -60,25 +77,20 @@
             <a href="#" class="nav-card card-relatorios disabled permissao-geral">
                 <div class="card-icon"><i class="fas fa-chart-line"></i></div>
                 <h2>Relatórios de Vendas</h2>
-                <p>Analise o desempenho de vendas, veja os produtos mais vendidos e obtenha insights valiosos.</p>
+                <p>Analise o desempenho de vendas e obtenha insights valiosos.</p>
                 <div class="card-footer"><span class="em-breve-tag">Em breve</span><i class="fas fa-arrow-right"></i></div>
             </a>
-            <!-- CARD DE LOGS REMOVIDO -->
             <a href="#" class="nav-card card-config disabled permissao-geral">
                 <div class="card-icon"><i class="fas fa-cog"></i></div>
                 <h2>Configurações</h2>
-                <p>Gerencie usuários, defina horários de funcionamento e outras configurações gerais do sistema.</p>
+                <p>Gerencie usuários, horários de funcionamento e outras configurações gerais.</p>
                 <div class="card-footer"><span class="em-breve-tag">Em breve</span><i class="fas fa-arrow-right"></i></div>
             </a>
         </nav>
     </div>
 
-     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-
-    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script src="../Pagina gerencia/notificacoes.js"></script>
-
-
     <script src="../Pagina gerencia/gerencia-home.js"></script>
 </body>
 </html>

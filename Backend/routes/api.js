@@ -813,5 +813,99 @@ router.get('/sessoes/:id/info', checarUsuarioParaLog, async (req, res) => {
     }
 });
 
+// Em /Backend/routes/api.js
+
+// SUBSTITUA a rota /mesas/chamar-garcom por esta:
+router.post('/mesas/chamar-garcom', checarUsuarioParaLog, async (req, res) => {
+    if (!req.broadcast) {
+        return res.status(500).json({ message: 'Erro de comunicação interna.' });
+    }
+
+    try {
+        const idMesa = req.usuario.id;
+        const nomeMesa = req.usuario.nome_usuario;
+
+        if (!idMesa || !nomeMesa) {
+            return res.status(400).json({ message: 'Não foi possível identificar a mesa.' });
+        }
+
+        // --- NOVA LÓGICA: INSERIR O CHAMADO NO BANCO DE DADOS ---
+        const sql = 'INSERT INTO chamados (id_mesa, nome_mesa) VALUES (?, ?)';
+        const result = await query(sql, [idMesa, nomeMesa]);
+        const novoChamadoId = result.insertId;
+        // ---------------------------------------------------------
+
+        const mensagem = {
+            type: 'CHAMADO_GARCOM',
+            id: novoChamadoId, // Envia o ID do novo chamado
+            nomeMesa: nomeMesa,
+            timestamp: new Date().toISOString()
+        };
+
+        req.broadcast(mensagem);
+
+        res.status(200).json({ message: 'Chamado enviado com sucesso!' });
+
+    } catch (error) {
+        console.error(`Erro ao processar chamado da mesa ${req.usuario.id}:`, error);
+        res.status(500).json({ message: 'Ocorreu um erro no servidor ao processar sua chamada.' });
+    }
+});
+
+
+// Em /Backend/routes/api.js
+
+// --- NOVAS ROTAS PARA A PÁGINA DE CHAMADOS ---
+
+// GET /api/chamados - Busca todos os chamados do dia
+router.get('/chamados', checarUsuarioParaLog, async (req, res) => {
+    try {
+        // Busca chamados feitos no dia de hoje (a partir da meia-noite)
+        const sql = "SELECT * FROM chamados WHERE DATE(data_hora) = CURDATE() ORDER BY data_hora DESC";
+        const chamados = await query(sql);
+        res.json(chamados);
+    } catch (error) {
+        console.error("Erro ao buscar chamados:", error);
+        res.status(500).json({ message: 'Erro no servidor ao buscar chamados.' });
+    }
+});
+
+// PATCH /api/chamados/:id/atender - Marca um chamado como atendido
+router.patch('/chamados/:id/atender', checarUsuarioParaLog, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const sql = "UPDATE chamados SET status = 'atendido' WHERE id = ? AND status = 'pendente'";
+        const result = await query(sql, [id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Chamado não encontrado ou já atendido.' });
+        }
+
+        res.json({ message: 'Chamado marcado como atendido com sucesso!' });
+    } catch (error) {
+        console.error(`Erro ao atender chamado ID ${id}:`, error);
+        res.status(500).json({ message: 'Erro no servidor ao atender chamado.' });
+    }
+});
+
+
+// Em /Backend/routes/api.js
+
+// GET /api/chamados/pendentes/count - Retorna apenas a contagem de chamados pendentes
+router.get('/chamados/pendentes/count', checarUsuarioParaLog, async (req, res) => {
+    try {
+        const sql = "SELECT COUNT(id) AS count FROM chamados WHERE status = 'pendente' AND DATE(data_hora) = CURDATE()";
+        const [result] = await query(sql);
+        res.json(result); // Retorna um objeto como { count: 5 }
+    } catch (error) {
+        console.error("Erro ao contar chamados pendentes:", error);
+        res.status(500).json({ message: 'Erro no servidor.' });
+    }
+});
+
+
+
+
+
 
 module.exports = router;

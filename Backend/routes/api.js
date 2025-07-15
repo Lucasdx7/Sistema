@@ -525,61 +525,55 @@ router.post('/sessoes/:id/fechar', checarUsuarioParaLog, async (req, res) => {
 // ==================================================================
 
 // ROTA DE PEDIDOS ATUALIZADA
+
+
+// ROTA DE PEDIDOS ATUALIZADA para incluir o status 'pendente'
+// Verifique se sua rota está exatamente assim
 router.post('/pedidos', checarUsuarioParaLog, async (req, res) => {
-    // 1. Extrai o array 'pedidos' do corpo da requisição.
     const { pedidos } = req.body;
 
-    // 2. Validação robusta dos dados recebidos.
     if (!Array.isArray(pedidos) || pedidos.length === 0) {
         return res.status(400).json({ message: 'O corpo da requisição deve conter um array de pedidos.' });
     }
 
-    // Valida cada item individualmente antes de tentar inserir no banco.
     for (const pedido of pedidos) {
-        if (
-            !pedido.id_mesa || 
-            !pedido.id_sessao || 
-            !pedido.id_produto || 
-            pedido.quantidade === undefined || 
-            pedido.preco_unitario === undefined
-        ) {
-            // Se qualquer item for inválido, rejeita a requisição inteira.
-            return res.status(400).json({ message: 'Dados do pedido incompletos ou inválidos. Verifique todos os itens.' });
+        if (!pedido.id_mesa || !pedido.id_sessao || !pedido.id_produto || pedido.quantidade === undefined || pedido.preco_unitario === undefined) {
+            return res.status(400).json({ message: 'Dados do pedido incompletos ou inválidos.' });
         }
     }
 
     try {
-        // 3. Mapeia o array de pedidos para um array de "promessas" de inserção.
         const promessasDePedidos = pedidos.map(pedido => {
-            const sql = 'INSERT INTO pedidos (id_sessao, id_produto, quantidade, preco_unitario, observacao) VALUES (?, ?, ?, ?, ?)';
+            // A query DEVE incluir a coluna 'status'
+            const sql = 'INSERT INTO pedidos (id_sessao, id_produto, quantidade, preco_unitario, observacao, status) VALUES (?, ?, ?, ?, ?, ?)';
             const params = [
                 pedido.id_sessao,
                 pedido.id_produto,
                 pedido.quantidade,
                 pedido.preco_unitario,
-                pedido.observacao || null // Garante que observação seja nula se não for fornecida
+                pedido.observacao || null,
+                'pendente' // E o valor 'pendente' DEVE ser passado aqui
             ];
             return query(sql, params);
         });
 
-        // 4. Executa todas as inserções. O Promise.all garante que todas sejam concluídas.
         await Promise.all(promessasDePedidos);
 
-        // 5. Envia uma notificação para a cozinha (se o sistema de broadcast estiver configurado)
         if (req.broadcast) {
             req.broadcast({ type: 'NOVO_PEDIDO' });
         }
 
-        // 6. Retorna sucesso.
         res.status(201).json({ message: 'Pedido recebido e enviado para a cozinha com sucesso!' });
 
     } catch (error) {
         console.error('Falha crítica ao inserir pedidos em lote:', error);
-        // Registra o erro para depuração futura.
         registrarLog(req.usuario.id, req.usuario.nome_usuario, 'ERRO_PEDIDO', `Falha ao registrar pedido em lote. Erro: ${error.message}`);
         res.status(500).json({ message: 'Erro interno no servidor ao tentar salvar o pedido.' });
     }
 });
+
+
+
 
 
 // ==================================================================
@@ -1128,5 +1122,125 @@ router.delete('/chamados/limpar-atendidos', checarPermissaoRelatorios, async (re
 
 
 
+router.get('/pedidos-ativos', checarUsuarioParaLog, async (req, res) => {
+    // Proteção de Nível de Acesso
+    if (req.usuario.nivel_acesso !== 'geral') {
+        return res.status(403).json({ message: 'Acesso negado. Rota exclusiva para a gerência.' });
+    }
+
+    try {
+        // Query aprimorada para incluir sessões sem pedidos e mais detalhes dos itens.
+        const sql = `
+            SELECT 
+                sc.id AS sessao_id,
+                sc.id_mesa AS mesa_id,
+                sc.nome_cliente,
+                m.nome_usuario AS nome_mesa,
+                -- Calcula o total apenas de itens não cancelados
+                (
+                    SELECT SUM(p.quantidade * p.preco_unitario) 
+                    FROM pedidos p 
+                    WHERE p.id_sessao = sc.id AND p.status != 'cancelado'
+                ) AS total,
+                -- Subquery para buscar os itens com TODOS os detalhes pedidos
+                (
+                    SELECT JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'pedido_item_id', p.id, -- ID do item específico no pedido
+                            'nome_produto', prod.nome, 
+                            'quantidade', p.quantidade,
+                            'observacao', p.observacao, -- << NOVA INFORMAÇÃO
+                            'categoria', cat.nome,     -- << NOVA INFORMAÇÃO
+                            'status', p.status          -- << NOVA INFORMAÇÃO (entregue, pendente)
+                        )
+                    )
+                    FROM pedidos p
+                    JOIN produtos prod ON p.id_produto = prod.id
+                    JOIN categorias cat ON prod.id_categoria = cat.id -- << NOVO JOIN
+                    WHERE p.id_sessao = sc.id AND p.status != 'cancelado'
+                ) AS itens
+            FROM sessoes_cliente sc
+            JOIN mesas m ON sc.id_mesa = m.id
+            WHERE sc.status = 'ativa' -- Pega todas as sessões ativas
+            ORDER BY sc.data_inicio ASC; -- Ordena pelas mais antigas primeiro
+        `;
+
+        const sessoesAtivas = await query(sql);
+
+        // Formata a resposta final
+        const sessoesFormatadas = sessoesAtivas.map(sessao => ({
+            ...sessao,
+            total: parseFloat(sessao.total) || 0,
+            // Se 'itens' for nulo (sessão sem pedidos), retorna um array vazio.
+            itens: sessao.itens || [] 
+        }));
+
+        res.status(200).json(sessoesFormatadas);
+
+    } catch (dbError) {
+        console.error('Erro ao buscar pedidos ativos:', dbError);
+        res.status(500).json({ message: 'Erro interno do servidor ao consultar os pedidos.' });
+    }
+});
+
+
+// ==================================================================
+// --- ROTA PARA MARCAR UM ITEM DE PEDIDO COMO ENTREGUE ---
+// ==================================================================
+router.patch('/pedidos/:id/entregar', checarUsuarioParaLog, async (req, res) => {
+    const { id } = req.params; // id do item específico do pedido
+
+    try {
+        const sql = "UPDATE pedidos SET status = 'entregue' WHERE id = ? AND status = 'pendente'";
+        const result = await query(sql, [id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Item do pedido não encontrado ou já foi entregue.' });
+        }
+
+        // Notifica todos os painéis para se atualizarem
+        if (req.broadcast) {
+            req.broadcast({ type: 'PEDIDO_ATUALIZADO' });
+        }
+
+        res.json({ message: 'Item marcado como entregue!' });
+
+    } catch (error) {
+        console.error(`Erro ao marcar item ${id} como entregue:`, error);
+        res.status(500).json({ message: 'Erro no servidor ao atualizar o item.' });
+    }
+});
+
+
+
+// ==================================================================
+// --- ROTA PARA CONTAR ITENS DE PEDIDOS PENDENTES ---
+// ==================================================================
+router.get('/pedidos/pendentes/count', checarUsuarioParaLog, async (req, res) => {
+    // Garante que apenas a gerência possa acessar esta informação
+    if (req.usuario.nivel_acesso !== 'geral') {
+        return res.status(403).json({ message: 'Acesso negado.' });
+    }
+
+    try {
+        // Query SQL que conta todos os registros na tabela 'pedidos'
+        // onde o status é 'pendente' e que pertencem a uma sessão 'ativa'.
+        const sql = `
+            SELECT COUNT(p.id) AS count 
+            FROM pedidos p
+            JOIN sessoes_cliente sc ON p.id_sessao = sc.id
+            WHERE p.status = 'pendente' AND sc.status = 'ativa';
+        `;
+        
+        const [result] = await query(sql);
+        
+        // Retorna o resultado no mesmo formato da contagem de chamados, ex: { count: 3 }
+        res.json(result); 
+
+    } catch (error) {
+        console.error("Erro ao contar pedidos pendentes:", error);
+        res.status(500).json({ message: 'Erro no servidor ao contar pedidos.' });
+    }
+});
 
 module.exports = router;

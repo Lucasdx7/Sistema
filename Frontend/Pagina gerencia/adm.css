@@ -1374,3 +1374,45 @@ li.inactive .slider {
         justify-content: center; /* Centraliza o conteúdo do botão */
     }
 }
+
+
+
+/* No seu arquivo CSS (ex: pedidos.css) */
+
+/* Garante que o contêiner principal ocupe o espaço restante na tela */
+.pedidos-container {
+    display: grid; /* Você já deve ter isso */
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); /* Você já deve ter isso */
+    gap: 25px; /* Você já deve ter isso */
+    padding: 25px; /* Você já deve ter isso */
+
+    /* --- ADICIONE ESTAS LINHAS --- */
+    flex-grow: 1; /* Faz o main crescer para ocupar o espaço vertical disponível */
+    width: 100%;  /* Garante que ele ocupe toda a largura */
+    align-content: flex-start; /* Alinha os cards no topo quando há espaço sobrando */
+}
+
+/* Garante que a mensagem de "sem sessões" seja visível quando não estiver escondida */
+.mensagem-sem-sessoes {
+    grid-column: 1 / -1; /* Ocupa toda a largura da grid */
+    text-align: center;
+    padding: 50px;
+    color: #6c757d;
+    
+    /* --- ADICIONE ESTA LINHA PARA GARANTIR --- */
+    display: block; /* Garante que o elemento seja um bloco visível por padrão */
+}
+
+/* A classe .hidden é a única que deve esconder a mensagem */
+.mensagem-sem-sessoes.hidden {
+    display: none !important; /* Usa !important para garantir que nada sobreponha esta regra */
+}
+
+/* Adicione isso ao seu CSS principal (ex: adm.css) para garantir a estrutura da página */
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Garante que o container principal ocupe pelo menos toda a altura da tela */
+}
+
+

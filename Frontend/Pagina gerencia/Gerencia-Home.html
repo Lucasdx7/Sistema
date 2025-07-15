@@ -69,11 +69,15 @@
                 <div class="card-footer"><span>Acessar</span><i class="fas fa-arrow-right"></i></div>
             </a>
 
-            <a href="#" class="nav-card card-pedidos disabled">
-                <div class="card-icon"><i class="fas fa-receipt"></i></div>
+            <a href="/acompanhar" class="nav-card card-pedidos permissao-geral">
+                <div class="card-icon">
+                    <i class="fas fa-receipt"></i>
+                    <!-- O contador de notificação para pedidos -->
+                    <span id="pedidos-count-badge" class="notification-badge hidden">0</span>
+                </div>
                 <h2>Acompanhar Pedidos</h2>
                 <p>Visualize os pedidos em andamento, controle o status e gerencie as entregas.</p>
-                <div class="card-footer"><span class="em-breve-tag">Em breve</span><i class="fas fa-arrow-right"></i></div>
+                <div class="card-footer"><span>Acessar</span><i class="fas fa-arrow-right"></i></div>
             </a>
 
             <a href="/relatorios" class="nav-card card-logs permissao-geral">

@@ -1,6 +1,7 @@
 /**
  * ==================================================================
  * SCRIPT DA PÁGINA INICIAL DA GERÊNCIA (Gerencia-Home.html)
+ * VERSÃO COMPLETA E ATUALIZADA
  * ==================================================================
  */
 
@@ -11,8 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logout-btn');
     const dropdownUserName = document.getElementById('dropdown-user-name');
     const dropdownUserRole = document.getElementById('dropdown-user-role');
-    // Novo elemento para o contador
     const chamadosBadge = document.getElementById('chamados-count-badge');
+    const pedidosBadge = document.getElementById('pedidos-count-badge'); // Badge para pedidos
 
     // --- Autenticação ---
     const token = localStorage.getItem('authToken');
@@ -27,6 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Funções ---
 
+    /**
+     * Realiza o logout do usuário, limpando o localStorage e redirecionando.
+     */
     function fazerLogout() {
         localStorage.removeItem('authToken');
         localStorage.removeItem('usuario');
@@ -34,6 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => window.location.href = '/login-gerencia', 1500);
     }
 
+    /**
+     * Configura a visibilidade dos cards com base no nível de acesso do usuário.
+     * @param {string} nivelAcesso - O nível de acesso do usuário ('geral', etc.).
+     */
     function configurarDashboard(nivelAcesso) {
         const elementosGerais = document.querySelectorAll('.permissao-geral');
         if (nivelAcesso !== 'geral') {
@@ -41,22 +49,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /**
+     * Preenche as informações do usuário no menu de perfil.
+     * @param {object} usuario - O objeto do usuário logado.
+     */
     function preencherPerfil(usuario) {
         if (dropdownUserName) dropdownUserName.textContent = usuario.nome;
         if (dropdownUserRole) dropdownUserRole.textContent = usuario.nivel_acesso;
     }
 
     /**
-     * Busca a contagem de chamados pendentes e atualiza o badge.
+     * Busca a contagem de chamados de garçom pendentes e atualiza o badge.
      */
     async function atualizarContadorChamados() {
-        if (!chamadosBadge) return; // Se não houver badge na página, não faz nada
+        if (!chamadosBadge) return; // Se o elemento não existir, não faz nada
 
         try {
             const response = await fetch('/api/chamados/pendentes/count', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (!response.ok) return; // Falha silenciosamente para não incomodar o usuário
+            if (!response.ok) return; // Falha silenciosamente
 
             const data = await response.json();
             const count = data.count || 0;
@@ -73,7 +85,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Conecta ao WebSocket para notificações em tempo real.
+     * Busca a contagem de itens de pedidos pendentes e atualiza o badge.
+     */
+    async function atualizarContadorPedidos() {
+        if (!pedidosBadge) return; // Se o elemento não existir, não faz nada
+
+        try {
+            const response = await fetch('/api/pedidos/pendentes/count', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) return; // Falha silenciosamente
+
+            const data = await response.json();
+            const count = data.count || 0;
+
+            pedidosBadge.textContent = count;
+            if (count > 0) {
+                pedidosBadge.classList.remove('hidden');
+            } else {
+                pedidosBadge.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error("Erro ao atualizar contador de pedidos:", error);
+        }
+    }
+
+    /**
+     * Conecta ao WebSocket para receber notificações e atualizar a UI em tempo real.
      */
     function conectarWebSocket() {
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -83,42 +121,66 @@ document.addEventListener('DOMContentLoaded', () => {
         ws.onmessage = (event) => {
             try {
                 const mensagem = JSON.parse(event.data);
-                if (mensagem.type === 'CHAMADO_GARCOM') {
-                    // ATUALIZAÇÃO: Ao receber um novo chamado, atualiza o contador
-                    atualizarContadorChamados(); 
+
+                // Lida com diferentes tipos de notificações
+                switch (mensagem.type) {
+                    case 'CHAMADO_GARCOM':
+                        atualizarContadorChamados();
+                        Swal.fire({
+                            title: '<strong>Chamado!</strong>',
+                            html: `<h2>A <strong>${mensagem.nomeMesa}</strong> está solicitando atendimento.</h2>`,
+                            icon: 'warning',
+                            confirmButtonText: 'OK, Entendido!',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                        });
+                        break;
                     
-                    Swal.fire({
-                        title: '<strong>Chamado!</strong>',
-                        html: `<h2>A <strong>${mensagem.nomeMesa}</strong> está solicitando atendimento.</h2>`,
-                        icon: 'warning',
-                        confirmButtonText: 'OK, Entendido!',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                    });
+                    case 'NOVO_PEDIDO':
+                    case 'PEDIDO_ATUALIZADO':
+                    case 'PAGAMENTO_FINALIZADO':
+                        atualizarContadorPedidos();
+                        break;
                 }
             } catch (error) {
                 console.error('Erro ao processar mensagem WebSocket:', error);
             }
         };
-        ws.onclose = () => setTimeout(conectarWebSocket, 5000);
+
+        ws.onclose = () => {
+            console.log('Conexão WebSocket fechada. Tentando reconectar em 5 segundos...');
+            setTimeout(conectarWebSocket, 5000);
+        };
+
+        ws.onerror = (error) => {
+            console.error('Erro no WebSocket:', error);
+            ws.close();
+        };
     }
 
     // --- Event Listeners ---
     profileMenuBtn.addEventListener('click', () => profileDropdown.classList.toggle('hidden'));
+
     window.addEventListener('click', (e) => {
         if (!profileMenuBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
             profileDropdown.classList.add('hidden');
         }
     });
+
     logoutBtn.addEventListener('click', async (e) => {
         e.preventDefault();
         const confirmado = await Notificacao.confirmar('Sair do Sistema', 'Deseja mesmo sair?');
-        if (confirmado) fazerLogout();
+        if (confirmado) {
+            fazerLogout();
+        }
     });
 
     // --- Inicialização ---
     configurarDashboard(usuario.nivel_acesso);
     preencherPerfil(usuario);
     conectarWebSocket();
-    atualizarContadorChamados(); // Busca a contagem inicial ao carregar a página
+    
+    // Busca a contagem inicial dos dois contadores ao carregar a página
+    atualizarContadorChamados();
+    atualizarContadorPedidos();
 });

@@ -2,7 +2,8 @@
  * ==================================================================
  * SCRIPT DA PÁGINA DE CHAMADOS DE GARÇOM (chamados.html)
  * ==================================================================
- * Controla a exibição e gerenciamento dos chamados em tempo real.
+ * Controla a exibição e gerenciamento dos chamados em tempo real,
+ * incluindo a funcionalidade de limpar chamados atendidos.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,13 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logout-btn');
     const dropdownUserName = document.getElementById('dropdown-user-name');
     const dropdownUserRole = document.getElementById('dropdown-user-role');
+    const limparChamadosBtn = document.getElementById('limpar-chamados-btn');
 
     // --- Autenticação ---
     const token = localStorage.getItem('authToken');
     const usuarioString = localStorage.getItem('usuario');
 
     if (!token || !usuarioString) {
-        Notificacao.erro('Acesso Negado', 'Você precisa estar logado.')
+        Notificacao.erro('Acesso Negado', 'Você precisa estar logado para ver esta página.')
             .then(() => window.location.href = '/login-gerencia');
         return;
     }
@@ -41,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function criarCardChamado(chamado) {
         const data = new Date(chamado.data_hora);
-        const horarioFormatado = data.toLocaleTimeString('pt-BR');
+        const horarioFormatado = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const isAtendido = chamado.status === 'atendido';
 
         return `
@@ -68,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function carregarChamados() {
         try {
-            // NOTA: A rota '/api/chamados' ainda precisa ser criada no backend!
             const response = await fetch('/api/chamados', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -78,16 +79,22 @@ document.addEventListener('DOMContentLoaded', () => {
             chamadosGrid.innerHTML = ''; // Limpa a área
 
             if (chamados.length === 0) {
-                chamadosGrid.innerHTML = '<p class="empty-message">Nenhum chamado registrado hoje.</p>';
+                chamadosGrid.innerHTML = '<p class="empty-message">Nenhum chamado registrado no momento.</p>';
+                limparChamadosBtn.disabled = true; // Desabilita o botão se não há chamados
                 return;
             }
 
             // Ordena para que os pendentes apareçam primeiro
             chamados.sort((a, b) => (a.status === 'pendente' ? -1 : 1) - (b.status === 'pendente' ? -1 : 1));
 
+            let atendidosCount = 0;
             chamados.forEach(chamado => {
+                if (chamado.status === 'atendido') atendidosCount++;
                 chamadosGrid.innerHTML += criarCardChamado(chamado);
             });
+
+            // Habilita ou desabilita o botão de limpar com base na existência de chamados atendidos
+            limparChamadosBtn.disabled = atendidosCount === 0;
 
         } catch (error) {
             Notificacao.erro('Erro ao Carregar', error.message);
@@ -101,28 +108,51 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function atenderChamado(chamadoId) {
         try {
-            // NOTA: A rota PATCH '/api/chamados/:id' ainda precisa ser criada!
             const response = await fetch(`/api/chamados/${chamadoId}/atender`, {
                 method: 'PATCH',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!response.ok) throw new Error('Falha ao atualizar o status do chamado.');
 
-            // Atualiza a interface sem recarregar a página
-            const card = document.querySelector(`.chamado-card[data-id='${chamadoId}']`);
-            if (card) {
-                card.classList.remove('pendente');
-                card.classList.add('atendido');
-                const footer = card.querySelector('.card-footer');
-                footer.innerHTML = '<span><i class="fas fa-check-circle"></i> Atendido</span>';
-            }
             Notificacao.sucesso('Chamado atendido!');
+            carregarChamados(); // Recarrega a lista para atualizar o status e o botão de limpar
 
         } catch (error) {
             Notificacao.erro('Erro', error.message);
+            carregarChamados(); // Recarrega mesmo em caso de erro para reabilitar o botão
         }
     }
     
+    /**
+     * Limpa todos os chamados que já foram atendidos.
+     */
+    async function limparChamadosAtendidos() {
+        limparChamadosBtn.disabled = true;
+        limparChamadosBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Limpando...';
+
+        try {
+            // NOTA: A rota DELETE '/api/chamados/limpar-atendidos' precisa ser criada no backend!
+            const response = await fetch('/api/chamados/limpar-atendidos', {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) {
+                const erro = await response.json();
+                throw new Error(erro.message || 'Falha ao limpar os chamados.');
+            }
+
+            Notificacao.sucesso('Limpeza Concluída', 'Os chamados atendidos foram removidos.');
+            await carregarChamados(); // Atualiza a visualização
+
+        } catch (error) {
+            Notificacao.erro('Erro na Limpeza', error.message);
+        } finally {
+            limparChamadosBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Limpar Atendidos';
+            // A função carregarChamados() já vai reavaliar se o botão deve estar habilitado ou não.
+        }
+    }
+
     /**
      * Conecta ao WebSocket para receber novos chamados em tempo real.
      */
@@ -134,14 +164,14 @@ document.addEventListener('DOMContentLoaded', () => {
         ws.onmessage = (event) => {
             const mensagem = JSON.parse(event.data);
             if (mensagem.type === 'CHAMADO_GARCOM') {
-                // Ao receber um novo chamado, simplesmente recarrega a lista de cards
                 carregarChamados();
-                // E mostra o alerta modal
                 Swal.fire({
                     title: '<strong>Novo Chamado!</strong>',
                     html: `<h2>A <strong>${mensagem.nomeMesa}</strong> está solicitando atendimento.</h2>`,
                     icon: 'warning',
                     confirmButtonText: 'OK, Entendido!',
+                    timer: 10000, // Fecha automaticamente após 10 segundos
+                    timerProgressBar: true
                 });
             }
         };
@@ -151,12 +181,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Event Listeners ---
     if (dropdownUserName) dropdownUserName.textContent = usuario.nome;
     if (dropdownUserRole) dropdownUserRole.textContent = usuario.nivel_acesso;
+
     profileMenuBtn.addEventListener('click', () => profileDropdown.classList.toggle('hidden'));
+    
     window.addEventListener('click', (e) => {
         if (!profileMenuBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
             profileDropdown.classList.add('hidden');
         }
     });
+
     logoutBtn.addEventListener('click', async (e) => {
         e.preventDefault();
         const confirmado = await Notificacao.confirmar('Sair do Sistema', 'Deseja mesmo sair?');
@@ -172,6 +205,19 @@ document.addEventListener('DOMContentLoaded', () => {
             atenderBtn.disabled = true;
             atenderBtn.textContent = 'Aguarde...';
             atenderChamado(chamadoId);
+        }
+    });
+
+    // Event listener para o botão de limpar
+    limparChamadosBtn.addEventListener('click', async () => {
+        const confirmado = await Notificacao.confirmar(
+            'Limpar Chamados Atendidos',
+            'Deseja realmente remover o histórico de chamados atendidos? Esta ação não pode ser desfeita.',
+            'Sim, limpar agora'
+        );
+
+        if (confirmado) {
+            limparChamadosAtendidos();
         }
     });
 

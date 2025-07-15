@@ -1160,3 +1160,217 @@ li.inactive .slider {
     transform: scale(0);
     display: flex; /* Mantém o flex para a animação funcionar melhor */
 }
+
+
+
+/* ================================================== */
+/* ESTILOS DA PÁGINA DE RELATÓRIOS (relatorios.html)  */
+/* ================================================== */
+
+.relatorios-container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.relatorios-filtros {
+    background-color: #fff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 350px;
+}
+
+.relatorios-filtros label {
+    font-weight: 600;
+    color: #555;
+}
+
+.relatorios-filtros select {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+/* Grid para os Cards de KPI */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.kpi-card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+.kpi-icon {
+    font-size: 24px;
+    color: #fff;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.kpi-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.kpi-title {
+    font-size: 1rem;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.kpi-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #343a40;
+}
+
+/* Grid para os Gráficos */
+.graficos-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* Gráfico de vendas maior que o de pagamentos */
+    gap: 20px;
+}
+
+.grafico-card {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    height: 400px; /* Altura fixa para consistência */
+    display: flex;
+    flex-direction: column;
+}
+
+.grafico-card h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+    color: #333;
+}
+
+/* Responsividade */
+@media (max-width: 992px) {
+    .graficos-grid {
+        grid-template-columns: 1fr; /* Empilha os gráficos em telas menores */
+    }
+}
+
+@media (max-width: 768px) {
+    .relatorios-container {
+        padding: 15px;
+    }
+    .kpi-grid {
+        grid-template-columns: 1fr; /* Um card por linha em telas muito pequenas */
+    }
+}
+
+
+/* Adicione isso ao seu arquivo adm.css */
+
+.relatorios-filtros {
+    display: flex;
+    justify-content: space-between; /* Alinha os itens nas extremidades */
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap; /* Permite que os itens quebrem a linha em telas menores */
+}
+
+.botao-acao {
+    padding: 10px 15px;
+    background-color: #c82333; /* Cor vermelha para PDF */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px; /* Espaço entre o ícone e o texto */
+    transition: background-color 0.3s;
+}
+
+.botao-acao:hover {
+    background-color: #a21b29;
+}
+
+
+
+.header-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap; /* Permite que os itens quebrem a linha em telas menores */
+}
+
+/* Estilo para o novo botão de limpar chamados */
+.btn-limpar-tudo {
+    background-color: #c82333; /* Vermelho mais escuro e sóbrio */
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    margin-left: 20px; /* Espaçamento do título */
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Espaço entre o ícone e o texto */
+}
+
+.btn-limpar-tudo:hover {
+    background-color: #a81d2a; /* Vermelho ainda mais escuro no hover */
+    transform: translateY(-2px); /* Efeito de elevação */
+}
+
+.btn-limpar-tudo:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Responsividade para o cabeçalho */
+@media (max-width: 600px) {
+    .header-title {
+        justify-content: flex-start;
+    }
+    
+    .header-title h1 {
+        margin-bottom: 10px;
+        width: 100%; /* Faz o título ocupar a largura toda */
+    }
+
+    .btn-limpar-tudo {
+        margin-left: 0; /* Remove a margem esquerda em telas pequenas */
+        margin-top: 5px; /* Adiciona espaço acima */
+        width: 100%; /* Faz o botão ocupar a largura toda */
+        justify-content: center; /* Centraliza o conteúdo do botão */
+    }
+}

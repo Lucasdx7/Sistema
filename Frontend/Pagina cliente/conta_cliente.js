@@ -279,60 +279,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Submissão do formulário de logout
     logoutForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        hideKeyboard(); // Garante que o teclado feche ao submeter
+    e.preventDefault();
+    const submitButton = logoutForm.querySelector('button[type="submit"]');
+    const usuarioMesa = document.getElementById('mesa-usuario').value;
+    const senhaMesa = document.getElementById('mesa-senha').value;
+    const formaPagamento = formaPagamentoInput.value; // Pega o valor do pagamento
 
-        const submitButton = logoutForm.querySelector('button[type="submit"]');
-        const usuarioMesa = document.getElementById('mesa-usuario').value;
-        const senhaMesa = document.getElementById('mesa-senha').value;
-        const formaPagamento = formaPagamentoInput.value;
+    if (!usuarioMesa || !senhaMesa) {
+        return Notificacao.erro('Campos Vazios', 'Usuário e senha da mesa são obrigatórios.');
+    }
+    // Validação da forma de pagamento
+    if (!formaPagamento) {
+        return Notificacao.erro('Campo Obrigatório', 'Por favor, selecione a forma de pagamento.');
+    }
 
-        if (!usuarioMesa || !senhaMesa) {
-            return Notificacao.erro('Campos Vazios', 'Usuário e senha da mesa são obrigatórios.');
-        }
-        if (!formaPagamento) {
-            return Notificacao.erro('Campo Obrigatório', 'Por favor, selecione a forma de pagamento.');
-        }
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
 
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+    try {
+        // 1. Autentica as credenciais da mesa (sem alterações aqui)
+        const authResponse = await fetch('/auth/login-cliente', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome_usuario: usuarioMesa, senha: senhaMesa })
+        });
+        const authResult = await authResponse.json();
+        if (!authResponse.ok) throw new Error(authResult.message);
 
-        try {
-            // 1. Autentica as credenciais da mesa
-            const authResponse = await fetch('/auth/login-cliente', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nome_usuario: usuarioMesa, senha: senhaMesa })
-            });
-            const authResult = await authResponse.json();
-            if (!authResponse.ok) throw new Error(authResult.message);
+        // 2. Se a autenticação for bem-sucedida, fecha a conta ENVIANDO A FORMA DE PAGAMENTO
+        const closeResponse = await fetch(`/api/sessoes/${sessaoId}/fechar`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json', // Adiciona o header
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({ forma_pagamento: formaPagamento }) // Envia o dado no corpo
+        });
+        const closeResult = await closeResponse.json();
+        if (!closeResponse.ok) throw new Error(closeResult.message);
 
-            // 2. Se autenticado, fecha a conta enviando a forma de pagamento
-            const closeResponse = await fetch(`/api/sessoes/${sessaoId}/fechar`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` 
-                },
-                body: JSON.stringify({ forma_pagamento: formaPagamento })
-            });
-            const closeResult = await closeResponse.json();
-            if (!closeResponse.ok) throw new Error(closeResult.message);
+        // 3. Limpa o localStorage e redireciona (sem alterações aqui)
+        localStorage.removeItem('token');
+        localStorage.removeItem('sessaoId');
+        localStorage.removeItem('mesaId');
+        localStorage.removeItem('nomeMesa');
+        localStorage.removeItem('dadosCliente');
+        localStorage.removeItem('carrinho');
 
-            // 3. Limpa o localStorage e redireciona para a tela de login
-            localStorage.clear(); // Limpa tudo para garantir uma saída limpa
+        Notificacao.sucesso('Sessão Encerrada!', 'Obrigado pela preferência e volte sempre.');
 
-            await Notificacao.sucesso('Sessão Encerrada!', 'Obrigado pela preferência e volte sempre.');
-
+        setTimeout(() => {
             window.location.href = '/login';
+        }, 2500);
 
-        } catch (error) {
-            Notificacao.erro('Falha no Logout', error.message);
-        } finally {
-            submitButton.disabled = false;
-            submitButton.innerHTML = 'Confirmar e Encerrar';
-        }
-    });
+    } catch (error) {
+        Notificacao.erro('Falha no Logout', error.message);
+    } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = 'Confirmar e Sair';
+    }
+});
+
 
     // --- Inicialização da Página ---
     carregarConta();

@@ -113,6 +113,7 @@ app.get('/confirmar-pedido', (req, res) => { res.sendFile(path.join(__dirname, '
 app.get('/login', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina cliente', 'login_cliente.html')); });
 app.get('/dados-cliente', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina cliente', 'dados_cliente.html')); });
 app.get('/chamados', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'chamado.html')); });
+app.get('/relatorios', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'relatorio.html')); });
 app.get('/', (req, res) => { res.redirect('/login'); });
 console.log('[DEBUG] Rotas de arquivos HTML servidas.');
 

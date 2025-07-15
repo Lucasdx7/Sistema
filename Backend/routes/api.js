@@ -905,6 +905,228 @@ router.get('/chamados/pendentes/count', checarUsuarioParaLog, async (req, res) =
 
 
 
+const checarPermissaoRelatorios = (req, res, next) => {
+    if (req.usuario && req.usuario.nivel_acesso === 'geral') {
+        return next();
+    }
+    return res.status(403).json({ message: 'Acesso negado. Apenas a gerência pode visualizar relatórios.' });
+};
+
+// Função para obter o intervalo de datas com base no período
+function obterIntervaloDeDatas(periodo) {
+    const agora = new Date();
+    // Define o fuso horário diretamente para consistência
+    agora.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+
+    const fim = new Date(agora);
+    let inicio = new Date(agora);
+
+    switch (periodo) {
+        case 'hoje':
+            inicio.setHours(0, 0, 0, 0);
+            break;
+        case 'semana':
+            const diaDaSemana = inicio.getDay(); // 0=Dom, 1=Seg,...
+            const diasParaSubtrair = diaDaSemana === 0 ? 6 : diaDaSemana - 1;
+            inicio.setDate(inicio.getDate() - diasParaSubtrair);
+            inicio.setHours(0, 0, 0, 0);
+            break;
+        case 'mes':
+            inicio.setDate(1);
+            inicio.setHours(0, 0, 0, 0);
+            break;
+        case 'ano':
+            inicio.setMonth(0, 1);
+            inicio.setHours(0, 0, 0, 0);
+            break;
+        default:
+            throw new Error('Período inválido');
+    }
+    // Retorna no formato que o MySQL entende (YYYY-MM-DD HH:MM:SS)
+    return {
+        inicio: inicio.toISOString().slice(0, 19).replace('T', ' '),
+        fim: fim.toISOString().slice(0, 19).replace('T', ' ')
+    };
+}
+
+// Rota principal de relatórios (Refatorada)
+router.get('/relatorios', checarPermissaoRelatorios, async (req, res) => {
+    const { periodo } = req.query;
+    const periodosValidos = ['hoje', 'semana', 'mes', 'ano'];
+
+    if (!periodosValidos.includes(periodo)) {
+        return res.status(400).json({ message: 'Período inválido fornecido.' });
+    }
+
+    try {
+        const { inicio, fim } = obterIntervaloDeDatas(periodo);
+
+        // 1. Query ÚNICA e Otimizada: Busca sessões e seus pedidos de uma vez
+        const sql = `
+            SELECT
+                s.id,
+                s.data_fim,
+                s.forma_pagamento,
+                p.quantidade,
+                p.preco_unitario
+            FROM sessoes_cliente s
+            JOIN pedidos p ON s.id = p.id_sessao
+            WHERE s.status = 'finalizada'
+              AND p.status != 'cancelado'
+              AND s.data_fim BETWEEN ? AND ?;
+        `;
+        const resultados = await query(sql, [inicio, fim]);
+
+        // 2. Processar os dados na aplicação (muito mais rápido)
+        const dadosFormatados = formatarDadosParaFrontend(resultados, periodo);
+
+        res.status(200).json(dadosFormatados);
+
+    } catch (error) {
+        console.error(`Erro ao gerar relatório para o período '${periodo}':`, error);
+        res.status(500).json({ message: 'Erro interno ao processar os dados do relatório.' });
+    }
+});
+
+/**
+ * Formata os dados brutos do banco para a estrutura JSON que o frontend precisa.
+ * @param {Array<Object>} dadosBrutos - Lista de pedidos com informações da sessão.
+ * @param {string} periodo - O período solicitado ('hoje', 'semana', 'mes', 'ano').
+ * @returns {Object} - O objeto formatado para a API.
+ */
+function formatarDadosParaFrontend(dadosBrutos, periodo) {
+    const fusoHorario = 'America/Sao_Paulo';
+    const agora = new Date(new Date().toLocaleString('en-US', { timeZone: fusoHorario }));
+
+    // Estruturas para agregar os dados
+    const sessoesProcessadas = new Map();
+    const graficoPagamentos = { cartao: 0, dinheiro: 0, pix: 0 };
+    let vendasTotais = 0;
+
+    // 1. Agregação dos dados
+    for (const item of dadosBrutos) {
+        const totalItem = item.quantidade * item.preco_unitario;
+        vendasTotais += totalItem;
+
+        if (!sessoesProcessadas.has(item.id)) {
+            sessoesProcessadas.set(item.id, {
+                data_fim: item.data_fim,
+                forma_pagamento: item.forma_pagamento,
+                total: 0
+            });
+        }
+        const sessao = sessoesProcessadas.get(item.id);
+        sessao.total += totalItem;
+    }
+
+    // 2. Preparação dos gráficos
+    const dadosParaGraficoVendas = inicializarGrafico(periodo, agora);
+
+    // 3. Preenchimento dos dados agregados
+    for (const sessao of sessoesProcessadas.values()) {
+        if (sessao.forma_pagamento && graficoPagamentos.hasOwnProperty(sessao.forma_pagamento)) {
+            graficoPagamentos[sessao.forma_pagamento] += sessao.total;
+        }
+
+        const data = new Date(new Date(sessao.data_fim).toLocaleString('en-US', { timeZone: fusoHorario }));
+        const chave = obterChaveGrafico(periodo, data);
+        if (dadosParaGraficoVendas.hasOwnProperty(chave)) {
+            dadosParaGraficoVendas[chave] += sessao.total;
+        }
+    }
+
+    // 4. Finalização
+    const totalPedidos = sessoesProcessadas.size;
+    const kpis = {
+        vendasTotais: vendasTotais,
+        totalPedidos: totalPedidos,
+        ticketMedio: totalPedidos > 0 ? vendasTotais / totalPedidos : 0,
+    };
+
+    return {
+        kpis,
+        graficoPagamentos,
+        graficoVendas: {
+            labels: Object.keys(dadosParaGraficoVendas),
+            valores: Object.values(dadosParaGraficoVendas)
+        }
+    };
+}
+
+// Funções auxiliares para manter o código limpo
+function inicializarGrafico(periodo, dataRef) {
+    const grafico = {};
+    if (periodo === 'hoje') {
+        for (let i = 0; i <= dataRef.getHours(); i++) { grafico[`${String(i).padStart(2, '0')}:00`] = 0; }
+    } else if (periodo === 'semana') {
+        const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        for (let i = 0; i < 7; i++) { grafico[dias[i]] = 0; }
+    } else if (periodo === 'mes') {
+        for (let i = 1; i <= dataRef.getDate(); i++) { grafico[String(i)] = 0; }
+    } else if (periodo === 'ano') {
+        const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        for (let i = 0; i <= dataRef.getMonth(); i++) { grafico[meses[i]] = 0; }
+    }
+    return grafico;
+}
+
+function obterChaveGrafico(periodo, data) {
+    if (periodo === 'hoje') return `${String(data.getHours()).padStart(2, '0')}:00`;
+    if (periodo === 'semana') return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][data.getDay()];
+    if (periodo === 'mes') return String(data.getDate());
+    if (periodo === 'ano') return ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][data.getMonth()];
+    return '';
+}
+
+
+
+
+
+// ====================================================================================
+// ROTA PARA LIMPAR CHAMADOS ATENDIDOS (SEGUINDO O PADRÃO DO PROJETO)
+// ====================================================================================
+router.delete('/chamados/limpar-atendidos', checarPermissaoRelatorios, async (req, res) => {
+    try {
+        // 1. Descobrir quantos chamados serão deletados (para o log)
+        // Usamos a função 'query' do seu projeto. O '?' é o placeholder padrão para o driver 'mysql' ou 'mysql2'.
+        const chamadosParaDeletar = await query("SELECT COUNT(*) as total FROM chamados WHERE status = 'atendido'");
+        const totalDeletado = chamadosParaDeletar[0].total;
+
+        // Se não houver nada para deletar, apenas retorne com sucesso.
+        if (totalDeletado === 0) {
+            return res.status(200).json({ message: 'Nenhum chamado atendido para limpar.' });
+        }
+
+        // 2. Executar a deleção dos chamados
+        await query("DELETE FROM chamados WHERE status = 'atendido'");
+
+        // 3. Registrar a ação no log do sistema
+        // Usando a mesma estrutura do seu exemplo, com o usuário que fez a requisição.
+        await registrarLog(
+            req.usuario.id, 
+            req.usuario.nome, 
+            'LIMPOU_CHAMADOS', 
+            `Limpou o histórico de ${totalDeletado} chamados de garçom que já haviam sido atendidos.`
+        );
+
+        // 4. Notificar clientes (opcional, mas bom para consistência)
+        // Se houver uma tela que possa ser atualizada com essa limpeza, enviamos o broadcast.
+        if (req.broadcast) {
+            req.broadcast({ type: 'CHAMADOS_ATUALIZADOS' });
+        }
+
+        // 5. Enviar a resposta de sucesso
+        res.status(200).json({ message: `Histórico de ${totalDeletado} chamados atendidos foi limpo com sucesso.` });
+
+    } catch (error) {
+        // Em caso de erro, registra no console e envia uma resposta de erro padronizada
+        console.error('Erro ao limpar chamados atendidos:', error);
+        res.status(500).json({ message: 'Erro ao limpar chamados atendidos', error: error.message });
+    }
+});
+
+
+
 
 
 module.exports = router;

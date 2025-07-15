@@ -1,27 +1,27 @@
 # Sistema de Gestão de Cardápio e Pedidos
 
-![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow ) ![Progresso](https://img.shields.io/badge/progresso-60%25-brightgreen ) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green ) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue ) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
+![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow ) ![Progresso](https://img.shields.io/badge/progresso-64%25-brightgreen ) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green ) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue ) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
 
-Sistema de gerenciamento completo para restaurante, com foco em segurança, usabilidade e atualizações em tempo real. A plataforma permite que a gerência administre o cardápio e as mesas de forma dinâmica, enquanto os clientes realizam seus pedidos diretamente pelo tablet.
+Sistema de gerenciamento completo para restaurantes, com foco em segurança, usabilidade e atualizações em tempo real. A plataforma permite que a gerência administre o cardápio, mesas e relatórios de forma dinâmica, enquanto os clientes realizam seus pedidos diretamente por um tablet na mesa.
 
 ## 📋 Visão Geral do Projeto
 
 O objetivo deste sistema é modernizar a experiência do cliente e otimizar a gestão do restaurante. Ele é dividido em duas interfaces principais:
 
-1.  **Painel de Gerenciamento:** Uma área administrativa segura onde a equipe gerencial pode administrar o cardápio, mesas, chamados de garçom e acompanhar o histórico de sessões de clientes.
+1.  **Painel de Gerenciamento:** Uma área administrativa segura onde a equipe gerencial pode administrar o cardápio, mesas, chamados de garçom, acompanhar o histórico de sessões e gerar relatórios de vendas.
 2.  **Interface do Cliente (Tablet):** Um sistema completo que guia o cliente desde o login da mesa, passando pela visualização do cardápio, montagem do pedido, até o fechamento da conta com a assistência de um funcionário.
 
 O sistema utiliza WebSockets para garantir que qualquer alteração feita pela gerência ou solicitação do cliente seja refletida **em tempo real** em todas as telas conectadas, sem a necessidade de recarregar a página.
 
 ---
 
-## 🚀 Status Atual (Progresso: 60%)
+## 🚀 Status Atual (Progresso: 64%)
 
 O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de interação do cliente e as principais funcionalidades de gerenciamento implementadas e estáveis.
 
 ### Funcionalidades Concluídas:
 -   [x] **Backend:** Estrutura do servidor com Node.js e Express.
--   [x] **Banco de Dados:** Schema robusto com tabelas para `usuarios`, `mesas`, `sessoes_cliente`, `pedidos`, `categorias`, `produtos` e `chamados`.
+-   [x] **Banco de Dados:** Schema robusto com tabelas para `usuarios`, `mesas`, `sessoes_cliente`, `pedidos`, `categorias`, `produtos`, `chamados` e `logs`.
 -   [x] **API Segura e Middleware Inteligente:**
     -   [x] Endpoints protegidos que exigem autenticação JWT para acesso.
     -   [x] Middleware de autenticação (`authMiddleware`) capaz de diferenciar tokens de **Gerência** e de **Mesa**.
@@ -36,19 +36,23 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
         -   [x] Painel interativo para visualizar o histórico de sessões de cada mesa.
         -   [x] Cancelar itens de pedidos de uma sessão ativa.
     -   [x] **Gestão de Chamados:**
-        -   [x] Página dedicada para visualizar chamados de garçom em tempo real, exibidos em formato de cards.
+        -   [x] Página dedicada para visualizar chamados de garçom em tempo real.
         -   [x] Contador de chamados pendentes no menu principal para visibilidade imediata.
-        -   [x] Funcionalidade para marcar um chamado como "Atendido", alterando seu status visualmente.
+        -   [x] Funcionalidade para marcar um chamado como "Atendido".
+        -   [x] **(NOVO)** Botão para **limpar o histórico** de chamados já atendidos, mantendo a tela organizada.
     -   [x] **Geração de Recibos Profissionais:**
         -   [x] Geração de recibo com layout otimizado para **impressoras térmicas de 80mm**.
         -   [x] Impressão direta acionada pelo navegador, sem abrir novas abas.
         -   [x] Recibo inclui todos os dados da sessão: cliente, telefone, CPF, itens, totais e **forma de pagamento**.
+    -   [x] **(NOVO) Página de Relatórios:**
+        -   [x] Geração de relatórios de vendas por período (diário, semanal, mensal).
+        -   [x] Visualização de totais, número de sessões e ticket médio.
+        -   [x] Funcionalidade para **exportar o relatório completo em formato PDF**, com layout profissional para arquivamento e impressão.
 -   [x] **Interface do Cliente (Ciclo Completo e Inteligente):**
     -   [x] **Login da Mesa:** Autenticação para iniciar uma sessão.
     -   [x] **Coleta de Dados do Cliente:** Formulário para inserir nome, telefone e CPF.
     -   [x] **Teclado Virtual Customizado (100% Integrado):**
-        -   [x] Implementado em **todas** as telas de input do cliente: Login, Dados do Cliente, Confirmação de Pedido (observações) e Conta do Cliente (logout).
-        -   [x] Garante uma experiência de usuário consistente e adaptada para tablets sem teclado físico.
+        -   [x] Implementado em **todas** as telas de input do cliente, garantindo uma experiência consistente e adaptada para tablets.
     -   [x] **Cardápio Dinâmico:** Itens e categorias são exibidos ou bloqueados com base em regras de negócio (status, happy hour).
     -   [x] **Confirmação de Pedido Profissional:** Controle de quantidade, adição de observações e sugestões de acompanhamento.
     -   [x] **Conta do Cliente:**
@@ -60,9 +64,9 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
 
 ### Próximos Passos (Roadmap):
 -   [ ] **Cozinha:** Criar uma interface para a cozinha visualizar os pedidos que chegam em tempo real.
--   [ ] **Relatórios:** Desenvolver um dashboard com indicadores de vendas (ex: por forma de pagamento, produtos mais vendidos).
--   [ ] **Logs de Auditoria:** Aprimorar o sistema de logs para rastrear todas as ações importantes.
--   [ ] **Pagamentos:** Integrar um gateway de pagamento (PIX, cartão) na tela da conta.
+-   [ ] **Relatórios Avançados:** Aprimorar o dashboard com mais indicadores (ex: produtos mais vendidos, horários de pico).
+-   [ ] **Logs de Auditoria:** Melhorar a interface de visualização dos logs para rastrear todas as ações importantes.
+-   [ ] **Pagamentos:** Integrar um gateway de pagamento (PIX, cartão) diretamente na tela da conta do cliente.
 -   [ ] **Deployment:** Preparar o sistema para ser hospedado em um servidor online.
 
 ---
@@ -76,6 +80,7 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
     *   [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken ): Para geração e validação de tokens de autenticação.
     *   [bcryptjs](https://github.com/dcodeIO/bcrypt.js ): Para criptografia segura de senhas.
     *   [ws](https://github.com/websockets/ws ): Biblioteca para implementação de WebSockets.
+    *   [jsPDF](https://github.com/parallax/jsPDF ) & [jsPDF-AutoTable](https://github.com/simonbengtsson/jsPDF-AutoTable ): Para geração de relatórios em PDF no lado do cliente.
 
 *   **Frontend:**
     *   HTML5, CSS3, JavaScript (Vanilla)

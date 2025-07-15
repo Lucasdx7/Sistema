@@ -56,24 +56,46 @@
 
     <!-- Modal de Logout da Mesa (NOVO) -->
     <div id="logout-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <button id="close-modal-btn" class="close-button">&times;</button>
-            <h2>Encerrar Sessão da Mesa</h2>
-            <p>Para liberar a mesa, confirme o usuário e senha dela.</p>
-            <form id="logout-form">
-                <div class="form-group">
-                    <label for="mesa-usuario">Usuário da Mesa</label>
-                    <input type="text" id="mesa-usuario" required>
+    <div class="modal-content">
+        <button id="close-modal-btn" class="close-button">&times;</button>
+        <h2>Encerrar Sessão da Mesa</h2>
+        <p>Para liberar a mesa, confirme os dados e a forma de pagamento.</p>
+        <form id="logout-form">
+            <div class="form-group">
+                <label for="mesa-usuario">Usuário da Mesa</label>
+                <input type="text" id="mesa-usuario" required>
+            </div>
+            <div class="form-group">
+                <label for="mesa-senha">Senha da Mesa</label>
+                <input type="password" id="mesa-senha" required>
+            </div>
+
+            <!-- ================================================== -->
+            <!-- NOVO CAMPO DE FORMA DE PAGAMENTO ADICIONADO AQUI   -->
+            <!-- ================================================== -->
+            <div class="form-group">
+                <label>Forma de Pagamento</label>
+                <div class="payment-options">
+                    <button type="button" class="payment-btn" data-payment="dinheiro">
+                        <i class="fas fa-money-bill-wave"></i> Dinheiro
+                    </button>
+                    <button type="button" class="payment-btn" data-payment="cartao">
+                        <i class="fas fa-credit-card"></i> Cartão
+                    </button>
+                    <button type="button" class="payment-btn" data-payment="pix">
+                        <i class="fas fa-qrcode"></i> PIX
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label for="mesa-senha">Senha da Mesa</label>
-                    <input type="password" id="mesa-senha" required>
-                </div>
-                <button type="submit" class="auth-submit-btn">Confirmar e Encerrar</button>
-                <p id="logout-message" class="message"></p>
-            </form>
-        </div>
+                <!-- Campo escondido para guardar o valor selecionado -->
+                <input type="hidden" id="forma-pagamento-input" required>
+            </div>
+            <!-- ================================================== -->
+
+            <button type="submit" class="auth-submit-btn">Confirmar e Encerrar</button>
+            <p id="logout-message" class="message"></p>
+        </form>
     </div>
+</div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 

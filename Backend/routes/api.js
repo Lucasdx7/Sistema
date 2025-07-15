@@ -405,11 +405,10 @@ router.get('/mesas/status', checarUsuarioParaLog, async (req, res) => {
 // --- ROTA DE SESSÕES COM A CONSULTA DO TOTAL CORRIGIDA ---
 // ==================================================================
 router.get('/mesas/:id/sessoes', checarUsuarioParaLog, async (req, res) => {
-    const { id } = req.params; // ID da mesa
+    const { id } = req.params;
     try {
-        // --- CONSULTA SQL CORRIGIDA E MAIS ROBUSTA ---
-        // Esta consulta agora calcula o 'total_gasto' de forma explícita,
-        // somando apenas os pedidos onde o status é DIFERENTE de 'cancelado'.
+        // --- CONSULTA SQL ATUALIZADA ---
+        // Adicionamos 'sc.forma_pagamento' à lista de campos selecionados.
         const sql = `
             SELECT 
                 sc.id, 
@@ -417,6 +416,7 @@ router.get('/mesas/:id/sessoes', checarUsuarioParaLog, async (req, res) => {
                 sc.data_inicio, 
                 sc.data_fim, 
                 sc.status,
+                sc.forma_pagamento, -- <<< CAMPO ADICIONADO AQUI
                 (
                     SELECT SUM(p.quantidade * p.preco_unitario) 
                     FROM pedidos p 
@@ -428,8 +428,6 @@ router.get('/mesas/:id/sessoes', checarUsuarioParaLog, async (req, res) => {
         `;
         
         const sessoes = await query(sql, [id]);
-
-        // Formata o resultado para garantir que o total seja um número
         const sessoesFormatadas = sessoes.map(s => ({
             ...s,
             total_gasto: parseFloat(s.total_gasto) || 0 
@@ -438,7 +436,6 @@ router.get('/mesas/:id/sessoes', checarUsuarioParaLog, async (req, res) => {
         res.json(sessoesFormatadas);
 
     } catch (error) {
-        console.error(`Erro ao buscar sessões da mesa ID ${id}:`, error);
         res.status(500).json({ message: 'Erro no servidor ao buscar o histórico da mesa.' });
     }
 });
@@ -496,23 +493,25 @@ router.get('/sessoes/:id/conta', checarUsuarioParaLog, async (req, res) => {
 // ==================================================================
 router.post('/sessoes/:id/fechar', checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params; // id da sessão
+    const { forma_pagamento } = req.body; // Pega a forma de pagamento do corpo da requisição
+
+    // Validação: verifica se a forma de pagamento foi enviada
+    if (!forma_pagamento || !['dinheiro', 'cartao', 'pix'].includes(forma_pagamento)) {
+        return res.status(400).json({ message: 'Forma de pagamento inválida ou não fornecida.' });
+    }
+
     try {
-        const result = await query(
-            "UPDATE sessoes_cliente SET status = 'finalizada', data_fim = NOW() WHERE id = ? AND status = 'ativa'",
-            [id]
-        );
+        // Atualiza a sessão, definindo o status, a data de fim E a forma de pagamento
+        const sql = "UPDATE sessoes_cliente SET status = 'finalizada', data_fim = NOW(), forma_pagamento = ? WHERE id = ? AND status = 'ativa'";
+        const result = await query(sql, [forma_pagamento, id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Sessão não encontrada ou já está finalizada.' });
         }
 
-        // --- CORREÇÃO APLICADA AQUI ---
-        // Determina qual nome usar para o log: 'nome' para gerentes, 'nome_usuario' para mesas.
         const nomeParaLog = req.usuario.nome || req.usuario.nome_usuario;
-
-        // Agora, passamos a variável correta para a função de log.
-        await registrarLog(req.usuario.id, nomeParaLog, 'FECHOU_SESSAO', `Fechou a sessão ID ${id}.`);
-        // ------------------------------------
+        // Log aprimorado
+        await registrarLog(req.usuario.id, nomeParaLog, 'FECHOU_SESSAO', `Fechou a sessão ID ${id} com pagamento via ${forma_pagamento}.`);
 
         res.json({ message: 'Conta fechada com sucesso!' });
     } catch (error) {

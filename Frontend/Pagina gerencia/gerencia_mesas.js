@@ -1,12 +1,22 @@
+/**
+ * ==================================================================
+ * SCRIPT DA PÁGINA DE GERENCIAMENTO DE MESAS (gerencia_mesas.html)
+ * ==================================================================
+ * Controla a visualização, adição e gerenciamento de mesas e suas sessões.
+ *
+ * Depende do objeto `Notificacao` fornecido por `notificacoes.js`.
+ */
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Bloco de autenticação inicial
+    // --- Autenticação e Permissão ---
     const token = localStorage.getItem('authToken');
     if (!token) {
-        window.location.href = '/login-gerencia';
+        Notificacao.erro('Acesso Negado', 'Você precisa estar logado para acessar esta página.')
+            .then(() => window.location.href = '/login-gerencia');
         return;
     }
 
-    // --- Bloco de declaração de variáveis do DOM ---
+    // --- Elementos do DOM ---
     const listaMesas = document.getElementById('lista-mesas');
     const detalhesTitulo = document.getElementById('detalhes-titulo');
     const detalhesConteudo = document.getElementById('detalhes-conteudo');
@@ -20,16 +30,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailsModalBody = document.getElementById('details-modal-body');
     const detailsModalTitulo = document.getElementById('details-modal-titulo');
 
+    // --- Variáveis de Estado ---
     let selectedMesaId = null;
     let currentSessaoId = null;
 
-    // --- Bloco de Funções Principais ---
+    // --- Funções Principais de Renderização ---
 
     async function carregarMesas() {
-        // ... (código sem alterações)
         try {
             const response = await fetch('/api/mesas', { headers: { 'Authorization': `Bearer ${token}` } });
-            if (!response.ok) throw new Error('Falha ao carregar mesas.');
+            if (!response.ok) throw new Error('Falha ao carregar mesas do servidor.');
             const mesas = await response.json();
             listaMesas.innerHTML = '';
             if (mesas.length === 0) {
@@ -45,20 +55,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 listaMesas.appendChild(li);
             });
         } catch (error) {
-            listaMesas.innerHTML = `<p style="color: red;">${error.message}</p>`;
+            Notificacao.erro('Erro de Rede', error.message);
+            listaMesas.innerHTML = `<p class="error-message">Não foi possível carregar as mesas.</p>`;
         }
     }
 
     async function carregarDetalhesMesa(mesaId, mesaNome) {
-        // ... (código sem alterações)
         selectedMesaId = mesaId;
         detalhesTitulo.textContent = `Detalhes da ${mesaNome}`;
-        detalhesConteudo.innerHTML = '<p>Carregando histórico...</p>';
+        detalhesConteudo.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Carregando histórico...</p>';
         document.querySelectorAll('#lista-mesas li').forEach(li => li.classList.remove('active'));
         document.querySelector(`#lista-mesas li[data-id='${mesaId}']`).classList.add('active');
         try {
             const sessoesResponse = await fetch(`/api/mesas/${mesaId}/sessoes`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (!sessoesResponse.ok) throw new Error('Falha ao carregar o histórico.');
+            if (!sessoesResponse.ok) throw new Error('Falha ao carregar o histórico de sessões.');
             const sessoes = await sessoesResponse.json();
             detalhesConteudo.innerHTML = '';
             if (sessoes.length === 0) {
@@ -78,15 +88,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 detalhesConteudo.appendChild(div);
             }
         } catch (error) {
-            detalhesConteudo.innerHTML = `<p style="color: red;">${error.message}</p>`;
+            Notificacao.erro('Erro ao Carregar Detalhes', error.message);
+            detalhesConteudo.innerHTML = `<p class="error-message">${error.message}</p>`;
         }
     }
 
     async function abrirModalDeDetalhes(sessaoId) {
-        // ... (código sem alterações)
         currentSessaoId = sessaoId;
         detailsModalTitulo.textContent = `Recibo da Sessão #${sessaoId}`;
-        detailsModalBody.innerHTML = '<p>Carregando detalhes...</p>';
+        detailsModalBody.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Carregando detalhes...</p>';
         detailsModal.classList.remove('hidden');
         try {
             const response = await fetch(`/api/sessoes/${sessaoId}/pedidos`, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -109,20 +119,20 @@ document.addEventListener('DOMContentLoaded', () => {
             pedidosHTML += `<div class="details-summary"><div class="summary-item"><span>Subtotal</span><span>R$ ${subtotal.toFixed(2)}</span></div><div class="summary-item"><span>Taxa de Serviço (10%)</span><span>R$ ${taxaServico.toFixed(2)}</span></div><div class="summary-item total"><span>TOTAL PAGO</span><span>R$ ${totalFinal.toFixed(2)}</span></div></div><div class="modal-print-footer"><button id="print-receipt-btn" class="action-btn print-btn"><i class="fas fa-eye"></i> Gerar Modelo do Recibo</button></div>`;
             detailsModalBody.innerHTML = pedidosHTML;
         } catch (error) {
-            detailsModalBody.innerHTML = `<p style="color: red;">${error.message}</p>`;
+            Notificacao.erro('Erro no Modal', error.message);
+            detailsModalBody.innerHTML = `<p class="error-message">${error.message}</p>`;
             throw error;
         }
     }
 
     async function abrirModalDeEdicao(sessaoId) {
-        // ... (código sem alterações)
         currentSessaoId = sessaoId;
         editModalTitulo.textContent = `Editando Pedidos (Sessão #${sessaoId})`;
-        editModalBody.innerHTML = '<p>Carregando pedidos...</p>';
+        editModalBody.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Carregando pedidos...</p>';
         editModal.classList.remove('hidden');
         try {
             const response = await fetch(`/api/sessoes/${sessaoId}/pedidos`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (!response.ok) throw new Error('Falha ao carregar pedidos.');
+            if (!response.ok) throw new Error('Falha ao carregar pedidos para edição.');
             const pedidos = await response.json();
             if (pedidos.length === 0) {
                 editModalBody.innerHTML = '<p>Nenhum pedido feito nesta sessão.</p>';
@@ -136,67 +146,69 @@ document.addEventListener('DOMContentLoaded', () => {
             pedidosHTML += '</ul>';
             editModalBody.innerHTML = pedidosHTML;
         } catch (error) {
-            editModalBody.innerHTML = `<p style="color: red;">${error.message}</p>`;
+            Notificacao.erro('Erro no Modal', error.message);
+            editModalBody.innerHTML = `<p class="error-message">${error.message}</p>`;
         }
     }
 
-    // --- Bloco de Funções Auxiliares para Geração do Recibo (COM ATUALIZAÇÃO) ---
+    // --- Funções Auxiliares para Geração do Recibo ---
+    function generateReceiptHtml(conta, sessaoInfo, sessaoId) { /* ... seu código sem alterações ... */ }
+    function generateReceiptCss() { /* ... seu código sem alterações ... */ }
 
-    function generateReceiptHtml(conta, sessaoInfo, sessaoId) {
-        const subtotal = parseFloat(conta.total);
-        const taxa = subtotal * 0.10;
-        const total = subtotal + taxa;
-        let itemsHtml = '';
-        const pedidosValidos = conta.pedidos.filter(p => p.status !== 'cancelado');
-        if (pedidosValidos.length > 0) {
-            pedidosValidos.forEach(item => {
-                const totalItem = (item.quantidade * item.preco_unitario).toFixed(2).replace('.', ',');
-                itemsHtml += `<div class="item"><span>${item.quantidade}x ${item.nome_produto}</span><span>R$ ${totalItem}</span></div>${item.observacao ? `<div class="obs">Obs: ${item.observacao}</div>` : ''}`;
-            });
-        } else {
-            itemsHtml = '<p>Nenhum item consumido.</p>';
-        }
-        // --- ATUALIZAÇÃO APLICADA AQUI ---
-        return `<div class="receipt"><div class="header"><strong>SKINA 67 - COZINHA E BAR</strong><span>Rua Ficticia, 123 - Bairro Centro</span></div><div class="info"><span>SESSÃO: #${sessaoId} | MESA: ${sessaoInfo.nome_usuario}</span><span>CLIENTE: ${sessaoInfo.nome_cliente}</span>${sessaoInfo.cpf_cliente ? `<span>CPF/CNPJ: ${sessaoInfo.cpf_cliente}</span>` : ''}${sessaoInfo.telefone_cliente ? `<span>TELEFONE: ${sessaoInfo.telefone_cliente}</span>` : ''}<span>DATA: ${new Date().toLocaleString('pt-BR')}</span></div><div class="items-header"><strong>ITENS CONSUMIDOS</strong></div><div class="items-list">${itemsHtml}</div><div class="totals"><div class="line"><span>SUBTOTAL</span><span>R$ ${subtotal.toFixed(2).replace('.', ',')}</span></div><div class="line"><span>SERVIÇO (10%)</span><span>R$ ${taxa.toFixed(2).replace('.', ',')}</span></div><div class="line total"><strong>TOTAL</strong><strong>R$ ${total.toFixed(2).replace('.', ',')}</strong></div></div><div class="footer"><span>Obrigado pela preferência!</span></div></div>`;
-    }
-
-    function generateReceiptCss() {
-        return `@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700&display=swap' ); body { background-color: #f0f0f0; display: flex; justify-content: center; align-items: flex-start; padding: 20px; font-family: 'Inconsolata', monospace; } .receipt { width: 302px; background-color: #fff; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); padding: 15px; font-size: 14px; color: #000; } .header, .footer, .info, .items-header { text-align: center; margin-bottom: 10px; } .header strong { font-size: 16px; } .header span, .footer span { font-size: 12px; } .header, .info, .items-header, .totals { display: flex; flex-direction: column; gap: 5px; } .info, .items-header, .totals { border-top: 1px dashed #000; padding-top: 10px; } .items-list .item, .totals .line { display: flex; justify-content: space-between; } .items-list .obs { font-size: 12px; color: #555; padding-left: 10px; } .totals .total { font-size: 16px; } @page { size: auto; margin: 0mm; } @media print { body { background-color: #fff; padding: 0; } .receipt { width: 100%; border: none; box-shadow: none; } }`;
-    }
-
-    // --- Bloco de Event Listeners (COM ATUALIZAÇÃO) ---
+    // --- Event Listeners ---
 
     formAddMesa.addEventListener('submit', async (e) => {
-        // ... (código sem alterações)
         e.preventDefault();
-        const nome = document.getElementById('nome-mesa-input').value.trim();
-        const senha = document.getElementById('senha-mesa-input').value.trim();
+        const nomeInput = document.getElementById('nome-mesa-input');
+        const senhaInput = document.getElementById('senha-mesa-input');
+        const nome = nomeInput.value.trim();
+        const senha = senhaInput.value.trim();
+
+        if (!nome || !senha) {
+            return Notificacao.erro('Campos Obrigatórios', 'Nome de usuário e senha da mesa são necessários.');
+        }
+
         try {
             const response = await fetch('/api/mesas', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ nome_usuario: nome, senha }) });
             const result = await response.json();
             if (!response.ok) throw new Error(result.message);
-            alert(`Mesa "${nome}" adicionada!`);
+            Notificacao.sucesso(`Mesa "${nome}" adicionada!`);
             formAddMesa.reset();
-            carregarMesas();
+            await carregarMesas();
         } catch (error) {
-            alert(error.message);
+            Notificacao.erro('Falha ao Adicionar', error.message);
         }
     });
 
-    listaMesas.addEventListener('click', (e) => {
-        // ... (código sem alterações)
+    listaMesas.addEventListener('click', async (e) => {
         const itemMesa = e.target.closest('.mesa-list-item');
         const deleteButton = e.target.closest('.delete-btn');
         if (deleteButton) {
             e.stopPropagation();
-            alert('Funcionalidade de deletar a ser implementada.');
+            const mesaId = itemMesa.dataset.id;
+            const mesaNome = itemMesa.dataset.nome;
+            const confirmado = await Notificacao.confirmar('Excluir Mesa', `Tem certeza que deseja excluir a mesa "${mesaNome}"? Todas as suas sessões e pedidos serão perdidos. Esta ação é irreversível.`);
+            if (confirmado) {
+                try {
+                    const response = await fetch(`/api/mesas/${mesaId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                    if (!response.ok) throw new Error((await response.json()).message);
+                    Notificacao.sucesso(`Mesa "${mesaNome}" excluída.`);
+                    await carregarMesas();
+                    // Limpa o painel de detalhes se a mesa excluída estava selecionada
+                    if (selectedMesaId == mesaId) {
+                        detalhesTitulo.textContent = 'Detalhes da Mesa';
+                        detalhesConteudo.innerHTML = '<p>Selecione uma mesa para ver os detalhes.</p>';
+                    }
+                } catch (error) {
+                    Notificacao.erro('Falha ao Excluir', error.message);
+                }
+            }
         } else if (itemMesa) {
             carregarDetalhesMesa(itemMesa.dataset.id, itemMesa.dataset.nome);
         }
     });
 
     detalhesConteudo.addEventListener('click', async (e) => {
-        // ... (código sem alterações)
         const editButton = e.target.closest('.edit-btn');
         if (editButton) {
             abrirModalDeEdicao(editButton.dataset.sessaoId);
@@ -210,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 await abrirModalDeDetalhes(sessaoId);
             } catch (error) {
-                alert(`Não foi possível carregar os detalhes: ${error.message}`);
+                Notificacao.erro('Erro ao Carregar Detalhes', error.message);
             } finally {
                 setTimeout(() => {
                     printButton.disabled = false;
@@ -222,48 +234,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const closeButton = e.target.closest('.close-btn');
         if (closeButton) {
             const sessaoId = closeButton.dataset.sessaoId;
-            if (confirm('Tem certeza que deseja fechar esta conta?')) {
+            const confirmado = await Notificacao.confirmar('Fechar Conta', 'Tem certeza que deseja fechar esta conta? Esta ação não pode ser desfeita.');
+            if (confirmado) {
                 try {
                     const response = await fetch(`/api/sessoes/${sessaoId}/fechar`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
                     if (!response.ok) throw new Error((await response.json()).message);
-                    alert('Conta fechada com sucesso!');
+                    Notificacao.sucesso('Conta fechada com sucesso!');
                     const mesaAtiva = document.querySelector('#lista-mesas li.active');
-                    if (mesaAtiva) carregarDetalhesMesa(mesaAtiva.dataset.id, mesaAtiva.dataset.nome);
+                    if (mesaAtiva) await carregarDetalhesMesa(mesaAtiva.dataset.id, mesaAtiva.dataset.nome);
                 } catch (error) {
-                    alert(`Erro: ${error.message}`);
+                    Notificacao.erro('Erro ao Fechar Conta', error.message);
                 }
             }
         }
     });
 
     editModalBody.addEventListener('click', async (e) => {
-        // ... (código sem alterações)
         const pedidoItem = e.target.closest('.pedido-item');
         if (!pedidoItem) return;
         const pedidoId = pedidoItem.dataset.pedidoId;
         const actionsContainer = pedidoItem.querySelector('.item-actions');
         if (e.target.closest('.cancel-item-btn')) {
             actionsContainer.innerHTML = `<div class="cancel-form-container"><input type="text" class="motivo-input" placeholder="Motivo..." required><button class="confirm-cancel-btn" title="Confirmar"><i class="fas fa-check"></i></button><button class="undo-cancel-btn" title="Desfazer"><i class="fas fa-undo"></i></button></div>`;
+            actionsContainer.querySelector('.motivo-input').focus();
         }
         if (e.target.closest('.confirm-cancel-btn')) {
             const motivoInput = actionsContainer.querySelector('.motivo-input');
             const motivo = motivoInput.value.trim();
             if (!motivo) {
-                alert('O motivo do cancelamento é obrigatório.');
-                motivoInput.focus();
-                return;
+                return Notificacao.erro('Campo Obrigatório', 'O motivo do cancelamento é obrigatório.');
             }
             try {
                 const response = await fetch(`/api/pedidos/${pedidoId}/cancelar`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ motivo }) });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message);
-                alert('Item cancelado com sucesso!');
+                Notificacao.sucesso('Item cancelado com sucesso!');
                 pedidoItem.classList.add('cancelado');
                 actionsContainer.innerHTML = `<span class="motivo-cancelamento" title="Motivo: ${motivo}">(Cancelado: ${motivo})</span>`;
                 const mesaAtiva = document.querySelector('#lista-mesas li.active');
                 if (mesaAtiva) await carregarDetalhesMesa(mesaAtiva.dataset.id, mesaAtiva.dataset.nome);
             } catch (error) {
-                alert(`Erro ao cancelar: ${error.message}`);
+                Notificacao.erro('Erro ao Cancelar', error.message);
             }
         }
         if (e.target.closest('.undo-cancel-btn')) {
@@ -271,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Listener unificado para o modal de detalhes (COM ATUALIZAÇÃO)
     detailsModal.addEventListener('click', async (e) => {
         if (e.target === detailsModal || e.target.closest('#details-modal-close-btn')) {
             detailsModal.classList.add('hidden');
@@ -283,28 +293,21 @@ document.addEventListener('DOMContentLoaded', () => {
             printButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
             try {
                 if (!currentSessaoId) throw new Error("ID da Sessão não encontrado.");
-                
-                // --- ATUALIZAÇÃO APLICADA AQUI ---
-                // Fazendo duas chamadas em paralelo para otimizar o tempo
                 const [contaResponse, sessaoInfoResponse] = await Promise.all([
                     fetch(`/api/sessoes/${currentSessaoId}/conta`, { headers: { 'Authorization': `Bearer ${token}` } }),
                     fetch(`/api/sessoes/${currentSessaoId}/info`, { headers: { 'Authorization': `Bearer ${token}` } })
                 ]);
-
                 if (!contaResponse.ok) throw new Error((await contaResponse.json()).message || 'Falha ao buscar dados da conta.');
                 if (!sessaoInfoResponse.ok) throw new Error((await sessaoInfoResponse.json()).message || 'Falha ao buscar informações da sessão.');
-
                 const conta = await contaResponse.json();
                 const sessaoInfo = await sessaoInfoResponse.json();
-                
                 const receiptHtml = generateReceiptHtml(conta, sessaoInfo, currentSessaoId);
                 const receiptCss = generateReceiptCss();
                 const printWindow = window.open('', '_blank');
                 printWindow.document.write(`<!DOCTYPE html><html><head><title>Recibo Sessão #${currentSessaoId}</title><style>${receiptCss}</style></head><body>${receiptHtml}</body></html>`);
                 printWindow.document.close();
             } catch (error) {
-                console.error("Falha ao gerar modelo:", error);
-                alert(`ERRO: ${error.message}`);
+                Notificacao.erro("Falha ao Gerar Modelo", error.message);
             } finally {
                 printButton.disabled = false;
                 printButton.innerHTML = '<i class="fas fa-eye"></i> Gerar Modelo do Recibo';
@@ -312,11 +315,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Listeners para fechar o modal de edição
     editModalCloseBtn.addEventListener('click', () => editModal.classList.add('hidden'));
-    editModal.addEventListener('click', (e) => {
-        if (e.target === editModal) editModal.classList.add('hidden');
-    });
+    editModal.addEventListener('click', (e) => { if (e.target === editModal) editModal.classList.add('hidden'); });
 
     // --- INICIALIZAÇÃO ---
     carregarMesas();

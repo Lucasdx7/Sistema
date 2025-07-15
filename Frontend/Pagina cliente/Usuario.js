@@ -1,26 +1,24 @@
 /**
- * Verifica se o token de autenticação da mesa e o ID da sessão do cliente existem.
- * Se não existirem, redireciona para a página de login.
- * @returns {boolean} - Retorna true se autenticado, false caso contrário.
+ * ==================================================================
+ * SCRIPT PRINCIPAL DA PÁGINA DO CARDÁPIO DO CLIENTE (Paginausuario.html)
+ * ==================================================================
+ * Controla a exibição do cardápio, categorias, carrinho e modal de detalhes.
+ *
+ * Depende do objeto `Notificacao` fornecido por `notificacoes.js` (versão cliente).
  */
-function verificarAutenticacao() {
+
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Bloco de autenticação inicial ---
     const token = localStorage.getItem('token');
     const sessaoId = localStorage.getItem('sessaoId');
 
     if (!token || !sessaoId) {
-        console.log('Autenticação ou sessão do cliente ausente, redirecionando para o login...');
-        window.location.href = '/login';
-        return false;
+        Notificacao.erro('Sessão Expirada', 'Por favor, faça o login novamente para acessar o cardápio.')
+            .then(() => window.location.href = '/login');
+        return;
     }
-    return true;
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    if (!verificarAutenticacao()) return;
 
     // --- Constantes e Variáveis de Estado ---
-    const token = localStorage.getItem('token');
-    const sessaoId = localStorage.getItem('sessaoId');
     const API_URL = '/api';
     let carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
     let cardapioCompleto = [];
@@ -31,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileIcon = document.querySelector('.fa-user.icon');
     const cartIcon = document.querySelector('.cart-icon');
     const cartBadge = document.querySelector('.cart-icon .badge');
-    
     const productModal = document.getElementById('product-details-modal');
     const productModalCloseBtn = document.getElementById('product-modal-close-btn');
     const productModalBody = document.getElementById('product-modal-body');
@@ -41,7 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const options = { headers: { 'Authorization': `Bearer ${token}` } };
         try {
             const response = await fetch(`${API_URL}${endpoint}`, options);
-            if (!response.ok) throw new Error('Erro na API');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: 'Erro de comunicação com o servidor.' }));
+                throw new Error(errorData.message);
+            }
             return response.json();
         } catch (error) {
             console.error(`Falha na chamada da API para ${endpoint}:`, error);
@@ -63,14 +63,16 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('carrinho', JSON.stringify(carrinho));
         atualizarBadgeCarrinho();
         
+        Notificacao.sucesso(`${produto.nome} adicionado ao pedido!`);
+        
         const addButton = document.querySelector(`.menu-item[data-id='${produto.id}'] .add-button`);
         if(addButton) {
-            addButton.textContent = '✓';
+            addButton.innerHTML = '<i class="fas fa-check"></i>';
             addButton.classList.add('added');
             setTimeout(() => { 
-                addButton.textContent = '+';
+                addButton.innerHTML = '+';
                 addButton.classList.remove('added');
-            }, 1000);
+            }, 1200);
         }
     }
 
@@ -115,13 +117,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const itemDiv = document.createElement('div');
             itemDiv.className = 'menu-item';
-            // Adiciona todos os dados do produto ao dataset para fácil acesso
             Object.keys(prod).forEach(key => {
                 itemDiv.dataset[key] = prod[key];
             });
 
-            const serveTexto = prod.serve_pessoas > 0 ? `<span class="serves">Serve até ${prod.serve_pessoas} ${prod.serve_pessoas > 1 ? 'pessoas' : 'pessoa'}</span>` : '';
-            
             const botaoAdicionar = happyHourInativo 
                 ? `<button class="add-button" disabled title="Disponível apenas durante o Happy Hour">+</button>`
                 : `<button class="add-button">+</button>`;
@@ -147,17 +146,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ====================================================================
-    // --- FUNÇÃO PARA ABRIR O MODAL DE DETALHES (VERSÃO FINAL) ---
-    // ====================================================================
     function abrirModalDeDetalhesProduto(produto) {
         productModalBody.innerHTML = `
             <img src="${produto.imagem_svg || 'https://via.placeholder.com/500x250'}" alt="${produto.nome}" class="product-modal-image">
             <div class="product-modal-content">
                 <h2>${produto.nome}</h2>
                 ${produto.serve_pessoas > 0 ? `<span class="serves">Serve até ${produto.serve_pessoas} ${produto.serve_pessoas > 1 ? 'pessoas' : 'pessoa'}</span>` : ''}
-                
-                <!-- AQUI ESTÁ A MÁGICA: Usa a descrição detalhada, e se não houver, usa a curta. -->
                 <p>${produto.descricao_detalhada || produto.descricao}</p>
             </div>
         `;
@@ -165,61 +159,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Função Principal de Inicialização ---
-   // Em /Pagina cliente/Usuario.js
+    async function inicializarCardapio() {
+        try {
+            cardapioCompleto = await apiCall('/cardapio-completo');
+            renderizarCategorias(cardapioCompleto);
 
-async function inicializarCardapio() {
-    try {
-        cardapioCompleto = await apiCall('/cardapio-completo');
-        renderizarCategorias(cardapioCompleto);
+            const urlParams = new URLSearchParams(window.location.search);
+            const categoriaIdDesejada = urlParams.get('categoria');
+            let categoriaInicial = null;
 
-        // --- LÓGICA ADICIONADA AQUI ---
-        const urlParams = new URLSearchParams(window.location.search);
-        const categoriaIdDesejada = urlParams.get('categoria');
-        
-        let categoriaInicial = null;
+            if (categoriaIdDesejada) {
+                categoriaInicial = cardapioCompleto.find(cat => cat.id == categoriaIdDesejada && cat.ativo);
+            }
 
-        if (categoriaIdDesejada) {
-            // Tenta encontrar a categoria vinda da URL
-            categoriaInicial = cardapioCompleto.find(cat => cat.id == categoriaIdDesejada && cat.ativo);
+            if (!categoriaInicial) {
+                categoriaInicial = cardapioCompleto.find(cat => cat.ativo && (!cat.is_happy_hour || isHappyHourAtivo(cat.happy_hour_inicio, cat.happy_hour_fim)));
+            }
+
+            if (categoriaInicial) {
+                renderizarProdutos(categoriaInicial.id);
+                const itemMenuAtivo = navMenu.querySelector(`li[data-filter='${categoriaInicial.id}']`);
+                if (itemMenuAtivo) itemMenuAtivo.classList.add('active');
+            } else {
+                menuList.innerHTML = '<p>Nenhum item disponível no cardápio no momento.</p>';
+            }
+        } catch (error) {
+            Notificacao.erro('Falha ao Carregar', 'Não foi possível carregar o cardápio. Verifique a conexão ou chame um garçom.');
+            menuList.innerHTML = '<p class="error-message">Não foi possível carregar o cardápio. Tente novamente mais tarde.</p>';
         }
-
-        // Se não encontrou (ou se não veio na URL), pega a primeira visível
-        if (!categoriaInicial) {
-            categoriaInicial = cardapioCompleto.find(cat => cat.ativo && (!cat.is_happy_hour || isHappyHourAtivo(cat.happy_hour_inicio, cat.happy_hour_fim)));
-        }
-        // --- FIM DA LÓGICA ADICIONADA ---
-
-        if (categoriaInicial) {
-            renderizarProdutos(categoriaInicial.id);
-            const itemMenuAtivo = navMenu.querySelector(`li[data-filter='${categoriaInicial.id}']`);
-            if (itemMenuAtivo) itemMenuAtivo.classList.add('active');
-        } else {
-            menuList.innerHTML = '<p>Nenhum item disponível no cardápio no momento.</p>';
-        }
-    } catch (error) {
-        menuList.innerHTML = '<p>Não foi possível carregar o cardápio. Tente novamente mais tarde.</p>';
     }
-}
-
 
     // --- Event Listeners ---
     profileIcon.addEventListener('click', () => { window.location.href = '/conta'; });
     cartIcon.addEventListener('click', () => {
         if (carrinho.length === 0) {
-            alert('Adicione itens ao seu pedido antes de revisar.');
+            Notificacao.erro('Carrinho Vazio', 'Adicione itens ao seu pedido antes de continuar.');
             return;
         }
         window.location.href = '/confirmar-pedido';
     });
 
-    // ====================================================================
-    // --- EVENT LISTENER DO MENU ATUALIZADO PARA LIDAR COM AMBOS OS BOTÕES ---
-    // ====================================================================
     menuList.addEventListener('click', (e) => {
         const menuItem = e.target.closest('.menu-item');
         if (!menuItem) return;
 
-        // Ação: Clicou no botão de adicionar
         if (e.target.closest('.add-button') && !e.target.closest('.add-button').disabled) {
             const produto = {
                 id: menuItem.dataset.id,
@@ -227,19 +210,16 @@ async function inicializarCardapio() {
                 descricao: menuItem.dataset.descricao,
                 preco: parseFloat(menuItem.dataset.preco),
                 imagem_svg: menuItem.dataset.imagem_svg,
-                // Adicionamos a descrição detalhada ao carrinho também, caso precise dela no futuro
                 descricao_detalhada: menuItem.dataset.descricao_detalhada
             };
             adicionarAoCarrinho(produto);
         }
 
-        // Ação: Clicou no botão de detalhes
         if (e.target.closest('.details-button')) {
-            // Reconstroi o objeto produto a partir do dataset do elemento
             const produto = {
                 nome: menuItem.dataset.nome,
                 descricao: menuItem.dataset.descricao,
-                descricao_detalhada: menuItem.dataset.descricao_detalhada, // Pega o novo campo
+                descricao_detalhada: menuItem.dataset.descricao_detalhada,
                 serve_pessoas: menuItem.dataset.serve_pessoas,
                 imagem_svg: menuItem.dataset.imagem_svg
             };
@@ -255,7 +235,6 @@ async function inicializarCardapio() {
         }
     });
 
-    // Listeners para fechar o modal de detalhes do produto
     productModalCloseBtn.addEventListener('click', () => productModal.classList.add('hidden'));
     productModal.addEventListener('click', (e) => {
         if (e.target === productModal) {
@@ -271,14 +250,13 @@ async function inicializarCardapio() {
             const data = JSON.parse(event.data);
             switch (data.type) {
                 case 'CARDAPIO_ATUALIZADO':
-                    console.log('Cardápio atualizado pelo gerente. Recarregando...');
+                    Notificacao.sucesso('O cardápio foi atualizado!');
                     inicializarCardapio();
                     break;
                 case 'LOGOUT_FORCADO':
-                    console.warn('Recebido comando de logout forçado:', data.message);
                     localStorage.clear();
-                    alert(data.message || 'Sua sessão foi encerrada pela gerência.');
-                    window.location.href = '/login';
+                    Notificacao.erro('Sessão Encerrada', data.message || 'Sua sessão foi encerrada pela gerência.')
+                        .then(() => window.location.href = '/login');
                     break;
             }
         };

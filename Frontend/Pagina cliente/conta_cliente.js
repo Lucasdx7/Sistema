@@ -1,46 +1,42 @@
 /**
+ * ==================================================================
+ * SCRIPT DA PÁGINA DA CONTA DO CLIENTE (conta_cliente.html)
+ * ==================================================================
+ * Exibe o resumo dos pedidos da sessão atual e permite o logout.
+ *
+ * Depende do objeto `Notificacao` fornecido por `notificacoes.js` (versão cliente).
+ */
+
+/**
  * Agrupa uma lista de pedidos por produto, status E observação.
  * Itens com observações diferentes serão listados separadamente.
  * @param {Array} pedidos - A lista de pedidos vinda da API.
  * @returns {Array} - Uma lista de itens agrupados.
  */
 function agruparPedidos(pedidos) {
-    if (!pedidos || pedidos.length === 0) {
-        return [];
-    }
-
+    if (!pedidos || pedidos.length === 0) return [];
     const itensAgrupados = {};
-
     pedidos.forEach(pedido => {
-        // A chave única agora inclui a observação para garantir que itens
-        // com e sem observação (ou com observações diferentes) sejam agrupados separadamente.
         const chave = `${pedido.nome_produto}-${pedido.status}-${pedido.observacao || ''}`;
-
         if (itensAgrupados[chave]) {
-            // Se já existe um grupo para este produto/status/observação, soma a quantidade.
             itensAgrupados[chave].quantidade += pedido.quantidade;
         } else {
-            // Se não, cria um novo grupo.
-            itensAgrupados[chave] = {
-                ...pedido,
-                quantidade: pedido.quantidade
-            };
+            itensAgrupados[chave] = { ...pedido, quantidade: pedido.quantidade };
         }
     });
-
     return Object.values(itensAgrupados);
 }
 
-
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Autenticação ---
     const token = localStorage.getItem('token');
     const sessaoId = localStorage.getItem('sessaoId');
     const dadosCliente = JSON.parse(localStorage.getItem('dadosCliente'));
     const nomeMesa = localStorage.getItem('nomeMesa');
 
     if (!token || !sessaoId) {
-        alert('Sessão não encontrada. Redirecionando para o login.');
-        window.location.href = '/login';
+        Notificacao.erro('Sessão não encontrada', 'Redirecionando para a tela de login.')
+            .then(() => window.location.href = '/login');
         return;
     }
 
@@ -55,17 +51,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutModal = document.getElementById('logout-modal');
     const closeModalBtn = document.getElementById('close-modal-btn');
     const logoutForm = document.getElementById('logout-form');
-    const logoutMessage = document.getElementById('logout-message');
 
     // --- Preenche os detalhes do cliente ---
-    if (clienteNomeEl) clienteNomeEl.textContent = dadosCliente?.nome || 'Cliente não identificado';
-    if (clienteMesaEl) clienteMesaEl.textContent = nomeMesa || 'Mesa não informada';
+    if (clienteNomeEl) clienteNomeEl.textContent = dadosCliente?.nome || 'Cliente';
+    if (clienteMesaEl) clienteMesaEl.textContent = nomeMesa || 'Mesa';
 
     /**
-     * Carrega os dados da conta da API.
+     * Carrega os dados da conta da API e renderiza na tela.
      */
     async function carregarConta() {
-        listaPedidos.innerHTML = '<p>Carregando sua conta...</p>';
+        listaPedidos.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Carregando sua conta...</p>';
         try {
             const response = await fetch(`/api/sessoes/${sessaoId}/conta`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -76,19 +71,13 @@ document.addEventListener('DOMContentLoaded', () => {
             listaPedidos.innerHTML = '';
             
             if (data.pedidos && data.pedidos.length > 0) {
-                // USA A FUNÇÃO DE AGRUPAMENTO FINAL ANTES DE RENDERIZAR
                 const pedidosAgrupados = agruparPedidos(data.pedidos);
-
                 pedidosAgrupados.forEach(item => {
                     const li = document.createElement('li');
                     const isCanceled = item.status === 'cancelado';
                     const temObservacao = item.observacao && item.observacao.trim() !== '';
-                    
-                    if (isCanceled) {
-                        li.classList.add('cancelado');
-                    }
+                    if (isCanceled) li.classList.add('cancelado');
 
-                    // ESTRUTURA HTML FINAL COM OBSERVAÇÃO
                     li.innerHTML = `
                         <div class="produto-info">
                             <img src="${item.imagem_svg || '/img/placeholder.svg'}" alt="${item.nome_produto}">
@@ -115,30 +104,38 @@ document.addEventListener('DOMContentLoaded', () => {
             taxaEl.textContent = `R$ ${taxa.toFixed(2)}`;
             totalEl.textContent = `R$ ${total.toFixed(2)}`;
         } catch (error) {
-            console.error('Erro ao carregar a conta:', error);
-            listaPedidos.innerHTML = `<p style="color: red; font-weight: bold;">Erro: ${error.message}</p>`;
+            Notificacao.erro('Erro ao Carregar Conta', error.message);
+            listaPedidos.innerHTML = `<p class="error-message">Não foi possível carregar os detalhes da sua conta.</p>`;
         }
     }
 
     // --- Lógica do Modal de Logout ---
+    function fecharModalLogout() {
+        logoutModal.classList.add('hidden');
+        logoutForm.reset();
+    }
+
     hiddenButton.addEventListener('click', () => {
         logoutModal.classList.remove('hidden');
     });
 
-    closeModalBtn.addEventListener('click', () => {
-        logoutModal.classList.add('hidden');
-        logoutForm.reset();
-        logoutMessage.textContent = '';
-    });
+    closeModalBtn.addEventListener('click', fecharModalLogout);
 
     logoutForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const submitButton = logoutForm.querySelector('button[type="submit"]');
         const usuarioMesa = document.getElementById('mesa-usuario').value;
         const senhaMesa = document.getElementById('mesa-senha').value;
-        logoutMessage.textContent = 'Verificando credenciais...';
-        logoutMessage.style.color = 'gray';
+
+        if (!usuarioMesa || !senhaMesa) {
+            return Notificacao.erro('Campos Vazios', 'Usuário e senha da mesa são obrigatórios.');
+        }
+
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
 
         try {
+            // 1. Autentica as credenciais da mesa para autorizar o fechamento
             const authResponse = await fetch('/auth/login-cliente', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -147,9 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const authResult = await authResponse.json();
             if (!authResponse.ok) throw new Error(authResult.message);
 
-            logoutMessage.textContent = 'Credenciais corretas! Encerrando sessão...';
-            logoutMessage.style.color = 'green';
-
+            // 2. Se a autenticação for bem-sucedida, fecha a conta
             const closeResponse = await fetch(`/api/sessoes/${sessaoId}/fechar`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -157,13 +152,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const closeResult = await closeResponse.json();
             if (!closeResponse.ok) throw new Error(closeResult.message);
 
-            alert('Sessão encerrada com sucesso!');
-            localStorage.clear(); // Limpa todo o localStorage ao deslogar
-            window.location.href = '/login';
+            // 3. Limpa tudo e redireciona com notificação de sucesso
+          // Trecho corrigido em conta_cliente.js
+            // 3. Limpa APENAS os dados da sessão do cliente e redireciona
+            localStorage.removeItem('token');       // Token do cliente
+            localStorage.removeItem('sessaoId');    // ID da sessão do cliente
+            localStorage.removeItem('mesaId');      // ID da mesa do cliente
+            localStorage.removeItem('nomeMesa');    // Nome da mesa do cliente
+            localStorage.removeItem('dadosCliente'); // Dados do cliente
+            localStorage.removeItem('carrinho');    // Carrinho de compras
+
+            // Mostra a notificação de sucesso
+            Notificacao.sucesso('Sessão Encerrada!', 'Obrigado pela preferência e volte sempre.');
+
+            // Aguarda 2.5 segundos e então redireciona para a página de login
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2500);
+
 
         } catch (error) {
-            logoutMessage.textContent = `Erro: ${error.message}`;
-            logoutMessage.style.color = 'red';
+            Notificacao.erro('Falha no Logout', error.message);
+        } finally {
+            // Reabilita o botão em caso de falha para permitir nova tentativa
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Confirmar e Sair';
         }
     });
 

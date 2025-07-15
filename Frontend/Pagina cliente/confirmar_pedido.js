@@ -1,16 +1,30 @@
-// Em /Pagina cliente/confirmar_pedido.js
+/**
+ * ==================================================================
+ * SCRIPT DA PÁGINA DE CONFIRMAÇÃO DE PEDIDO (confirmar_pedido.html)
+ * ==================================================================
+ * Versão corrigida e otimizada.
+ * - Agrupa itens por produto E observação.
+ * - Envia o pedido completo em uma única requisição para a API.
+ * - Utiliza o sistema de Notificacao.js para feedback ao usuário.
+ */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Variáveis de Estado e Constantes ---
+    // --- Autenticação e Variáveis de Estado ---
     const token = localStorage.getItem('token');
     const sessaoId = localStorage.getItem('sessaoId');
-    if (!token || !sessaoId) {
-        alert('Sessão inválida. Redirecionando...');
-        window.location.href = '/login';
+    const mesaId = localStorage.getItem('mesaId'); // Essencial para a API
+
+    // Validação inicial robusta
+    if (!token || !sessaoId || !mesaId) {
+        // Usa o sistema de notificação para uma melhor UX
+        Notificacao.erro('Sessão Inválida', 'Dados essenciais não encontrados. Você será redirecionado para o login.')
+            .then(() => window.location.href = '/login');
         return;
     }
+
     let carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
-    let produtoIdParaObservacao = null; // Armazena o ID do produto sendo editado no modal
+    let produtoIdParaObservacao = null; // ID do produto no modal
+    let observacaoOriginalParaEdicao = ''; // Observação original para encontrar o item correto
 
     // --- Elementos do DOM ---
     const listaResumo = document.getElementById('lista-resumo-pedido');
@@ -21,8 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartBadge = document.querySelector('.cart-icon .badge');
     const profileIcon = document.getElementById('profile-icon');
     const suggestionContainer = document.getElementById('suggestion-item');
-
-    // --- Elementos do Modal de Observação ---
     const observationModal = document.getElementById('observation-modal');
     const modalProductName = document.getElementById('modal-product-name');
     const modalTextarea = document.getElementById('modal-textarea');
@@ -30,14 +42,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
     // --- Funções de Lógica do Carrinho ---
+
+    /**
+     * CORRIGIDO: Agrupa itens pela combinação de ID e observação.
+     * Isso permite que "X-Burger sem cebola" e "X-Burger normal" sejam itens distintos na lista.
+     */
     function agruparItensDoCarrinho(carrinhoBruto) {
         if (!carrinhoBruto || carrinhoBruto.length === 0) return [];
         const itensAgrupados = {};
         carrinhoBruto.forEach(item => {
-            if (itensAgrupados[item.id]) {
-                itensAgrupados[item.id].quantidade++;
+            const chave = `${item.id}-${item.observacao || ''}`; // Chave única
+            if (itensAgrupados[chave]) {
+                itensAgrupados[chave].quantidade++;
             } else {
-                itensAgrupados[item.id] = { ...item, quantidade: 1 };
+                // Clona o item e adiciona a propriedade quantidade
+                itensAgrupados[chave] = { ...item, quantidade: 1 };
             }
         });
         return Object.values(itensAgrupados);
@@ -70,11 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.className = 'order-item';
             li.dataset.produtoId = item.id;
+            li.dataset.observacao = item.observacao || ''; // Dataset para identificar o grupo correto
 
             const precoTotalItem = item.preco * item.quantidade;
             const temObservacao = item.observacao && item.observacao.trim() !== '';
 
-            // ESTRUTURA HTML FINAL COM BOTÃO DE OBSERVAÇÃO
             li.innerHTML = `
                 <img src="${item.imagem_svg || '/img/placeholder.svg'}" alt="${item.nome}" class="order-item-image">
                 <div class="order-item-details">
@@ -85,12 +104,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="quantity-btn increase-btn" title="Aumentar">+</button>
                     </div>
                     <span class="item-price">R$ ${precoTotalItem.toFixed(2)}</span>
+                    ${temObservacao ? `<p class="observacao-info">Obs: <em>${item.observacao}</em></p>` : ''}
                 </div>
                 <div class="order-item-actions">
-                    <button class="action-btn observation-btn ${temObservacao ? 'active' : ''}" title="Adicionar Observação">
+                    <button class="action-btn observation-btn ${temObservacao ? 'active' : ''}" title="Adicionar/Editar Observação">
                         <i class="fas fa-comment-dots"></i>
                     </button>
-                    <button class="action-btn remove-item-btn" title="Remover todos os '${item.nome}'">
+                    <button class="action-btn remove-item-btn" title="Remover '${item.nome}' com esta observação">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -101,18 +121,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         subtotalEl.textContent = `R$ ${subtotal.toFixed(2)}`;
         totalEl.textContent = `R$ ${subtotal.toFixed(2)}`;
-        cartBadge.textContent = carrinho.length;
+        cartBadge.textContent = carrinho.length; // Badge mostra o total de itens, não de grupos
         cartBadge.style.display = carrinho.length > 0 ? 'flex' : 'none';
     }
 
-    // --- Funções do Modal ---
-    function abrirModalObservacao(produtoId) {
-        const itemAgrupado = agruparItensDoCarrinho(carrinho).find(p => p.id == produtoId);
-        if (!itemAgrupado) return;
+    // --- Funções do Modal de Observação ---
+    function abrirModalObservacao(produtoId, obsAtual) {
+        const itemOriginal = carrinho.find(p => p.id == produtoId);
+        if (!itemOriginal) return;
 
         produtoIdParaObservacao = produtoId;
-        modalProductName.textContent = itemAgrupado.nome;
-        modalTextarea.value = itemAgrupado.observacao || '';
+        observacaoOriginalParaEdicao = obsAtual; // Guarda a observação original
+        modalProductName.textContent = itemOriginal.nome;
+        modalTextarea.value = obsAtual;
         observationModal.classList.remove('hidden');
         modalTextarea.focus();
     }
@@ -120,60 +141,61 @@ document.addEventListener('DOMContentLoaded', () => {
     function fecharModalObservacao() {
         observationModal.classList.add('hidden');
         produtoIdParaObservacao = null;
+        observacaoOriginalParaEdicao = '';
     }
 
     function salvarObservacao() {
         if (!produtoIdParaObservacao) return;
-
-        const novaObservacao = modalTextarea.value;
+        const novaObservacao = modalTextarea.value.trim();
+        
+        // Atualiza a observação para TODOS os itens correspondentes
         const novoCarrinho = carrinho.map(item => {
-            if (item.id == produtoIdParaObservacao) {
+            if (item.id == produtoIdParaObservacao && (item.observacao || '') === observacaoOriginalParaEdicao) {
                 return { ...item, observacao: novaObservacao };
             }
             return item;
         });
         
-        atualizarCarrinho(novoCarrinho); // Atualiza e redesenha para mostrar o ícone ativo
+        atualizarCarrinho(novoCarrinho);
         fecharModalObservacao();
     }
 
     // --- Event Listeners ---
-    listaResumo.addEventListener('click', (e) => {
+    listaResumo.addEventListener('click', async (e) => {
         const itemLi = e.target.closest('.order-item');
         if (!itemLi) return;
+
         const produtoId = itemLi.dataset.produtoId;
+        const obs = itemLi.dataset.observacao;
+
+        // Encontra um item de amostra para adicionar ou remover
+        const itemAmostra = carrinho.find(item => item.id == produtoId && (item.observacao || '') === obs);
 
         if (e.target.closest('.increase-btn')) {
-            const itemParaAdicionar = carrinho.find(item => item.id == produtoId);
-            if (itemParaAdicionar) atualizarCarrinho([...carrinho, itemParaAdicionar]);
+            if (itemAmostra) atualizarCarrinho([...carrinho, { ...itemAmostra }]);
         } else if (e.target.closest('.decrease-btn')) {
-            const indexParaRemover = carrinho.findIndex(item => item.id == produtoId);
+            const indexParaRemover = carrinho.findIndex(item => item.id == produtoId && (item.observacao || '') === obs);
             if (indexParaRemover > -1) {
                 const novoCarrinho = [...carrinho];
                 novoCarrinho.splice(indexParaRemover, 1);
                 atualizarCarrinho(novoCarrinho);
             }
         } else if (e.target.closest('.remove-item-btn')) {
-            const itemParaRemover = carrinho.find(item => item.id == produtoId);
-            if (confirm(`Tem certeza que deseja remover todos os itens "${itemParaRemover.nome}" do seu pedido?`)) {
-                atualizarCarrinho(carrinho.filter(item => item.id != produtoId));
+            const confirmado = await Notificacao.confirmar('Remover Item', `Deseja remover todos os itens "${itemAmostra.nome}" ${obs ? 'com esta observação' : ''}?`);
+            if (confirmado) {
+                const novoCarrinho = carrinho.filter(item => !(item.id == produtoId && (item.observacao || '') === obs));
+                atualizarCarrinho(novoCarrinho);
             }
         } else if (e.target.closest('.observation-btn')) {
-            abrirModalObservacao(produtoId);
+            abrirModalObservacao(produtoId, obs);
         }
     });
 
     modalSaveBtn.addEventListener('click', salvarObservacao);
     modalCancelBtn.addEventListener('click', fecharModalObservacao);
-    observationModal.addEventListener('click', (e) => {
-        if (e.target === observationModal) {
-            fecharModalObservacao();
-        }
-    });
+    observationModal.addEventListener('click', (e) => { if (e.target === observationModal) fecharModalObservacao(); });
 
-    // ... (O resto do seu código, como carregarSugestao e confirmarPedido, pode permanecer o mesmo)
-    
-    // --- CÓDIGO RESTANTE (SEM ALTERAÇÕES) ---
+    // --- Funções de Ação ---
     async function carregarSugestao() {
         try {
             const response = await fetch('/api/produtos/sugestao', { headers: { 'Authorization': `Bearer ${token}` } });
@@ -201,8 +223,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 carouselWrapper.appendChild(card);
                 card.querySelector('.btn-add-suggestion').addEventListener('click', () => {
-                    atualizarCarrinho([...carrinho, sugestao]);
-                    card.innerHTML = '<p class="feedback-adicionado">Item adicionado! ✔️</p>';
+                    atualizarCarrinho([...carrinho, sugestao], true);
+                    Notificacao.sucesso('Item Adicionado', `"${sugestao.nome}" foi adicionado ao seu carrinho.`);
+                    card.querySelector('.btn-add-suggestion').disabled = true;
+                    card.querySelector('.btn-add-suggestion').innerHTML = '<i class="fas fa-check"></i> Adicionado';
                 });
                 card.querySelector('.btn-view-category').addEventListener('click', (e) => {
                     window.location.href = `/cardapio?categoria=${e.currentTarget.dataset.categoryId}`;
@@ -215,42 +239,63 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /**
+     * CORRIGIDO: Envia o pedido em uma única requisição (bulk)
+     * e inclui o `id_mesa` em cada item do pedido.
+     */
     async function confirmarPedido() {
+        const confirmado = await Notificacao.confirmar('Confirmar Pedido', 'Seu pedido será enviado para a cozinha. Deseja continuar?');
+        if (!confirmado) return;
+
         confirmarBtn.disabled = true;
         confirmarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-        const pedidosParaEnviar = carrinho.map(item => ({
+
+        // Mapeia os itens agrupados, garantindo que CADA item tenha TODOS os campos necessários.
+        const pedidosParaEnviar = agruparItensDoCarrinho(carrinho).map(item => ({
+            id_mesa: mesaId, // <-- CORREÇÃO CRÍTICA: Adiciona o ID da mesa
             id_sessao: sessaoId,
             id_produto: item.id,
+            quantidade: item.quantidade,
             preco_unitario: item.preco,
             observacao: item.observacao || null
         }));
+
         try {
-            const promessasDePedidos = pedidosParaEnviar.map(pedido =>
-                fetch('/api/pedidos', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify(pedido)
-                }).then(async response => {
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido.' }));
-                        throw new Error(errorData.message);
-                    }
-                    return response.json();
-                })
-            );
-            await Promise.all(promessasDePedidos);
-            atualizarCarrinho([]);
-            alert('Pedido confirmado com sucesso e enviado para a cozinha!');
-            window.location.href = '/cardapio';
+            const response = await fetch('/api/pedidos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                // Envia um objeto contendo a lista de pedidos, como no exemplo original.
+                // Se a API espera um array direto, mude para: JSON.stringify(pedidosParaEnviar)
+                body: JSON.stringify({ pedidos: pedidosParaEnviar })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido ao enviar pedido.' }));
+                // A mensagem de erro agora vem da API, como "Dados do pedido incompletos ou inválidos."
+                throw new Error(errorData.message);
+            }
+            
+            atualizarCarrinho([]); // Limpa o carrinho local
+
+            // 1. Mostra a notificação de sucesso.
+            Notificacao.sucesso('Pedido Enviado!', 'Seu pedido foi enviado para a cozinha e já está sendo preparado.');
+
+            // 2. Aguarda um curto período (ex: 2 segundos) e SÓ ENTÃO redireciona.
+            setTimeout(() => {
+                window.location.href = '/cardapio';
+            }, 2000);
+
         } catch (error) {
             console.error('Falha ao confirmar pedido:', error);
-            alert(`Houve um erro ao confirmar seu pedido:\n\n${error.message}\n\nPor favor, tente novamente ou chame um garçom.`);
+            Notificacao.erro('Falha ao Enviar', `${error.message}. Por favor, tente novamente ou chame um garçom.`);
         } finally {
+            // Reabilita o botão mesmo se houver erro
             confirmarBtn.disabled = false;
             confirmarBtn.innerHTML = '<i class="fas fa-check"></i> Confirmar e Enviar';
         }
     }
 
+    // --- Event Listeners Finais e Inicialização ---
     voltarBtn.addEventListener('click', () => window.location.href = '/cardapio');
     confirmarBtn.addEventListener('click', confirmarPedido);
     profileIcon.addEventListener('click', () => window.location.href = '/conta');

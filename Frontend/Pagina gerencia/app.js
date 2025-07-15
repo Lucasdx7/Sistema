@@ -1,34 +1,37 @@
-// /Frontend/Pagina gerencia/app.js - VERSÃO FINAL E COMPLETA
+/**
+ * ==================================================================
+ * SCRIPT PRINCIPAL DA PÁGINA DE GERENCIAMENTO (Gerencia.html)
+ * ==================================================================
+ * Este arquivo controla toda a interatividade da página de gerenciamento,
+ * como adicionar/editar/excluir categorias e produtos.
+ *
+ * Ele depende do objeto `Notificacao` que é fornecido pelo arquivo
+ * `notificacoes.js`, que deve ser carregado antes deste script.
+ */
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- Constantes Globais ---
-    const API_URL = '/api'; // URL relativa para produção
-    const WS_URL = `ws://${window.location.host}`; // WebSocket relativo
+    const API_URL = '/api';
+    const WS_URL = `ws://${window.location.host}`;
 
     // --- Elementos do DOM ---
     const listaCategorias = document.getElementById('lista-categorias');
     const listaProdutos = document.getElementById('lista-produtos');
     const nomeCategoriaSelecionada = document.getElementById('nome-categoria-selecionada');
     const formProdutoContainer = document.getElementById('form-produto-container');
-    
-    // Formulário de Adicionar Categoria
     const inputNovaCategoria = document.getElementById('input-nova-categoria');
     const btnAddCategoria = document.getElementById('btn-add-categoria');
     const checkIsHappyHour = document.getElementById('input-is-happy-hour');
     const happyHourFields = document.getElementById('happy-hour-fields');
     const inputHappyHourInicio = document.getElementById('input-happy-hour-inicio');
     const inputHappyHourFim = document.getElementById('input-happy-hour-fim');
-
-    // Formulário de Adicionar Produto (com o novo campo)
     const inputNomeProduto = document.getElementById('input-nome-produto');
     const inputDescricaoProduto = document.getElementById('input-descricao-produto');
-    const inputDescricaoDetalhada = document.getElementById('input-descricao-detalhada'); // NOVO
+    const inputDescricaoDetalhada = document.getElementById('input-descricao-detalhada');
     const inputPrecoProduto = document.getElementById('input-preco-produto');
     const inputImagemProduto = document.getElementById('input-imagem-produto');
     const inputServePessoas = document.getElementById('input-serve-pessoas');
     const btnAddProduto = document.getElementById('btn-add-produto');
-
-    // Elementos do Modal de Edição
     const editModal = document.getElementById('editModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalBody = document.getElementById('modalBody');
@@ -60,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`${API_URL}${endpoint}`, options);
             if (response.status === 401 || response.status === 403) {
-                alert('Sua sessão expirou. Por favor, faça login novamente.');
+                Notificacao.erro('Sessão Expirada!', 'Por favor, faça login novamente.');
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('usuario');
                 window.location.href = '/login-gerencia';
@@ -68,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ message: response.statusText }));
-                throw new Error(`Erro na API: ${errorData.message}`);
+                throw new Error(errorData.message);
             }
             return response.status === 204 ? {} : response.json();
         } catch (error) {
@@ -133,55 +136,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 listaProdutos.innerHTML = '';
             }
         } catch (error) {
-            console.error("Falha ao carregar categorias.", error.message);
+            Notificacao.erro("Falha ao carregar categorias.", error.message);
         }
     }
 
     async function carregarProdutos(idCategoria) {
-    try {
-        const produtos = await apiCall(`/categorias/${idCategoria}/produtos`);
-        listaProdutos.innerHTML = '';
-        produtos.forEach(prod => {
-            const li = document.createElement('li');
-            Object.keys(prod).forEach(key => { li.dataset[key] = prod[key]; });
-            li.classList.toggle('inactive', !prod.ativo);
+        try {
+            const produtos = await apiCall(`/categorias/${idCategoria}/produtos`);
+            listaProdutos.innerHTML = '';
+            produtos.forEach(prod => {
+                const li = document.createElement('li');
+                Object.keys(prod).forEach(key => { li.dataset[key] = prod[key]; });
+                li.classList.toggle('inactive', !prod.ativo);
 
-            // Converte o valor do banco (que pode ser 0/1) para booleano
-            const podeSerSugestao = prod.pode_ser_sugestao === 1 || prod.pode_ser_sugestao === true;
+                const podeSerSugestao = prod.pode_ser_sugestao === 1 || prod.pode_ser_sugestao === true;
 
-            li.innerHTML = `
-                <div class="produto-info">
-                    <img src="${prod.imagem_svg || 'https://via.placeholder.com/60'}" alt="${prod.nome}">
-                    <div>
-                        <strong>${prod.nome}</strong> - R$ ${parseFloat(prod.preco ).toFixed(2)}
-                        <p><strong>Descrição:</strong> ${prod.descricao}</p>
-                        <p class="desc-detalhada"><strong>Detalhes:</strong> ${prod.descricao_detalhada || 'N/A'}</p>
-                        <small>Serve: ${prod.serve_pessoas} pessoa(s)</small>
+                li.innerHTML = `
+                    <div class="produto-info">
+                        <img src="${prod.imagem_svg || 'https://via.placeholder.com/60'}" alt="${prod.nome}">
+                        <div>
+                            <strong>${prod.nome}</strong> - R$ ${parseFloat(prod.preco ).toFixed(2)}
+                            <p><strong>Descrição:</strong> ${prod.descricao}</p>
+                            <p class="desc-detalhada"><strong>Detalhes:</strong> ${prod.descricao_detalhada || 'N/A'}</p>
+                            <small>Serve: ${prod.serve_pessoas} pessoa(s)</small>
+                        </div>
                     </div>
-                </div>
-                <div class="action-buttons">
-                    
-                    <!-- NOVO CHECKBOX DE SUGESTÃO -->
-                    <label class="switch suggestion-switch" title="Marcar como sugestão de acompanhamento">
-                        <input type="checkbox" class="toggle-suggestion" ${podeSerSugestao ? 'checked' : ''}>
-                        <span class="slider suggestion-slider">💡</span>
-                    </label>
-                    <!-- FIM DO NOVO CHECKBOX -->
-
-                    <label class="switch" title="${prod.ativo ? 'Desativar' : 'Ativar'} Produto">
-                        <input type="checkbox" class="toggle-status" data-tipo="produtos" ${prod.ativo ? 'checked' : ''}>
-                        <span class="slider"></span>
-                    </label>
-                    <button class="edit-btn" data-tipo="produto" title="Editar Produto"><i class="fas fa-pencil-alt"></i></button>
-                    <button class="delete-btn" data-tipo="produto" title="Excluir Produto">X</button>
-                </div>
-            `;
-            listaProdutos.appendChild(li);
-        });
-    } catch (error) {
-        listaProdutos.innerHTML = '<li>Não foi possível carregar os produtos.</li>';
+                    <div class="action-buttons">
+                        <label class="switch suggestion-switch" title="Marcar como sugestão de acompanhamento">
+                            <input type="checkbox" class="toggle-suggestion" ${podeSerSugestao ? 'checked' : ''}>
+                            <span class="slider suggestion-slider">💡</span>
+                        </label>
+                        <label class="switch" title="${prod.ativo ? 'Desativar' : 'Ativar'} Produto">
+                            <input type="checkbox" class="toggle-status" data-tipo="produtos" ${prod.ativo ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                        <button class="edit-btn" data-tipo="produto" title="Editar Produto"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="delete-btn" data-tipo="produto" title="Excluir Produto">X</button>
+                    </div>
+                `;
+                listaProdutos.appendChild(li);
+            });
+        } catch (error) {
+            listaProdutos.innerHTML = '<li>Não foi possível carregar os produtos.</li>';
+            Notificacao.erro("Falha ao carregar produtos.", error.message);
+        }
     }
-}
 
     // --- Lógica do Modal de Edição ---
     function abrirModalDeEdicao(tipo, itemElement) {
@@ -197,12 +196,10 @@ document.addEventListener('DOMContentLoaded', () => {
             modalBody.innerHTML = `
                 <label for="editNome">Nome da Categoria:</label>
                 <input type="text" id="editNome" name="nome" value="${itemElement.dataset.nome}" required>
-                
                 <div class="happy-hour-toggle">
                     <input type="checkbox" id="editIsHappyHour" name="is_happy_hour" ${isHappy ? 'checked' : ''}>
                     <label for="editIsHappyHour">É Happy Hour?</label>
                 </div>
-
                 <div id="editHappyHourFields" class="${isHappy ? '' : 'hidden'}">
                     <label for="editHappyHourInicio">Início:</label>
                     <input type="time" id="editHappyHourInicio" name="happy_hour_inicio" value="${itemElement.dataset.happy_hour_inicio || ''}">
@@ -218,16 +215,12 @@ document.addEventListener('DOMContentLoaded', () => {
             modalBody.innerHTML = `
                 <label for="editNome">Nome do Produto:</label>
                 <input type="text" id="editNome" name="nome" value="${itemElement.dataset.nome}" required>
-                
-                <label for="editDescricao">Descrição Curta (para o cardápio):</label>
+                <label for="editDescricao">Descrição Curta:</label>
                 <textarea id="editDescricao" name="descricao" required>${itemElement.dataset.descricao}</textarea>
-                
-                <label for="editDescricaoDetalhada">Descrição Detalhada (para o modal do cliente):</label>
+                <label for="editDescricaoDetalhada">Descrição Detalhada:</label>
                 <textarea id="editDescricaoDetalhada" name="descricao_detalhada">${itemElement.dataset.descricao_detalhada || ''}</textarea>
-                
                 <label for="editPreco">Preço (R$):</label>
                 <input type="number" id="editPreco" name="preco" step="0.01" value="${itemElement.dataset.preco}" required>
-                
                 <label for="editServePessoas">Serve Pessoas:</label>
                 <input type="number" id="editServePessoas" name="serve_pessoas" value="${itemElement.dataset.serve_pessoas}" required min="1">
             `;
@@ -244,33 +237,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = editItemId.value;
         const tipo = editItemType.value;
         const url = `/${tipo}s/${id}`;
-        
         const formData = new FormData(e.target);
         const body = Object.fromEntries(formData.entries());
-        
         if (tipo === 'categoria') {
             body.is_happy_hour = e.target.querySelector('#editIsHappyHour')?.checked || false;
         }
-
         try {
             await apiCall(url, 'PUT', body);
-            alert('Salvo com sucesso!');
+            Notificacao.sucesso('Salvo com sucesso!');
             fecharModal();
-            // Recarrega para refletir as mudanças
             await carregarCategorias();
             if (estado.categoriaSelecionada) {
                 await carregarProdutos(estado.categoriaSelecionada.id);
             }
         } catch (error) {
-            alert(`Erro ao salvar: ${error.message}`);
+            Notificacao.erro('Erro ao Salvar', error.message);
         }
     });
 
     closeModalBtn.addEventListener('click', fecharModal);
     cancelModalBtn.addEventListener('click', fecharModal);
-    window.addEventListener('click', (e) => {
-        if (e.target === editModal) fecharModal();
-    });
+    window.addEventListener('click', (e) => { if (e.target === editModal) fecharModal(); });
 
     // --- Event Listeners Principais ---
     checkIsHappyHour.addEventListener('change', () => {
@@ -279,17 +266,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnAddCategoria.addEventListener('click', async () => {
         const nome = inputNovaCategoria.value.trim();
-        if (!nome) return alert('O nome da categoria é obrigatório.');
-        
+        if (!nome) return Notificacao.erro('Campo Obrigatório', 'O nome da categoria não pode ser vazio.');
         const body = {
             nome,
             is_happy_hour: checkIsHappyHour.checked,
             happy_hour_inicio: inputHappyHourInicio.value || null,
             happy_hour_fim: inputHappyHourFim.value || null,
         };
-
         try {
             await apiCall('/categorias', 'POST', body);
+            Notificacao.sucesso(`Categoria "${nome}" adicionada!`);
             inputNovaCategoria.value = '';
             checkIsHappyHour.checked = false;
             happyHourFields.classList.add('hidden');
@@ -297,50 +283,59 @@ document.addEventListener('DOMContentLoaded', () => {
             inputHappyHourFim.value = '';
             await carregarCategorias();
         } catch (error) {
-            alert(`Falha ao adicionar categoria: ${error.message}`);
+            Notificacao.erro('Falha ao Adicionar', error.message);
         }
     });
 
-    function handleListClick(event, listType) {
-    const li = event.target.closest('li');
-    if (!li) return;
+    async function handleListClick(event, listType) {
+        const li = event.target.closest('li');
+        if (!li) return;
+        const id = li.dataset.id;
+        const tipo = listType;
 
-    const id = li.dataset.id;
-    const tipo = listType;
+        if (event.target.classList.contains('toggle-status')) {
+            const isChecked = event.target.checked;
+            const tipoEndpoint = li.closest('#lista-categorias') ? 'categorias' : 'produtos';
+            apiCall(`/${tipoEndpoint}/${id}`, 'PATCH', { ativo: isChecked })
+                .then(() => {
+                    li.classList.toggle('inactive', !isChecked);
+                    li.dataset.ativo = isChecked;
+                    Notificacao.sucesso(`Status atualizado!`);
+                })
+                .catch(error => {
+                    Notificacao.erro(`Erro ao atualizar status`, error.message);
+                    event.target.checked = !isChecked;
+                });
+            return;
+        }
 
-    // --- LÓGICA EXISTENTE ---
-    if (event.target.classList.contains('toggle-status')) {
-        // ... (código para ativar/desativar, sem alterações)
-        return;
-    }
-
-    // --- NOVA LÓGICA PARA O CHECKBOX DE SUGESTÃO ---
-    if (event.target.classList.contains('toggle-suggestion')) {
-        const isChecked = event.target.checked;
-        // Assumindo um novo endpoint para atualizar apenas essa flag
-        apiCall(`/produtos/${id}/sugestao`, 'PATCH', { pode_ser_sugestao: isChecked })
-            .then(() => {
-                // Atualiza o dataset para manter o estado consistente
-                li.dataset.pode_ser_sugestao = isChecked;
-            })
-            .catch(error => {
-                alert(`Erro ao atualizar status de sugestão: ${error.message}`);
-                // Reverte a mudança visual em caso de erro
-                event.target.checked = !isChecked;
-            });
-        return; // Impede que o clique selecione a categoria
-    }
-    // --- FIM DA NOVA LÓGICA ---
+        if (event.target.classList.contains('toggle-suggestion')) {
+            const isChecked = event.target.checked;
+            apiCall(`/produtos/${id}/sugestao`, 'PATCH', { pode_ser_sugestao: isChecked })
+                .then(() => {
+                    li.dataset.pode_ser_sugestao = isChecked;
+                    Notificacao.sucesso('Status de sugestão atualizado!');
+                })
+                .catch(error => {
+                    Notificacao.erro(`Erro ao atualizar`, error.message);
+                    event.target.checked = !isChecked;
+                });
+            return;
+        }
 
         const button = event.target.closest('button');
         if (button) {
             if (button.classList.contains('edit-btn')) {
                 abrirModalDeEdicao(tipo.slice(0, -1), li);
             } else if (button.classList.contains('delete-btn')) {
-                if (confirm(`Tem certeza que deseja excluir?`)) {
+                const confirmado = await Notificacao.confirmar('Tem certeza?', `Você está prestes a excluir "${li.dataset.nome}". Esta ação não pode ser desfeita.`);
+                if (confirmado) {
                     apiCall(`/${tipo}/${id}`, 'DELETE')
-                        .then(() => li.remove())
-                        .catch(error => alert(`Falha ao deletar: ${error.message}`));
+                        .then(() => {
+                            li.remove();
+                            Notificacao.sucesso('Item excluído com sucesso!');
+                        })
+                        .catch(error => Notificacao.erro('Falha ao Excluir', error.message));
                 }
             }
             return;
@@ -358,36 +353,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     listaCategorias.addEventListener('click', (e) => handleListClick(e, 'categorias'));
     listaProdutos.addEventListener('click', (e) => handleListClick(e, 'produtos'));
-    
+
     btnAddProduto.addEventListener('click', async () => {
-        if (!estado.categoriaSelecionada?.id) return alert('Selecione uma categoria antes de adicionar um produto.');
-        
+        if (!estado.categoriaSelecionada?.id) return Notificacao.erro('Atenção', 'Selecione uma categoria antes de adicionar um produto.');
         const nome = inputNomeProduto.value.trim();
         const descricao = inputDescricaoProduto.value.trim();
-        const descricao_detalhada = inputDescricaoDetalhada.value.trim(); // NOVO
+        const descricao_detalhada = inputDescricaoDetalhada.value.trim();
         const preco = parseFloat(inputPrecoProduto.value.replace(',', '.'));
         const serve_pessoas = parseInt(inputServePessoas.value, 10) || 1;
         const imagemFile = inputImagemProduto.files[0];
 
-        if (!nome || !descricao || isNaN(preco)) return alert('Preencha os campos obrigatórios do produto.');
+        if (!nome || !descricao || isNaN(preco)) return Notificacao.erro('Campos Incompletos', 'Preencha nome, descrição e preço do produto.');
         
         try {
             const imagem_svg = imagemFile ? await fileToBase64(imagemFile) : null;
-            const produto = { 
-                id_categoria: estado.categoriaSelecionada.id, 
-                nome, 
-                descricao, 
-                descricao_detalhada, // NOVO
-                preco, 
-                imagem_svg, 
-                serve_pessoas 
-            };
+            const produto = { id_categoria: estado.categoriaSelecionada.id, nome, descricao, descricao_detalhada, preco, imagem_svg, serve_pessoas };
             await apiCall('/produtos', 'POST', produto);
-            
+            Notificacao.sucesso(`Produto "${nome}" adicionado!`);
             [inputNomeProduto, inputDescricaoProduto, inputDescricaoDetalhada, inputPrecoProduto, inputImagemProduto, inputServePessoas].forEach(input => input.value = '');
             await carregarProdutos(estado.categoriaSelecionada.id);
         } catch (error) {
-            alert(`Falha ao adicionar produto: ${error.message}`);
+            Notificacao.erro('Falha ao Adicionar Produto', error.message);
         }
     });
 
@@ -428,9 +414,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const novaOrdemIds = [...listaCategorias.querySelectorAll('li')].map(li => li.dataset.id);
         try {
             await apiCall('/categorias/ordenar', 'POST', { ordem: novaOrdemIds });
+            Notificacao.sucesso('Nova ordem salva!');
         } catch (error) {
-            alert('Não foi possível salvar a nova ordem. A página será recarregada.');
-            carregarCategorias();
+            Notificacao.erro('Não foi possível salvar a nova ordem.', 'A página será recarregada para restaurar a ordem anterior.');
+            setTimeout(() => carregarCategorias(), 2000);
         }
     });
 
@@ -442,6 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const message = JSON.parse(event.data);
             if (message.type === 'CARDAPIO_ATUALIZADO') {
                 console.log('Recebida atualização do cardápio via WebSocket.');
+                Notificacao.sucesso('O cardápio foi atualizado por outro terminal!');
                 carregarCategorias();
                 if (estado.categoriaSelecionada) {
                     carregarProdutos(estado.categoriaSelecionada.id);

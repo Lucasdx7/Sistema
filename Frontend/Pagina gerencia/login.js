@@ -1,4 +1,5 @@
-// /Frontend/Pagina gerencia/login.js
+// /Frontend/Pagina gerencia/login.js - VERSÃO CORRIGIDA
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- Elementos do DOM ---
     const loginForm = document.getElementById('login-form');
@@ -11,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('register-form');
     const registerErrorMessage = document.getElementById('register-error-message');
 
-    // --- Lógica de Login ---
+    // --- Lógica de Login (NÃO PRECISA DE MUDANÇAS) ---
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -40,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Lógica do Modal de Registro ---
+    // --- Lógica do Modal de Registro (NÃO PRECISA DE MUDANÇAS) ---
     if (openModalBtn) {
         openModalBtn.addEventListener('click', () => {
             registerModal.classList.remove('hidden');
@@ -59,23 +60,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Lógica de Registro ---
+    // --- Lógica de Registro (AQUI ESTÁ A CORREÇÃO) ---
     if (registerForm) {
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             registerErrorMessage.textContent = '';
 
+            // Coleta dos dados do formulário
             const nome = document.getElementById('register-nome').value;
             const email = document.getElementById('register-email').value;
             const senha = document.getElementById('register-senha').value;
             const nivel_acesso = document.querySelector('input[name="nivel_acesso"]:checked').value;
             const tokenSecreto = document.getElementById('register-token').value;
+            
+            // ==================================================================
+            // CORREÇÃO APLICADA AQUI
+            // O backend espera um campo 'usuario'. Vamos criá-lo a partir do nome.
+            const usuario = nome;
+            // ==================================================================
 
             try {
                 const response = await fetch('/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nome, email, senha, nivel_acesso, tokenSecreto })
+                    // Adicionamos a variável 'usuario' ao corpo da requisição
+                    body: JSON.stringify({ nome, email, senha, nivel_acesso, tokenSecreto, usuario })
                 });
 
                 const data = await response.json();

@@ -3,6 +3,7 @@ const router = express.Router();
 const { query, registrarLog } = require('../db');
 const bcrypt = require('bcryptjs');
 
+
 const authMiddleware = require('../middleware/authMiddleware'); 
 
 const PDFDocument = require('pdfkit');
@@ -270,6 +271,75 @@ router.patch('/produtos/:id/status', checarUsuarioParaLog, (req, res) => {
     atualizarStatus(req, res, 'produtos');
 });
 
+// No seu arquivo de rotas da API (ex: api.js)
+// No seu arquivo de rotas da API (ex: api.js)
+
+// Rota para ATUALIZAR uma categoria (parcialmente)
+router.patch('/categorias/:id', async (req, res) => {
+    const { id } = req.params;
+    const { ativo } = req.body; // Pega apenas o campo 'ativo'
+
+    if (ativo === undefined) {
+        return res.status(400).json({ message: 'O campo "ativo" é obrigatório.' });
+    }
+
+    try {
+        await query('UPDATE categorias SET ativo = ? WHERE id = ?', [ativo, id]);
+
+        // ==================================================================
+        // CORREÇÃO APLICADA AQUI
+        // Após atualizar o banco, notifica TODOS os clientes.
+        req.broadcast({ type: 'CARDAPIO_ATUALIZADO' });
+        // ==================================================================
+
+        res.status(200).json({ message: 'Status da categoria atualizado com sucesso.' });
+    } catch (error) {
+        console.error('Erro ao atualizar categoria:', error);
+        res.status(500).json({ message: 'Erro no servidor ao atualizar categoria.' });
+    }
+});
+
+// Rota para ATUALIZAR um produto (parcialmente)
+router.patch('/produtos/:id', async (req, res) => {
+    const { id } = req.params;
+    // Pega os campos que podem ser atualizados: ativo, pode_ser_sugestao, etc.
+    const { ativo, pode_ser_sugestao } = req.body; 
+
+    // Cria a query dinamicamente para atualizar apenas os campos enviados
+    const fields = [];
+    const values = [];
+    if (ativo !== undefined) {
+        fields.push('ativo = ?');
+        values.push(ativo);
+    }
+    if (pode_ser_sugestao !== undefined) {
+        fields.push('pode_ser_sugestao = ?');
+        values.push(pode_ser_sugestao);
+    }
+
+    if (fields.length === 0) {
+        return res.status(400).json({ message: 'Nenhum campo para atualizar fornecido.' });
+    }
+
+    values.push(id); // Adiciona o ID para a cláusula WHERE
+
+    try {
+        await query(`UPDATE produtos SET ${fields.join(', ')} WHERE id = ?`, values);
+
+        // ==================================================================
+        // CORREÇÃO APLICADA AQUI
+        // Após atualizar o banco, notifica TODOS os clientes.
+        req.broadcast({ type: 'CARDAPIO_ATUALIZADO' });
+        // ==================================================================
+
+        res.status(200).json({ message: 'Produto atualizado com sucesso.' });
+    } catch (error) {
+        console.error('Erro ao atualizar produto:', error);
+        res.status(500).json({ message: 'Erro no servidor ao atualizar produto.' });
+    }
+});
+
+
 // ==================================================================
 // --- ROTAS DE MESAS E SESSÕES ---
 // ==================================================================
@@ -457,19 +527,57 @@ router.post('/sessoes/:id/fechar', checarUsuarioParaLog, async (req, res) => {
 
 // ROTA DE PEDIDOS ATUALIZADA
 router.post('/pedidos', checarUsuarioParaLog, async (req, res) => {
-    // Adicionamos 'observacao' à desestruturação
-    const { id_sessao, id_produto, preco_unitario, observacao } = req.body;
-    if (!id_sessao || !id_produto || preco_unitario === undefined) {
-        return res.status(400).json({ message: 'Dados do pedido incompletos ou inválidos.' });
+    // 1. Extrai o array 'pedidos' do corpo da requisição.
+    const { pedidos } = req.body;
+
+    // 2. Validação robusta dos dados recebidos.
+    if (!Array.isArray(pedidos) || pedidos.length === 0) {
+        return res.status(400).json({ message: 'O corpo da requisição deve conter um array de pedidos.' });
     }
+
+    // Valida cada item individualmente antes de tentar inserir no banco.
+    for (const pedido of pedidos) {
+        if (
+            !pedido.id_mesa || 
+            !pedido.id_sessao || 
+            !pedido.id_produto || 
+            pedido.quantidade === undefined || 
+            pedido.preco_unitario === undefined
+        ) {
+            // Se qualquer item for inválido, rejeita a requisição inteira.
+            return res.status(400).json({ message: 'Dados do pedido incompletos ou inválidos. Verifique todos os itens.' });
+        }
+    }
+
     try {
-        // Atualizamos a query e os parâmetros para incluir a observacao
-        const sql = 'INSERT INTO pedidos (id_sessao, id_produto, preco_unitario, quantidade, observacao) VALUES (?, ?, ?, ?, ?)';
-        const params = [id_sessao, id_produto, preco_unitario, 1, observacao || null];
-        
-        const result = await query(sql, params);
-        res.status(201).json({ message: 'Produto adicionado ao pedido com sucesso!', pedidoId: result.insertId });
+        // 3. Mapeia o array de pedidos para um array de "promessas" de inserção.
+        const promessasDePedidos = pedidos.map(pedido => {
+            const sql = 'INSERT INTO pedidos (id_sessao, id_produto, quantidade, preco_unitario, observacao) VALUES (?, ?, ?, ?, ?)';
+            const params = [
+                pedido.id_sessao,
+                pedido.id_produto,
+                pedido.quantidade,
+                pedido.preco_unitario,
+                pedido.observacao || null // Garante que observação seja nula se não for fornecida
+            ];
+            return query(sql, params);
+        });
+
+        // 4. Executa todas as inserções. O Promise.all garante que todas sejam concluídas.
+        await Promise.all(promessasDePedidos);
+
+        // 5. Envia uma notificação para a cozinha (se o sistema de broadcast estiver configurado)
+        if (req.broadcast) {
+            req.broadcast({ type: 'NOVO_PEDIDO' });
+        }
+
+        // 6. Retorna sucesso.
+        res.status(201).json({ message: 'Pedido recebido e enviado para a cozinha com sucesso!' });
+
     } catch (error) {
+        console.error('Falha crítica ao inserir pedidos em lote:', error);
+        // Registra o erro para depuração futura.
+        registrarLog(req.usuario.id, req.usuario.nome_usuario, 'ERRO_PEDIDO', `Falha ao registrar pedido em lote. Erro: ${error.message}`);
         res.status(500).json({ message: 'Erro interno no servidor ao tentar salvar o pedido.' });
     }
 });

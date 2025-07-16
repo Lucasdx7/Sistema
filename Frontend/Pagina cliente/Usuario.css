@@ -1465,8 +1465,9 @@
 
 #modal-textarea {
     width: 100%;
+    position: center;
     min-height: 120px;
-    padding: 10px;
+    padding: 0px;
     border: 1px solid #ccc;
     border-radius: 8px;
     font-size: 1rem;
@@ -1779,4 +1780,26 @@ body.keyboard-active {
 #shift-key.active {
     background-color: #a0a0a0; /* Cor do Shift quando ativo */
     color: #000;
+}
+
+
+/*
+ * Estilo para a informação "Serve até X pessoas" no cardápio.
+ * Adicionado para corresponder ao design do Figma.
+ */
+.item-details h3 .serves-info {
+    color: #D9534F; /* Tom de vermelho - ajuste a cor se necessário */
+    font-size: 0.85em; /* Um pouco menor que o título do produto */
+    font-weight: 500;  /* Peso da fonte (nem normal, nem negrito) */
+    margin-left: 10px; /* Espaçamento em relação ao nome do produto */
+    vertical-align: middle; /* Ajuda no alinhamento vertical com o texto ao lado */
+}
+
+
+.serves-info {
+    color: #D9534F; /* Tom de vermelho - ajuste a cor se necessário */
+    font-size: 0.85em; /* Um pouco menor que o título do produto */
+    font-weight: 500;  /* Peso da fonte (nem normal, nem negrito) */
+    margin-left: 10px; /* Espaçamento em relação ao nome do produto */
+    vertical-align: middle; /* Ajuda no alinhamento vertical com o texto ao lado */
 }

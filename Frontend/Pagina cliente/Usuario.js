@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const categoria = cardapioCompleto.find(cat => cat.id == idCategoria);
         menuList.innerHTML = '';
 
-        if (!categoria || categoria.produtos.length === 0) {
+        if (!categoria || !categoria.produtos || categoria.produtos.length === 0) {
             menuList.innerHTML = '<p>Nenhum produto encontrado nesta categoria.</p>';
             return;
         }
@@ -125,10 +125,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `<button class="add-button" disabled title="Disponível apenas durante o Happy Hour">+</button>`
                 : `<button class="add-button">+</button>`;
 
+            // Converte 'serve_pessoas' para número para fazer a verificação
+            const servePessoas = parseInt(prod.serve_pessoas, 10) || 0;
+
+            // --- CÓDIGO CORRIGIDO E INTEGRADO ---
             itemDiv.innerHTML = `
                 <img src="${prod.imagem_svg || 'https://via.placeholder.com/150x100'}" alt="${prod.nome}">
                 <div class="item-details">
-                    <h3>${prod.nome}</h3>
+                    <h3>
+                        ${prod.nome}
+                        ${servePessoas > 0 ? `<span class="serves-info">Serve até ${servePessoas} ${servePessoas > 1 ? 'pessoas' : 'pessoa'}</span>` : ''}
+                    </h3>
                     <p>${prod.descricao}</p>
                 </div>
                 <div class="item-action">
@@ -147,11 +154,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function abrirModalDeDetalhesProduto(produto) {
+        const servePessoas = parseInt(produto.serve_pessoas, 10) || 0;
         productModalBody.innerHTML = `
             <img src="${produto.imagem_svg || 'https://via.placeholder.com/500x250'}" alt="${produto.nome}" class="product-modal-image">
             <div class="product-modal-content">
                 <h2>${produto.nome}</h2>
-                ${produto.serve_pessoas > 0 ? `<span class="serves">Serve até ${produto.serve_pessoas} ${produto.serve_pessoas > 1 ? 'pessoas' : 'pessoa'}</span>` : ''}
+                ${servePessoas > 0 ? `<span class="serves">Serve até ${servePessoas} ${servePessoas > 1 ? 'pessoas' : 'pessoa'}</span>` : ''}
                 <p>${produto.descricao_detalhada || produto.descricao}</p>
             </div>
         `;
@@ -204,13 +212,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!menuItem) return;
 
         if (e.target.closest('.add-button') && !e.target.closest('.add-button').disabled) {
+            // --- CÓDIGO CORRIGIDO E INTEGRADO ---
             const produto = {
                 id: menuItem.dataset.id,
                 nome: menuItem.dataset.nome,
                 descricao: menuItem.dataset.descricao,
                 preco: parseFloat(menuItem.dataset.preco),
                 imagem_svg: menuItem.dataset.imagem_svg,
-                descricao_detalhada: menuItem.dataset.descricao_detalhada
+                descricao_detalhada: menuItem.dataset.descricao_detalhada,
+                serve_pessoas: parseInt(menuItem.dataset.serve_pessoas, 10) || 0 
             };
             adicionarAoCarrinho(produto);
         }

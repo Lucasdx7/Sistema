@@ -152,39 +152,50 @@ document.addEventListener('DOMContentLoaded', () => {
             confirmarBtn.style.opacity = '1';
         }
 
-        itensAgrupados.forEach(item => {
-            const li = document.createElement('li');
-            li.className = 'order-item';
-            li.dataset.produtoId = item.id;
-            li.dataset.observacao = item.observacao || '';
+        // ... dentro da função renderizarPagina()
 
-            const precoTotalItem = item.preco * item.quantidade;
-            const temObservacao = item.observacao && item.observacao.trim() !== '';
+            itensAgrupados.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'order-item';
+                li.dataset.produtoId = item.id;
+                li.dataset.observacao = item.observacao || '';
 
-            li.innerHTML = `
-                <img src="${item.imagem_svg || '/img/placeholder.svg'}" alt="${item.nome}" class="order-item-image">
-                <div class="order-item-details">
-                    <h3>${item.nome}</h3>
-                    <div class="quantity-control">
-                        <button class="quantity-btn decrease-btn" title="Diminuir">-</button>
-                        <span class="quantity-value">${item.quantidade}</span>
-                        <button class="quantity-btn increase-btn" title="Aumentar">+</button>
+                const precoTotalItem = item.preco * item.quantidade;
+                const temObservacao = item.observacao && item.observacao.trim() !== '';
+
+                // --- LÓGICA ADICIONADA AQUI ---
+                // Converte 'serve_pessoas' para número para fazer a verificação
+                const servePessoas = parseInt(item.serve_pessoas, 10) || 0;
+
+                // --- TEMPLATE HTML MODIFICADO ---
+                li.innerHTML = `
+                    <img src="${item.imagem_svg || '/img/placeholder.svg'}" alt="${item.nome}" class="order-item-image">
+                    <div class="order-item-details">
+                        <h3>
+                            ${item.nome}
+                            ${servePessoas > 0 ? `<span class="serves-info">Serve até ${servePessoas} ${servePessoas > 1 ? 'pessoas' : 'pessoa'}</span>` : ''}
+                        </h3>
+                        <div class="quantity-control">
+                            <button class="quantity-btn decrease-btn" title="Diminuir">-</button>
+                            <span class="quantity-value">${item.quantidade}</span>
+                            <button class="quantity-btn increase-btn" title="Aumentar">+</button>
+                        </div>
+                        <span class="item-price">R$ ${precoTotalItem.toFixed(2)}</span>
+                        ${temObservacao ? `<p class="observacao-info">Obs: <em>${item.observacao}</em></p>` : ''}
                     </div>
-                    <span class="item-price">R$ ${precoTotalItem.toFixed(2)}</span>
-                    ${temObservacao ? `<p class="observacao-info">Obs: <em>${item.observacao}</em></p>` : ''}
-                </div>
-                <div class="order-item-actions">
-                    <button class="action-btn observation-btn ${temObservacao ? 'active' : ''}" title="Adicionar/Editar Observação">
-                        <i class="fas fa-comment-dots"></i>
-                    </button>
-                    <button class="action-btn remove-item-btn" title="Remover '${item.nome}' com esta observação">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `;
-            listaResumo.appendChild(li);
-            subtotal += precoTotalItem;
-        });
+                    <div class="order-item-actions">
+                        <button class="action-btn observation-btn ${temObservacao ? 'active' : ''}" title="Adicionar/Editar Observação">
+                            <i class="fas fa-comment-dots"></i>
+                        </button>
+                        <button class="action-btn remove-item-btn" title="Remover '${item.nome}' com esta observação">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                listaResumo.appendChild(li);
+                subtotal += precoTotalItem;
+            });
+
 
         subtotalEl.textContent = `R$ ${subtotal.toFixed(2)}`;
         totalEl.textContent = `R$ ${subtotal.toFixed(2)}`;

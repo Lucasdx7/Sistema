@@ -1,6 +1,6 @@
 # Sistema de Gestão de Cardápio e Pedidos
 
-![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow ) ![Progresso](https://img.shields.io/badge/progresso-89%25-brightgreen ) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green ) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue ) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
+![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow) ![Progresso](https://img.shields.io/badge/progresso-89%25-brightgreen) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet)
 
 Sistema de gerenciamento completo para restaurantes, com foco em segurança, usabilidade e atualizações em tempo real. A plataforma permite que a gerência administre o cardápio, mesas e relatórios de forma dinâmica, enquanto os clientes realizam seus pedidos diretamente por um tablet na mesa.
 
@@ -85,22 +85,22 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
 ## 🛠️ Tecnologias Utilizadas
 
 *   **Backend:**
-    *   [Node.js](https://nodejs.org/ ): Ambiente de execução JavaScript no servidor.
-    *   [Express.js](https://expressjs.com/ ): Framework para a construção da API.
-    *   [MySQL2](https://github.com/sidorares/node-mysql2 ): Driver para conectar o Node.js ao banco de dados MySQL.
-    *   [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken ): Para geração e validação de tokens de autenticação.
-    *   [bcryptjs](https://github.com/dcodeIO/bcrypt.js ): Para criptografia segura de senhas.
-    *   [ws](https://github.com/websockets/ws ): Biblioteca para implementação de WebSockets.
-    *   [dotenv](https://github.com/motdotla/dotenv ): Para gerenciamento de variáveis de ambiente.
+    *   [Node.js](https://nodejs.org/): Ambiente de execução JavaScript no servidor.
+    *   [Express.js](https://expressjs.com/): Framework para a construção da API.
+    *   [MySQL2](https://github.com/sidorares/node-mysql2): Driver para conectar o Node.js ao banco de dados MySQL.
+    *   [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken): Para geração e validação de tokens de autenticação.
+    *   [bcryptjs](https://github.com/dcodeIO/bcrypt.js): Para criptografia segura de senhas.
+    *   [ws](https://github.com/websockets/ws): Biblioteca para implementação de WebSockets.
+    *   [dotenv](https://github.com/motdotla/dotenv): Para gerenciamento de variáveis de ambiente.
 
 *   **Frontend:**
     *   HTML5, CSS3, JavaScript (Vanilla)
-    *   [Chart.js](https://www.chartjs.org/ ): Para a criação dos gráficos de relatórios.
-    *   [Font Awesome](https://fontawesome.com/ ): Para os ícones da interface.
-    *   [SweetAlert2](https://sweetalert2.github.io/ ): Para notificações e modais elegantes.
+    *   [Chart.js](https://www.chartjs.org/): Para a criação dos gráficos de relatórios.
+    *   [Font Awesome](https://fontawesome.com/): Para os ícones da interface.
+    *   [SweetAlert2](https://sweetalert2.github.io/): Para notificações e modais elegantes.
 
 *   **Banco de Dados:**
-    *   [MySQL](https://www.mysql.com/ )
+    *   [MySQL](https://www.mysql.com/)
 
 ---
 
@@ -109,8 +109,8 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
 Para rodar este projeto em sua máquina, siga os passos abaixo.
 
 ### Pré-requisitos:
-*   Ter o [Node.js](https://nodejs.org/ ) instalado.
-*   Ter um servidor [MySQL](https://www.mysql.com/ ) rodando localmente.
+*   Ter o [Node.js](https://nodejs.org/) instalado.
+*   Ter um servidor [MySQL](https://www.mysql.com/) rodando localmente.
 
 ### 1. Configuração do Banco de Dados
 -   Crie um banco de dados no seu MySQL com o nome `cardapio_db` (ou o nome que preferir).
@@ -214,23 +214,23 @@ CREATE TABLE IF NOT EXISTS configuracoes (
 );
 
 -- Tabela de Logs (Adicionada para auditoria)
-'''CREATE TABLE IF NOT EXISTS logs (
+CREATE TABLE IF NOT EXISTS logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nivel VARCHAR(20) NOT NULL,
     mensagem VARCHAR(255) NOT NULL,
     detalhes TEXT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);'''
+);
 
-'''-- Inserções Iniciais
+-- Inserções Iniciais
 INSERT INTO categorias (nome) VALUES ('Hambúrgueres'), ('Bebidas');
 INSERT INTO produtos (id_categoria, nome, descricao, preco, imagem_svg) VALUES
 (1, 'X-Skina', 'Hambúrguer da casa com 180g de carne, queijo e molho especial.', 35.90, '<svg>...</svg>'),
 (2, 'Coca-Cola Lata', 'Refrigerante de cola 350ml.', 6.00, '<svg>...</svg>');
 INSERT INTO usuarios (nome, email, usuario, senha, nivel_acesso)
-VALUES ('Admin Geral', 'admin@skina67.com', 'admin', '$2b$10$abcdefghijklmnopqrstuv', 'geral');'''
+VALUES ('Admin Geral', 'admin@skina67.com', 'admin', '$2b$10$abcdefghijklmnopqrstuv', 'geral');
 
-
+```
 
 ### 2. Variáveis de Ambiente
 -   Crie um arquivo `.env` na pasta `Backend`.
@@ -265,3 +265,5 @@ VALUES ('Admin Geral', 'admin@skina67.com', 'admin', '$2b$10$abcdefghijklmnopqrs
 ### 5. Acessando o Sistema
 -   **Painel de Gerenciamento:** Abra seu navegador e acesse `http://localhost:3000/login-gerencia`
 -   **Interface do Cliente:** Abra outra aba e acesse `http://localhost:3000/login`
+
+

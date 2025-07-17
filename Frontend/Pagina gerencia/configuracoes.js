@@ -1,6 +1,7 @@
 /**
  * ==================================================================
  * SCRIPT DA PÁGINA DE CONFIGURAÇÕES (configuracoes.js) - VERSÃO FINAL
+ * Com a exibição correta de "Mesas Fechadas" no relatório de atividade.
  * ==================================================================
  */
 
@@ -119,12 +120,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const atividades = await response.json();
             if (!response.ok) throw new Error(atividades.message);
             relatorioResultadoContainer.classList.remove('hidden');
+            
             if (atividades.length === 0) {
                 relatorioResultadoContainer.innerHTML = '<p>Nenhuma atividade encontrada para este funcionário no período selecionado.</p>';
             } else {
                 let htmlResult = '<ul>';
                 atividades.forEach(ativ => {
-                    const acaoFormatada = ativ.acao.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+                    // ==================================================================
+                    // --- AQUI ESTÁ A CORREÇÃO ---
+                    // Se a ação for 'Mesas Fechadas', usamos o texto diretamente.
+                    // Caso contrário, formatamos como antes.
+                    // ==================================================================
+                    const acaoFormatada = ativ.acao === 'Mesas Fechadas' 
+                        ? ativ.acao 
+                        : ativ.acao.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+                    
                     htmlResult += `<li><strong>${acaoFormatada}:</strong> ${ativ.total} vezes</li>`;
                 });
                 htmlResult += '</ul>';
@@ -224,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ secretKey: secretKey }) // Envia a chave no corpo da requisição
+                    body: JSON.stringify({ secretKey: secretKey })
                 });
 
                 const result = await response.json();

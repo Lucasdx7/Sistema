@@ -32,21 +32,40 @@
     </div>
 </header>
 
-        <main class="logs-container">
-            <table id="logs-table">
-                <thead>
-                    <tr>
-                        <th>Data e Hora</th>
-                        <th>Usuário</th>
-                        <th>Ação</th>
-                        <th>Detalhes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- As linhas de log serão inseridas aqui pelo JavaScript -->
-                </tbody>
-            </table>
-        </main>
+                    <main class="logs-container">
+                <!-- ================================================== -->
+                <!-- --- NOVO CABEÇALHO DE FILTROS --- -->
+                <!-- ================================================== -->
+                <div class="logs-filter-header">
+                    <div class="filter-group">
+                        <label for="filtro-data"><i class="fas fa-calendar-alt"></i> Filtrar por Data:</label>
+                        <input type="date" id="filtro-data" class="form-control">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filtro-termo"><i class="fas fa-search"></i> Buscar nos Detalhes:</label>
+                        <input type="text" id="filtro-termo" class="form-control" placeholder="Ex: Mesa 05, Produto X...">
+                    </div>
+                    <div class="filter-actions">
+                        <button id="btn-aplicar-filtros" class="btn btn-primary"><i class="fas fa-filter"></i> Aplicar</button>
+                        <button id="btn-limpar-filtros" class="btn btn-secondary"><i class="fas fa-undo"></i> Limpar</button>
+                    </div>
+                </div>
+
+                <!-- Tabela de Logs (sem alterações na estrutura) -->
+                <table id="logs-table">
+                    <thead>
+                        <tr>
+                            <th>Data e Hora</th>
+                            <th>Usuário</th>
+                            <th>Ação</th>
+                            <th>Detalhes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- As linhas de log serão inseridas aqui pelo JavaScript -->
+                    </tbody>
+                </table>
+            </main>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 

@@ -1,75 +1,76 @@
-/* Estilos para a página de acompanhamento de pedidos (pedidos.css) */
+/* ==================================================================
+ * CSS DA PÁGINA DE ACOMPANHAMENTO DE PEDIDOS (VERSÃO PROFISSIONAL)
+ * ================================================================== */
 
+/* --- Estilos do Container Principal --- */
 .pedidos-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-    gap: 25px;
-    padding: 25px;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 24px; /* Espaçamento entre os cards */
+    padding: 24px;
+    background-color: #f8f9fa; /* Um fundo levemente acinzentado */
 }
 
+/* --- Estilo Base do Card de Pedido --- */
 .pedido-card {
-    background-color: #2c2c3e;
-    border-radius: 12px;
-    border: 1px solid #444;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background-color: #ffffff;
+    border-radius: 12px; /* Bordas mais arredondadas */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Sombra mais suave */
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    transition: all 0.3s ease;
+    overflow: hidden; /* Garante que os cantos arredondados sejam aplicados a tudo */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: 1px solid #e9ecef; /* Borda sutil */
 }
 
-/* --- ESTILOS DE STATUS DO CARD --- */
-.pedido-card[data-status="aguardando"] { border-left: 5px solid #6c757d; }
-.pedido-card[data-status="pedido_feito"] { border-left: 5px solid #007bff; }
-.pedido-card[data-status="todos_entregues"] { border-left: 5px solid #28a745; }
-.pedido-card.chamando {
-    border-color: #ffc107;
-    animation: pulse-animation 1.5s infinite;
+.pedido-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
-@keyframes pulse-animation {
-    0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
-}
-
+/* --- Cabeçalho do Card --- */
 .card-header {
-    background-color: #343a4f;
-    padding: 15px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #444;
+    padding: 16px 20px;
+    background-color: #f1f3f5; /* Fundo do cabeçalho para destaque */
+    border-bottom: 1px solid #dee2e6;
 }
 
 .card-header h3 {
     margin: 0;
-    font-size: 1.4rem;
-    color: #fff;
+    font-size: 1.25rem; /* Tamanho maior para o nome da mesa */
+    color: #212529;
 }
 
 .card-header .cliente-nome {
-    font-size: 1rem;
-    color: #adb5bd;
-    font-weight: 400;
+    font-size: 0.9rem;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     margin-top: 4px;
 }
 
+/* --- Tags de Status --- */
 .status-tag {
+    padding: 6px 12px;
+    border-radius: 20px; /* Formato de pílula */
     font-size: 0.8rem;
-    padding: 4px 10px;
-    border-radius: 20px;
+    font-weight: 600;
     color: #fff;
-    font-weight: bold;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.status-tag.aguardando { background-color: #6c757d; }
-.status-tag.pedido-feito { background-color: #007bff; }
-.status-tag.todos-entregues { background-color: #28a745; }
+.status-tag.pedido_feito { background-color: #007bff; } /* Azul para indicar ação necessária */
+.status-tag.todos_entregues { background-color: #28a745; } /* Verde para sucesso */
+.status-tag.aguardando { background-color: #6c757d; } /* Cinza para estado neutro */
 
+/* --- Corpo do Card (Lista de Itens) --- */
 .card-body {
-    padding: 0 20px 20px 20px;
+    padding: 0; /* Removemos o padding para a lista ocupar todo o espaço */
     flex-grow: 1;
 }
 
@@ -77,226 +78,150 @@
     list-style: none;
     padding: 0;
     margin: 0;
-    max-height: 300px;
-    overflow-y: auto;
-    margin-top: 15px;
 }
 
-.lista-itens {
-  /* Para Firefox */
-  scrollbar-width: none;
-  /* Para IE e Edge */
-  -ms-overflow-style: none;
+.lista-itens li {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: grid;
+    grid-template-columns: 1fr auto; /* Colunas para nome e ações */
+    grid-template-areas:
+        "info     actions"
+        "categoria actions"
+        "obs      actions";
+    gap: 4px 16px;
 }
 
-/* Para Chrome, Safari e outros navegadores WebKit */
-.lista-itens::-webkit-scrollbar {
-  display: none;
+.lista-itens li:last-child {
+    border-bottom: none;
 }
-.lista-itens li:last-child { border-bottom: none; }
 
 .item-info {
+    grid-area: info;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 5px;
-}
-
-.item-nome {
-    font-weight: 500;
-    font-size: 1.1rem;
-    color: #e9ecef;
+    font-weight: 600;
+    color: #343a40;
 }
 
 .item-quantidade {
-    background-color: #495057;
-    color: #fff;
-    padding: 3px 8px;
-    border-radius: 5px;
     font-size: 0.9rem;
+    padding: 2px 8px;
+    background-color: #e9ecef;
+    border-radius: 6px;
+    color: #495057;
 }
 
 .item-categoria {
-    font-size: 0.8rem;
-    color: #8c96a3;
-    font-style: italic;
-}
-
-.item-observacao {
-    font-size: 0.9rem;
-    color: #ffc107; /* Amarelo para destacar */
-    margin-top: 5px;
-    padding-left: 15px;
-    position: relative;
-}
-.item-observacao::before {
-    content: '“';
-    position: absolute;
-    left: 0;
-    top: -2px;
-    font-size: 1.2rem;
+    grid-area: categoria;
+    font-size: 0.85rem;
     color: #6c757d;
 }
 
+.item-observacao {
+    grid-area: obs;
+    font-size: 0.85rem;
+    color: #e67700; /* Cor de destaque para observações */
+    background-color: #fff9e6;
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin-top: 4px;
+}
+
+/* --- Ações do Item (Botão) --- */
 .item-actions {
+    grid-area: actions;
     display: flex;
-    justify-content: flex-end;
     align-items: center;
-    margin-top: 10px;
+    justify-content: center;
 }
 
 .btn-entregar {
     background-color: #007bff;
     color: white;
     border: none;
-    padding: 6px 12px;
-    border-radius: 5px;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
     cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: bold;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
-.btn-entregar:hover { background-color: #0056b3; }
-.btn-entregar:disabled {
-    background-color: #28a745;
-    cursor: not-allowed;
-}
-.btn-entregar:disabled i { margin-right: 5px; }
 
+.btn-entregar:hover:not(:disabled) {
+    background-color: #0056b3;
+    transform: scale(1.02);
+}
+
+.btn-entregar:disabled {
+    background-color: #28a745; /* Verde quando entregue */
+    color: white;
+    cursor: not-allowed;
+    opacity: 1; /* Garantir que a cor fique forte */
+}
+
+.btn-entregar:disabled .fa-check-circle {
+    animation: check-pop 0.4s ease-out;
+}
+
+@keyframes check-pop {
+    0% { transform: scale(0.8); }
+    80% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* --- Rodapé do Card --- */
 .card-footer {
-    background-color: #343a4f;
-    padding: 12px 20px;
+    padding: 16px 20px;
+    background-color: #343a40; /* Rodapé escuro para contraste */
+    color: #fff;
     text-align: right;
     font-size: 1.2rem;
-    color: #28a745;
     font-weight: bold;
-    border-top: 1px solid #444;
 }
 
-.mensagem-sem-pedidos {
-    grid-column: 1 / -1;
+/* --- Estilo para Card com Chamado de Garçom --- */
+.pedido-card.chamando {
+    border-color: #ffc107; /* Borda amarela chamativa */
+    box-shadow: 0 0 15px rgba(255, 193, 7, 0.7);
+    animation: pulse-chamado 1.5s infinite;
+}
+
+@keyframes pulse-chamado {
+    0% { box-shadow: 0 0 15px rgba(255, 193, 7, 0.7); }
+    50% { box-shadow: 0 0 25px rgba(255, 193, 7, 1); }
+    100% { box-shadow: 0 0 15px rgba(255, 193, 7, 0.7); }
+}
+
+/* --- Mensagem de "Sem Pedidos" --- */
+.mensagem-sem-sessoes {
+    /* Este estilo já parece bom no seu CSS original, mantendo a consistência */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
-    padding: 50px;
     color: #6c757d;
-}
-.mensagem-sem-pedidos.hidden { display: none; }
-.mensagem-sem-sessoes,
-.mensagem-sem-pedidos {
-    grid-column: 1 / -1; /* Ocupa toda a largura */
-    text-align: center;
-    padding: 50px;
-    color: #6c757d;
+    padding: 40px;
+    width: 100%;
+    grid-column: 1 / -1; /* Ocupa toda a largura do grid */
 }
 
-.mensagem-sem-sessoes.hidden,
-.mensagem-sem-pedidos.hidden {
-    display: none;
-}
-
-.mensagem-sem-sessoes i,
-.mensagem-sem-pedidos i {
+.mensagem-sem-sessoes i {
     font-size: 4rem;
-    margin-bottom: 20px;
+    margin-bottom: 1rem;
 }
 
-.mensagem-sem-sessoes p,
-.mensagem-sem-pedidos p {
+.mensagem-sem-sessoes p {
     font-size: 1.5rem;
+    font-weight: 500;
     margin: 0;
 }
 
-.mensagem-sem-sessoes span,
-.mensagem-sem-pedidos span {
+.mensagem-sem-sessoes span {
     font-size: 1rem;
-}
-
-/* No seu arquivo pedidos.css */
-
-.lista-itens li.item-pedido {
-    /* AQUI ESTÁ A MÁGICA DO FLEXBOX */
-    display: flex;
-    justify-content: space-between; /* Coloca um grupo na esquerda e outro na direita */
-    align-items: flex-start;      /* Alinha os grupos no topo */
-    padding: 12px 0;
-    border-bottom: 1px solid #3a3a4a;
-    gap: 10px; /* Adiciona um espaço entre os grupos */
-}
-
-.lista-itens li:last-child { 
-    border-bottom: none; 
-}
-
-/* Grupo da Esquerda: Detalhes do Produto */
-.item-detalhes {
-    flex-grow: 1; /* Permite que este grupo cresça e ocupe o espaço disponível */
-}
-
-.item-nome {
-    font-weight: 500;
-    font-size: 1.1rem;
-    color: #e9ecef;
-    margin-bottom: 3px;
-}
-
-.item-categoria {
-    font-size: 0.8rem;
-    color: #8c96a3;
-    font-style: italic;
-}
-
-.item-observacao {
-    font-size: 0.9rem;
-    color: #ffc107;
-    margin-top: 8px;
-    padding-left: 15px;
-    position: relative;
-}
-.item-observacao::before {
-    content: '“';
-    position: absolute;
-    left: 0;
-    top: -2px;
-    font-size: 1.2rem;
-    color: #6c757d;
-}
-
-/* Grupo da Direita: Controles */
-.item-controles {
-    display: flex;
-    flex-direction: column; /* Empilha os controles verticalmente */
-    align-items: flex-end;   /* Alinha os controles à direita */
-    text-align: right;
-    flex-shrink: 0; /* Impede que este grupo encolha */
-}
-
-.item-quantidade {
-    background-color: #495057;
-    color: #fff;
-    padding: 3px 8px;
-    border-radius: 5px;
-    font-size: 0.9rem;
-    margin-bottom: 8px; /* Adiciona um espaço abaixo da quantidade */
-}
-
-.btn-entregar {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: bold;
-    transition: background-color 0.2s;
-    white-space: nowrap; /* Impede que o texto do botão quebre linha */
-}
-.btn-entregar:hover { 
-    background-color: #0056b3; 
-}
-.btn-entregar:disabled {
-    background-color: #28a745;
-    cursor: not-allowed;
-}
-.btn-entregar:disabled i { 
-    margin-right: 5px; 
 }

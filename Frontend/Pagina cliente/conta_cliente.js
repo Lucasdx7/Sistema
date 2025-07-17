@@ -1,6 +1,7 @@
 /**
  * ==================================================================
- * SCRIPT DA PÁGINA DA CONTA DO CLIENTE (conta_cliente.html) - VERSÃO ATUALIZADA
+ * SCRIPT DA PÁGINA DA CONTA DO CLIENTE (conta_cliente.js) - VERSÃO FINAL
+ * Com autenticação de funcionário por NOME DE USUÁRIO para fechar a conta.
  * ==================================================================
  */
 
@@ -79,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (clienteMesaEl) clienteMesaEl.textContent = nomeMesa || 'Mesa';
 
     // ==================================================================
-    // LÓGICA DO TECLADO VIRTUAL
+    // LÓGICA DO TECLADO VIRTUAL (Sem alterações)
     // ==================================================================
     const keyboard = document.getElementById('virtual-keyboard-alphanumeric');
     const inputs = document.querySelectorAll('.virtual-input');
@@ -231,74 +232,86 @@ document.addEventListener('DOMContentLoaded', () => {
         formaPagamentoInput.value = selectedBtn.dataset.payment;
     });
 
-    // Submissão do formulário de logout
+    // ==================================================================
+    // --- LÓGICA DE LOGOUT ATUALIZADA ---
+    // ==================================================================
     logoutForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const submitButton = logoutForm.querySelector('button[type="submit"]');
-    const usuarioMesa = document.getElementById('mesa-usuario').value;
-    const senhaMesa = document.getElementById('mesa-senha').value;
-    const formaPagamento = formaPagamentoInput.value; // Pega o valor do pagamento
+        e.preventDefault();
+        const submitButton = logoutForm.querySelector('button[type="submit"]');
+        // Coleta os dados dos campos corretos (nome de usuário e senha do funcionário)
+        const nomeUsuarioFuncionario = document.getElementById('funcionario-usuario').value;
+        const senhaFuncionario = document.getElementById('funcionario-senha').value;
+        const formaPagamento = formaPagamentoInput.value;
 
-    if (!usuarioMesa || !senhaMesa) {
-        return Notificacao.erro('Campos Vazios', 'Usuário e senha da mesa são obrigatórios.');
-    }
-    // Validação da forma de pagamento
-    if (!formaPagamento) {
-        return Notificacao.erro('Campo Obrigatório', 'Por favor, selecione a forma de pagamento.');
-    }
+        if (!nomeUsuarioFuncionario || !senhaFuncionario) {
+            return Notificacao.erro('Campos Vazios', 'Nome de usuário e senha do funcionário são obrigatórios.');
+        }
+        if (!formaPagamento) {
+            return Notificacao.erro('Campo Obrigatório', 'Por favor, selecione a forma de pagamento.');
+        }
 
-    submitButton.disabled = true;
-    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Autorizando...';
 
-    try {
-        // 1. Autentica as credenciais da mesa (sem alterações aqui)
-        const authResponse = await fetch('/auth/login-cliente', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nome_usuario: usuarioMesa, senha: senhaMesa })
-        });
-        const authResult = await authResponse.json();
-        if (!authResponse.ok) throw new Error(authResult.message);
+        try {
+            // 1. Autentica as credenciais do FUNCIONÁRIO usando a rota de login
+            const authResponse = await fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // Envia 'nome_usuario' em vez de 'email'
+                body: JSON.stringify({ 
+                    nome_usuario: nomeUsuarioFuncionario, 
+                    senha: senhaFuncionario 
+                })
+            });
+            const authResult = await authResponse.json();
+            if (!authResponse.ok) {
+                throw new Error(authResult.message || 'Credenciais do funcionário inválidas.');
+            }
 
-        // 2. Se a autenticação for bem-sucedida, fecha a conta ENVIANDO A FORMA DE PAGAMENTO
-        const closeResponse = await fetch(`/api/sessoes/${sessaoId}/fechar`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json', // Adiciona o header
-                'Authorization': `Bearer ${token}` 
-            },
-            body: JSON.stringify({ forma_pagamento: formaPagamento }) // Envia o dado no corpo
-        });
-        const closeResult = await closeResponse.json();
-        if (!closeResponse.ok) throw new Error(closeResult.message);
+            const tokenFuncionario = authResult.token;
+            const nivelAcessoFuncionario = authResult.usuario.nivel_acesso;
 
-        // 3. Limpa o localStorage e redireciona (sem alterações aqui)
-        localStorage.removeItem('token');
-        localStorage.removeItem('sessaoId');
-        localStorage.removeItem('mesaId');
-        localStorage.removeItem('nomeMesa');
-        localStorage.removeItem('dadosCliente');
-        localStorage.removeItem('carrinho');
+            // Validação extra de permissão no frontend
+            if (nivelAcessoFuncionario !== 'geral' && nivelAcessoFuncionario !== 'pedidos') {
+                throw new Error('Este funcionário não tem permissão para fechar contas.');
+            }
 
-        Notificacao.sucesso('Sessão Encerrada!', 'Obrigado pela preferência e volte sempre.');
+            // 2. Se a autenticação for bem-sucedida, fecha a conta usando o token do funcionário
+            const closeResponse = await fetch(`/api/sessoes/${sessaoId}/fechar`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${tokenFuncionario}`
+                },
+                body: JSON.stringify({ forma_pagamento: formaPagamento })
+            });
+            const closeResult = await closeResponse.json();
+            if (!closeResponse.ok) {
+                throw new Error(closeResult.message);
+            }
 
-        setTimeout(() => {
-            window.location.href = '/login';
-        }, 2500);
+            // 3. Limpa o localStorage e redireciona
+            localStorage.clear();
+            Notificacao.sucesso('Sessão Encerrada!', 'Obrigado pela preferência e volte sempre.');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2500);
 
-    } catch (error) {
-        Notificacao.erro('Falha no Logout', error.message);
-    } finally {
-        submitButton.disabled = false;
-        submitButton.innerHTML = 'Confirmar e Sair';
-    }
-});
-
-    // ... (todo o código existente da página)
+        } catch (error) {
+            Notificacao.erro('Falha na Autorização', error.message);
+        } finally {
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Autorizar e Encerrar Conta';
+        }
+    });
 
     // --- Lógica do WebSocket ---
     function conectarWebSocket() {
-        const socket = new WebSocket(`ws://${window.location.host}?sessaoId=${sessaoId}`);
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}`;
+        const socket = new WebSocket(`${wsUrl}?sessaoId=${sessaoId}` );
+        
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === 'CONFIG_ATUALIZADA' && data.payload && data.payload.fonte_cliente) {
@@ -312,6 +325,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIALIZAÇÃO ---
     carregarEaplicarFonte();
     carregarConta();
-    conectarWebSocket(); // Adiciona a chamada aqui
+    conectarWebSocket();
 });
-

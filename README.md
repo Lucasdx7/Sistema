@@ -1,6 +1,6 @@
 # Sistema de Gestão de Cardápio e Pedidos
 
-![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow ) ![Progresso](https://img.shields.io/badge/progresso-87%25-brightgreen ) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green ) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue ) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
+![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow ) ![Progresso](https://img.shields.io/badge/progresso-89%25-brightgreen ) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green ) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue ) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet )
 
 Sistema de gerenciamento completo para restaurantes, com foco em segurança, usabilidade e atualizações em tempo real. A plataforma permite que a gerência administre o cardápio, mesas e relatórios de forma dinâmica, enquanto os clientes realizam seus pedidos diretamente por um tablet na mesa.
 
@@ -15,7 +15,7 @@ O sistema utiliza WebSockets para garantir que qualquer alteração feita pela g
 
 ---
 
-## 🚀 Status Atual (Progresso: 87%)
+## 🚀 Status Atual (Progresso: 89%)
 
 O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de interação do cliente e as principais funcionalidades de gerenciamento implementadas e estáveis.
 
@@ -25,47 +25,50 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
 -   [x] **API Segura e Middleware Inteligente:**
     -   [x] Endpoints protegidos que exigem autenticação JWT para acesso.
     -   [x] Middleware de autenticação (`authMiddleware`) capaz de diferenciar tokens de **Gerência** e de **Mesa**.
-    -   [x] **(NOVO)** Middleware de permissão (`checarNivelAcesso`) para controle granular de acesso às rotas da API, permitindo diferentes níveis de autorização para as mesmas funcionalidades.
+    -   [x] Middleware de permissão (`checarNivelAcesso`) para controle granular de acesso às rotas da API.
 -   [x] **Sistema de Autenticação Robusto:**
     -   [x] Telas de login separadas e seguras para **Gerência** e **Mesas**.
+    -   [x] **(NOVO)** Rota de login da gerência flexível, aceitando tanto **email** quanto **nome de usuário**.
     -   [x] Criptografia de senhas no banco de dados (`bcryptjs`).
     -   [x] Logout seguro que não interfere em outras sessões ativas.
 -   [x] **Painel de Gerenciamento (CRUD Completo):**
     -   [x] **Gestão de Cardápio:** Adicionar, editar, remover, ordenar e controlar status de categorias e produtos. Inclui sistema de sugestões e configuração de Happy Hour.
     -   [x] **Gestão de Mesas:**
         -   [x] Cadastrar e remover mesas.
-        -   [x] Painel interativo para visualizar o histórico de sessões de cada mesa.
-        -   [x] Cancelar itens de pedidos de uma sessão ativa.
+        -   [x] Painel interativo para visualizar o histórico de sessões de cada mesa, com sessões **ativas** priorizadas no topo.
+        -   [x] **(NOVO)** Exibição do **nome do funcionário** que finalizou cada sessão, para maior rastreabilidade.
+        -   [x] **(NOVO)** Sistema robusto para **cancelamento parcial ou total** de itens de um pedido, com registro de motivo.
     -   [x] **Gestão de Chamados:**
         -   [x] Página dedicada para visualizar chamados de garçom em tempo real.
-        -   [x] Contador de chamados pendentes no menu principal para visibilidade imediata.
-        -   [x] Funcionalidade para marcar um chamado como "Atendido".
-        -   [x] Botão para **limpar o histórico** de chamados já atendidos, mantendo a tela organizada.
+        -   [x] Contador de chamados pendentes no menu principal.
+        -   [x] Funcionalidade para marcar um chamado como "Atendido" e limpar o histórico.
+    -   [x] **(NOVO) Acompanhamento de Pedidos Profissional:**
+        -   [x] Interface com design aprimorado para acompanhar o status dos pedidos de todas as mesas ativas.
+        -   [x] Botão para **confirmar a entrega** de cada item, com registro de log para auditoria.
     -   [x] **Geração de Recibos Profissionais:**
         -   [x] Geração de recibo com layout otimizado para **impressoras térmicas de 80mm**.
-        -   [x] Impressão direta acionada pelo navegador, sem abrir novas abas.
-        -   [x] Recibo inclui todos os dados da sessão: cliente, telefone, CPF, itens, totais e **forma de pagamento**.
-    -   [x] **Página de Relatórios:**
-        -   [x] Geração de relatórios de vendas por período (diário, semanal, mensal).
-        -   [x] Visualização de totais, número de sessões e ticket médio.
-        -   [x] Funcionalidade para **exportar o relatório completo em formato PDF**, com layout profissional para arquivamento e impressão.
--   [x] **(NOVO) Página de Configurações Avançadas:**
+        -   [x] Impressão direta acionada pelo navegador.
+        -   [x] Recibo inclui todos os dados da sessão: cliente, telefone, CPF, itens, totais e forma de pagamento.
+    -   [x] **(NOVO) Página de Logs com Filtros:**
+        -   [x] Interface aprimorada com filtros para pesquisar logs por **data específica** e por **termo de busca** nos detalhes.
+        -   [x] Rota de API otimizada para lidar com as consultas filtradas de forma eficiente.
+-   [x] **Página de Configurações Avançadas:**
     -   [x] **Personalização de Aparência:** Alteração da fonte das páginas do cliente em tempo real.
-    -   [x] **Relatório de Atividade de Funcionários:** Análise de desempenho individual por período (ações de criação, edição, deleção, etc.).
-    -   [x] **Gestão de Permissões:** Controle dinâmico dos módulos que usuários do nível "Pedidos" podem acessar na tela inicial.
-    -   [x] **Zona de Perigo:** Funcionalidade segura para **resetar o banco de dados** (exceto logs), protegida por chave de acesso secreta e com lógica robusta para lidar com chaves estrangeiras.
+    -   [x] **(NOVO) Relatório de Atividade de Funcionários Aprimorado:**
+        -   [x] Análise de desempenho individual por período, corrigida para lidar com **fuso horário (timezone)**.
+        -   [x] Exibe métricas chave como **mesas fechadas** e **pedidos entregues**, além das ações gerais.
+    -   [x] **Gestão de Permissões:** Controle dinâmico dos módulos que usuários do nível "Pedidos" podem acessar.
+    -   [x] **Zona de Perigo:** Funcionalidade segura para **resetar o banco de dados**, protegida por chave de acesso.
 -   [x] **Interface do Cliente (Ciclo Completo e Inteligente):**
-    -   [x] **Login da Mesa:** Autenticação para iniciar uma sessão.
-    -   [x] **Coleta de Dados do Cliente:** Formulário para inserir nome, telefone e CPF.
-    -   [x] **Teclado Virtual Customizado (100% Integrado):**
-        -   [x] Implementado em **todas** as telas de input do cliente, garantindo uma experiência consistente e adaptada para tablets.
-    -   [x] **Cardápio Dinâmico:** Itens e categorias são exibidos ou bloqueados com base em regras de negócio (status, happy hour).
-    -   [x] **Confirmação de Pedido Profissional:** Controle de quantidade, adição de observações e sugestões de acompanhamento.
-    -   [x] **Conta do Cliente:**
-        -   [x] **Chamado de Garçom:** Botão para solicitar atendimento, que notifica todas as telas da gerência em tempo real.
-        -   [x] **Fechamento de Conta com Pagamento:** Ao encerrar a sessão, o funcionário registra a forma de pagamento (Dinheiro, Cartão ou PIX).
+    -   [x] Login da Mesa e Coleta de Dados do Cliente.
+    -   [x] Teclado Virtual Customizado integrado em todas as telas de input.
+    -   [x] Cardápio Dinâmico com regras de negócio (status, happy hour).
+    -   [x] Confirmação de Pedido Profissional com observações e sugestões.
+    -   [x] **(NOVO) Fechamento de Conta com Autorização de Funcionário:**
+        -   [x] O encerramento da sessão agora exige autenticação de um funcionário com **nome de usuário e senha**.
+        -   [x] Aumenta a segurança e a rastreabilidade da operação de pagamento.
 -   [x] **Comunicação em Tempo Real (WebSockets):**
-    -   [x] Atualização automática do cardápio e da **aparência** do cliente.
+    -   [x] Atualização automática do cardápio e da aparência do cliente.
     -   [x] Notificação instantânea de chamados de garçom para a gerência.
 
 ### Próximos Passos (Roadmap):
@@ -90,7 +93,6 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
     *   HTML5, CSS3, JavaScript (Vanilla)
     *   [Font Awesome](https://fontawesome.com/ ): Para os ícones da interface.
     *   [SweetAlert2](https://sweetalert2.github.io/ ): Para notificações e modais elegantes.
-    *   [jsPDF](https://github.com/parallax/jsPDF ) & [html2canvas](https://html2canvas.hertzen.com/ ): Para geração de relatórios em PDF no lado do cliente.
 
 *   **Banco de Dados:**
     *   [MySQL](https://www.mysql.com/ )
@@ -120,7 +122,7 @@ Para rodar este projeto em sua máquina, siga os passos abaixo.
     DB_NAME=cardapio_db
     JWT_SECRET=sua_chave_secreta_para_jwt
     REGISTER_SECRET_TOKEN=sua_chave_para_registrar_novos_usuarios
-    RESET_SECRET_KEY=sua_chave_secreta_para_resetar_o_banco
+    RESET_SECRET_TOKEN=sua_chave_secreta_para_resetar_o_banco
     ```
 
 ### 3. Instalação das Dependências

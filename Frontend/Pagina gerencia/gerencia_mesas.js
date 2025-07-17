@@ -73,134 +73,141 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function carregarDetalhesMesa(mesaId, mesaNome) {
-        selectedMesaId = mesaId;
-        detalhesTitulo.textContent = `Detalhes da ${mesaNome}`;
-        detalhesConteudo.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Carregando histórico...</p>';
-        document.querySelectorAll('#lista-mesas li').forEach(li => li.classList.remove('active'));
-        document.querySelector(`#lista-mesas li[data-id='${mesaId}']`).classList.add('active');
+    selectedMesaId = mesaId;
+    detalhesTitulo.textContent = `Detalhes da ${mesaNome}`;
+    detalhesConteudo.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Carregando histórico...</p>';
+    document.querySelectorAll('#lista-mesas li').forEach(li => li.classList.remove('active'));
+    document.querySelector(`#lista-mesas li[data-id='${mesaId}']`).classList.add('active');
 
-        try {
-            const sessoesResponse = await fetch(`/api/mesas/${mesaId}/sessoes`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (!sessoesResponse.ok) throw new Error('Falha ao carregar o histórico.');
-            const sessoes = await sessoesResponse.json();
-            detalhesConteudo.innerHTML = '';
-            if (sessoes.length === 0) {
-                detalhesConteudo.innerHTML = '<p>Esta mesa ainda não teve nenhuma sessão.</p>';
-                return;
-            }
-            sessoes.forEach(sessao => {
-                const div = document.createElement('div');
-                div.className = `session-card ${sessao.status}`;
-                const totalGasto = parseFloat(sessao.total_gasto || 0).toFixed(2);
-                const dataInicio = new Date(sessao.data_inicio).toLocaleString('pt-BR');
-                const dataFim = sessao.data_fim ? new Date(sessao.data_fim).toLocaleString('pt-BR') : '';
-
-                let pagamentoHTML = '';
-                if (sessao.forma_pagamento) {
-                    const pagamentoFormatado = sessao.forma_pagamento.charAt(0).toUpperCase() + sessao.forma_pagamento.slice(1);
-                    pagamentoHTML = `<p><strong>Pagamento:</strong> ${pagamentoFormatado}</p>`;
-                }
-
-                const actionsHTML = sessao.status === 'ativa'
-                    ? `<div class="session-actions">
-                           <button class="action-btn print-btn" data-sessao-id="${sessao.id}"><i class="fas fa-receipt"></i> Ver Conta</button>
-                           <button class="action-btn edit-btn" data-sessao-id="${sessao.id}"><i class="fas fa-edit"></i> Editar Pedidos</button>
-                           <button class="action-btn close-btn" data-sessao-id="${sessao.id}"><i class="fas fa-check-circle"></i> Fechar Conta</button>
-                       </div>`
-                    : `<div class="session-actions">
-                           <button class="action-btn view-details-btn" data-sessao-id="${sessao.id}"><i class="fas fa-receipt"></i> Ver Detalhes</button>
-                       </div>`;
-
-                div.innerHTML = `
-                    <div class="session-header">
-                        <strong><i class="fas fa-user"></i> ${sessao.nome_cliente}</strong>
-                        <span class="status-tag ${sessao.status}">${sessao.status}</span>
-                    </div>
-                    <div class="session-body">
-                        <p><strong>Início:</strong> ${dataInicio}</p>
-                        ${dataFim ? `<p><strong>Fim:</strong> ${dataFim}</p>` : ''}
-                        <p><strong>Total Gasto:</strong> R$ ${totalGasto}</p>
-                        ${pagamentoHTML}
-                    </div>
-                    ${actionsHTML}`;
-                detalhesConteudo.appendChild(div);
-            });
-        } catch (error) {
-            Notificacao.erro('Erro ao Carregar Detalhes', error.message);
+    try {
+        const sessoesResponse = await fetch(`/api/mesas/${mesaId}/sessoes`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!sessoesResponse.ok) throw new Error('Falha ao carregar o histórico.');
+        
+        const sessoes = await sessoesResponse.json();
+        detalhesConteudo.innerHTML = '';
+        if (sessoes.length === 0) {
+            detalhesConteudo.innerHTML = '<p>Esta mesa ainda não teve nenhuma sessão.</p>';
+            return;
         }
-    }
 
-    async function abrirModalDeDetalhes(sessaoId) {
-        currentSessaoId = sessaoId;
-        detailsModalTitulo.textContent = `Recibo da Sessão #${sessaoId}`;
-        detailsModalBody.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Carregando...</p>';
-        detailsModal.classList.remove('hidden');
-        try {
-            const response = await fetch(`/api/sessoes/${sessaoId}/conta`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (!response.ok) throw new Error('Falha ao carregar detalhes da sessão.');
-            const conta = await response.json();
-            let pedidosHTML = '<ul>';
-            if (conta.pedidos && conta.pedidos.length > 0) {
-                conta.pedidos.forEach(pedido => {
-                    const isCanceled = pedido.status === 'cancelado';
-                    pedidosHTML += `<li class="pedido-item ${isCanceled ? 'cancelado' : ''}">
-                                        <span>${pedido.quantidade}x ${pedido.nome_produto}</span>
-                                        ${isCanceled ? `<span class="motivo-cancelamento">(Cancelado)</span>` : `<span>R$ ${(pedido.quantidade * pedido.preco_unitario).toFixed(2)}</span>`}
-                                    </li>`;
-                });
-            } else {
-                pedidosHTML += '<p>Nenhum pedido registrado nesta sessão.</p>';
+        sessoes.forEach(sessao => {
+            const div = document.createElement('div');
+            div.className = `session-card ${sessao.status}`;
+            const totalGasto = parseFloat(sessao.total_gasto || 0).toFixed(2);
+            const dataInicio = new Date(sessao.data_inicio).toLocaleString('pt-BR');
+            const dataFim = sessao.data_fim ? new Date(sessao.data_fim).toLocaleString('pt-BR') : '';
+
+            let pagamentoHTML = '';
+            if (sessao.forma_pagamento) {
+                const pagamentoFormatado = sessao.forma_pagamento.charAt(0).toUpperCase() + sessao.forma_pagamento.slice(1);
+                pagamentoHTML = `<p><strong>Pagamento:</strong> ${pagamentoFormatado}</p>`;
             }
-            pedidosHTML += '</ul>';
-            const subtotal = parseFloat(conta.total) || 0;
-            const taxaServico = subtotal * 0.10;
-            const totalFinal = subtotal + taxaServico;
-            pedidosHTML += `
-                <div class="details-summary">
-                    <div class="summary-item"><span>Subtotal</span><span>R$ ${subtotal.toFixed(2)}</span></div>
-                    <div class="summary-item"><span>Taxa de Serviço (10%)</span><span>R$ ${taxaServico.toFixed(2)}</span></div>
-                    <div class="summary-item total"><span>TOTAL PAGO</span><span>R$ ${totalFinal.toFixed(2)}</span></div>
+
+            // ==================================================================
+            // --- AQUI ESTÁ A MUDANÇA: Adicionando a linha "Finalizado por" ---
+            // ==================================================================
+            let finalizadoPorHTML = '';
+            if (sessao.status === 'finalizada' && sessao.finalizado_por) {
+                finalizadoPorHTML = `<p class="finalizado-por"><strong>Finalizado por:</strong> ${sessao.finalizado_por}</p>`;
+            }
+
+            const actionsHTML = sessao.status === 'ativa'
+                ? `<div class="session-actions">
+                       <button class="action-btn print-btn" data-sessao-id="${sessao.id}"><i class="fas fa-receipt"></i> Ver Conta</button>
+                       <button class="action-btn edit-btn" data-sessao-id="${sessao.id}"><i class="fas fa-edit"></i> Editar Pedidos</button>
+                   </div>`
+                : `<div class="session-actions">
+                       <button class="action-btn view-details-btn" data-sessao-id="${sessao.id}"><i class="fas fa-receipt"></i> Ver Detalhes</button>
+                   </div>`;
+
+            div.innerHTML = `
+                <div class="session-header">
+                    <strong><i class="fas fa-user"></i> ${sessao.nome_cliente}</strong>
+                    <span class="status-tag ${sessao.status}">${sessao.status}</span>
                 </div>
-                <div class="modal-print-footer">
-                    <button id="print-receipt-btn" class="action-btn print-btn"><i class="fas fa-print"></i> Gerar Recibo</button>
-                </div>`;
-            detailsModalBody.innerHTML = pedidosHTML;
-        } catch (error) {
-            Notificacao.erro('Erro no Modal', error.message);
-            detailsModalBody.innerHTML = `<p class="error-message">${error.message}</p>`;
-        }
+                <div class="session-body">
+                    <p><strong>Início:</strong> ${dataInicio}</p>
+                    ${dataFim ? `<p><strong>Fim:</strong> ${dataFim}</p>` : ''}
+                    <p><strong>Total Gasto:</strong> R$ ${totalGasto}</p>
+                    ${pagamentoHTML}
+                    ${finalizadoPorHTML} <!-- Linha adicionada aqui -->
+                </div>
+                ${actionsHTML}`;
+            detalhesConteudo.appendChild(div);
+        });
+    } catch (error) {
+        Notificacao.erro('Erro ao Carregar Detalhes', error.message);
     }
+}
 
-    async function abrirModalDeEdicao(sessaoId) {
-        currentSessaoId = sessaoId;
-        editModalTitulo.textContent = `Editando Pedidos (Sessão #${sessaoId})`;
-        editModalBody.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Carregando...</p>';
-        editModal.classList.remove('hidden');
-        try {
-            const response = await fetch(`/api/sessoes/${sessaoId}/pedidos`, { headers: { 'Authorization': `Bearer ${token}` } });
-            if (!response.ok) throw new Error('Falha ao carregar pedidos.');
-            const pedidos = await response.json();
-            if (pedidos.length === 0) {
-                editModalBody.innerHTML = '<p>Nenhum pedido feito nesta sessão.</p>';
-                return;
-            }
-            let pedidosHTML = '<ul>';
-            pedidos.forEach(pedido => {
-                const isCanceled = pedido.status === 'cancelado';
-                pedidosHTML += `
-                    <li class="pedido-item ${isCanceled ? 'cancelado' : ''}" data-pedido-id="${pedido.id}">
-                        <span>${pedido.quantidade}x ${pedido.nome_produto}</span>
-                        <div class="item-actions">
-                            ${!isCanceled ? `<button class="cancel-item-btn" title="Cancelar Item"><i class="fas fa-times-circle"></i></button>` : `<span class="motivo-cancelamento" title="Motivo: ${pedido.motivo_cancelamento}">(Cancelado)</span>`}
-                        </div>
-                    </li>`;
-            });
-            pedidosHTML += '</ul>';
-            editModalBody.innerHTML = pedidosHTML;
-        } catch (error) {
-            Notificacao.erro('Erro no Modal', error.message);
+    // Em /Pagina gerencia/gerencia_mesas.js
+// SUBSTITUA A FUNÇÃO INTEIRA POR ESTA VERSÃO FINAL
+
+async function abrirModalDeEdicao(sessaoId) {
+    currentSessaoId = sessaoId;
+    editModalTitulo.textContent = `Editando Pedidos (Sessão #${sessaoId})`;
+    editModalBody.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Carregando pedidos...</p>';
+    editModal.classList.remove('hidden');
+
+    try {
+        // A rota /api/sessoes/:id/pedidos já busca o motivo do cancelamento.
+        // Se não buscar, você precisará ajustar a API para incluir p.motivo_cancelamento
+        const response = await fetch(`/api/sessoes/${sessaoId}/pedidos`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!response.ok) throw new Error('Falha ao carregar os pedidos para edição.');
+        
+        const pedidos = await response.json();
+        if (pedidos.length === 0) {
+            editModalBody.innerHTML = '<p class="placeholder-text">Nenhum pedido feito nesta sessão ainda.</p>';
+            return;
         }
+
+        let pedidosHTML = '<ul class="edit-pedidos-list">';
+        pedidos.forEach(pedido => {
+            const isCanceled = pedido.status === 'cancelado';
+            // Calcula o preço total do item, se não estiver cancelado
+            const totalItem = !isCanceled ? (pedido.quantidade * pedido.preco_unitario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '';
+
+            pedidosHTML += `
+                <li class="edit-pedido-item ${isCanceled ? 'cancelado' : ''}" 
+                    data-pedido-id="${pedido.id}" 
+                    data-quantidade="${pedido.quantidade}"
+                    data-nome-produto="${pedido.nome_produto}">
+                    
+                    <div class="item-info">
+                        <span class="item-nome">${pedido.quantidade}x ${pedido.nome_produto}</span>
+                        ${!isCanceled ? `<span class="item-preco">${totalItem}</span>` : ''}
+                        
+                        <!-- ================================================================== -->
+                        <!-- --- AQUI ESTÁ A MUDANÇA: Exibindo o motivo do cancelamento --- -->
+                        <!-- ================================================================== -->
+                        ${isCanceled && pedido.motivo_cancelamento ? `
+                            <span class="motivo-texto">Motivo: ${pedido.motivo_cancelamento}</span>
+                        ` : ''}
+
+                    </div>
+
+                    <div class="item-actions">
+                        ${!isCanceled ? `
+                            <button class="action-btn cancel-item-btn" title="Cancelar Item">
+                                <i class="fas fa-times-circle"></i> Cancelar
+                            </button>` 
+                        : `
+                            <span class="status-cancelado" title="Este item foi cancelado.">
+                                <i class="fas fa-check-circle"></i> Cancelado
+                            </span>`
+                        }
+                    </div>
+                </li>`;
+        });
+        pedidosHTML += '</ul>';
+        editModalBody.innerHTML = pedidosHTML;
+
+    } catch (error) {
+        Notificacao.erro('Erro ao Abrir Modal', error.message);
+        editModalBody.innerHTML = `<p class="error-message">${error.message}</p>`;
     }
+}
+
 
     // Em /Pagina gerencia/gerencia_mesas.js
 
@@ -491,29 +498,122 @@ function generateReceiptCss() {
 
     // Ações no Modal de Edição de Pedidos
     editModalBody.addEventListener('click', async (e) => {
-        const pedidoItem = e.target.closest('.pedido-item');
-        if (!pedidoItem) return;
-        const pedidoId = pedidoItem.dataset.pedidoId;
-        const actionsContainer = pedidoItem.querySelector('.item-actions');
-        if (e.target.closest('.cancel-item-btn')) {
-            actionsContainer.innerHTML = `<div class="cancel-form-container"><input type="text" class="motivo-input" placeholder="Motivo..." required><button class="confirm-cancel-btn" title="Confirmar"><i class="fas fa-check"></i></button><button class="undo-cancel-btn" title="Desfazer"><i class="fas fa-undo"></i></button></div>`;
-            actionsContainer.querySelector('.motivo-input').focus();
-        } else if (e.target.closest('.confirm-cancel-btn')) {
-            const motivo = actionsContainer.querySelector('.motivo-input').value.trim();
-            if (!motivo) return Notificacao.erro('Campo Obrigatório', 'O motivo é obrigatório.');
-            try {
-                await fetch(`/api/pedidos/${pedidoId}/cancelar`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ motivo }) });
-                Notificacao.sucesso('Item cancelado!');
-                const mesaAtiva = document.querySelector('#lista-mesas li.active');
-                if (mesaAtiva) await carregarDetalhesMesa(mesaAtiva.dataset.id, mesaAtiva.dataset.nome);
-                abrirModalDeEdicao(currentSessaoId); // Recarrega o modal
-            } catch (error) {
-                Notificacao.erro('Erro ao Cancelar', error.message);
+    const cancelButton = e.target.closest('.cancel-item-btn');
+    if (!cancelButton) return;
+
+    const pedidoItem = cancelButton.closest('.edit-pedido-item');
+    const pedidoId = pedidoItem.dataset.pedidoId;
+    const quantidadeAtual = parseInt(pedidoItem.dataset.quantidade, 10);
+    const nomeProduto = pedidoItem.dataset.nomeProduto;
+
+    let quantidadeParaCancelar = 1;
+    let motivo = '';
+
+    // Se a quantidade for maior que 1, pergunta quantos cancelar.
+    if (quantidadeAtual > 1) {
+        const { value: formValues, isConfirmed } = await Swal.fire({
+            title: `Cancelar "${nomeProduto}"`,
+            html: `
+                <p>Existem <strong>${quantidadeAtual}</strong> unidades deste item. Quantas você deseja cancelar?</p>
+                <input type="number" id="swal-quantidade" class="swal2-input" value="1" min="1" max="${quantidadeAtual}">
+                <input type="text" id="swal-motivo" class="swal2-input" placeholder="Motivo do cancelamento (obrigatório)">
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Confirmar Cancelamento',
+            cancelButtonText: 'Voltar',
+            showDenyButton: true,
+            denyButtonText: 'Cancelar Todos',
+            confirmButtonColor: '#dc3545',
+            denyButtonColor: '#b02a37',
+            preConfirm: () => {
+                const qtd = document.getElementById('swal-quantidade').value;
+                const mot = document.getElementById('swal-motivo').value.trim();
+                if (!mot) {
+                    Swal.showValidationMessage('O motivo do cancelamento é obrigatório.');
+                    return false;
+                }
+                if (!qtd || qtd < 1 || qtd > quantidadeAtual) {
+                    Swal.showValidationMessage(`A quantidade deve ser entre 1 e ${quantidadeAtual}.`);
+                    return false;
+                }
+                return { quantidade: parseInt(qtd, 10), motivo: mot };
             }
-        } else if (e.target.closest('.undo-cancel-btn')) {
-            actionsContainer.innerHTML = `<button class="cancel-item-btn" title="Cancelar Item"><i class="fas fa-times-circle"></i></button>`;
+        });
+
+        if (!isConfirmed) { // Se o usuário clicou em "Cancelar" ou "Cancelar Todos"
+             if (Swal.getDenyButton().ariaPressed) { // Se clicou em "Cancelar Todos"
+                const { value: motivoTodos, isConfirmed: isConfirmedTodos } = await Swal.fire({
+                    title: 'Cancelar TODOS os itens?',
+                    input: 'text',
+                    inputLabel: 'Motivo do cancelamento (obrigatório)',
+                    inputPlaceholder: 'Digite o motivo aqui...',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sim, cancelar todos',
+                    cancelButtonText: 'Voltar',
+                    inputValidator: (value) => {
+                        if (!value) {
+                            return 'Você precisa informar um motivo!';
+                        }
+                    }
+                });
+                if(isConfirmedTodos) {
+                    quantidadeParaCancelar = quantidadeAtual;
+                    motivo = motivoTodos;
+                } else {
+                    return; // Usuário desistiu
+                }
+            } else {
+                return; // Usuário fechou ou cancelou
+            }
+        } else { // Se o usuário confirmou o cancelamento parcial
+            quantidadeParaCancelar = formValues.quantidade;
+            motivo = formValues.motivo;
         }
-    });
+
+    } else { // Se a quantidade for 1, apenas pede o motivo.
+        const { value: motivoUnico, isConfirmed } = await Swal.fire({
+            title: `Cancelar "${nomeProduto}"`,
+            input: 'text',
+            inputLabel: 'Qual o motivo do cancelamento?',
+            inputPlaceholder: 'Digite o motivo aqui...',
+            showCancelButton: true,
+            confirmButtonText: 'Confirmar',
+            cancelButtonText: 'Voltar',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Você precisa informar um motivo!';
+                }
+            }
+        });
+        if (!isConfirmed) return;
+        motivo = motivoUnico;
+    }
+
+    // Envia a requisição para a API
+    try {
+        const response = await fetch(`/api/pedidos/${pedidoId}/cancelar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ motivo, quantidade: quantidadeParaCancelar })
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Falha ao processar o cancelamento.');
+
+        Notificacao.sucesso('Item(s) cancelado(s) com sucesso!');
+        
+        // Recarrega o modal e os detalhes da mesa para refletir a mudança
+        abrirModalDeEdicao(currentSessaoId);
+        const mesaAtiva = document.querySelector('#lista-mesas li.active');
+        if (mesaAtiva) {
+            carregarDetalhesMesa(mesaAtiva.dataset.id, mesaAtiva.dataset.nome);
+        }
+
+    } catch (error) {
+        Notificacao.erro('Erro ao Cancelar', error.message);
+    }
+});
 
     // Ações no Modal de Detalhes da Conta (Gerar Recibo)
     // Em /Pagina gerencia/gerencia_mesas.js

@@ -54,30 +54,47 @@ router.post('/register', async (req, res) => {
 });
 
 // Rota de Login da GERÊNCIA: POST /auth/login
+// No seu arquivo de rotas de autenticação do backend
+// SUBSTITUA A ROTA /auth/login por esta versão
+
 router.post('/login', async (req, res) => {
-    const { email, senha } = req.body;
+    // Aceita tanto 'email' quanto 'nome_usuario'
+    const { email, nome_usuario, senha } = req.body;
+    const loginIdentifier = email || nome_usuario;
+
+    if (!loginIdentifier || !senha) {
+        return res.status(400).json({ message: 'Credenciais de login e senha são obrigatórias.' });
+    }
 
     try {
-        const [usuario] = await query('SELECT * FROM usuarios WHERE email = ?', [email]);
+        // A consulta agora verifica tanto a coluna 'email' quanto a 'nome'
+        const sql = 'SELECT * FROM usuarios WHERE email = ? OR nome = ?';
+        const [usuario] = await query(sql, [loginIdentifier, loginIdentifier]);
 
-        if (usuario && (await bcrypt.compare(senha, usuario.senha))) {
-            res.json({
-                token: gerarToken(usuario.id),
-                usuario: {
-                    id: usuario.id,
-                    nome: usuario.nome,
-                    email: usuario.email,
-                    nivel_acesso: usuario.nivel_acesso,
-                },
-            });
-        } else {
-            res.status(401).json({ message: 'Email ou senha inválidos.' });
+        if (!usuario) {
+            return res.status(401).json({ message: 'Credenciais inválidas.' });
         }
+
+        const senhaValida = await bcrypt.compare(senha, usuario.senha);
+        if (!senhaValida) {
+            return res.status(401).json({ message: 'Credenciais inválidas.' });
+        }
+
+        const payload = { id: usuario.id, nome: usuario.nome, nivel_acesso: usuario.nivel_acesso };
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '8h' });
+
+        res.json({
+            message: 'Login bem-sucedido!',
+            token: token,
+            usuario: payload // Envia os dados do usuário para o frontend
+        });
+
     } catch (error) {
-        console.error("Erro no login da gerência:", error);
-        res.status(500).json({ message: 'Erro no servidor ao tentar fazer login.' });
+        console.error("Erro na autenticação:", error);
+        res.status(500).json({ message: 'Erro interno no servidor.' });
     }
 });
+
 
 // ==================================================================
 // ROTA CORRIGIDA PARA LOGIN DO CLIENTE (TABLET/MESA)

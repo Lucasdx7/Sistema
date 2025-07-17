@@ -402,11 +402,15 @@ router.get('/mesas/status', checarUsuarioParaLog, async (req, res) => {
 // ==================================================================
 // --- ROTA DE SESSÕES COM A CONSULTA DO TOTAL CORRIGIDA ---
 // ==================================================================
-router.get('/mesas/:id/sessoes', checarNivelAcesso (['geral', 'pedidos']), checarUsuarioParaLog, async (req, res) => {
+// Em seu arquivo api.js
+// SUBSTITUA A ROTA DE BUSCAR SESSÕES INTEIRA POR ESTA VERSÃO
+
+router.get('/mesas/:id/sessoes', checarNivelAcesso(['geral', 'pedidos']), checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params;
     try {
-        // --- CONSULTA SQL ATUALIZADA ---
-        // Adicionamos 'sc.forma_pagamento' à lista de campos selecionados.
+        // ==================================================================
+        // --- CONSULTA SQL ATUALIZADA PARA INCLUIR O NOME DO FUNCIONÁRIO ---
+        // ==================================================================
         const sql = `
             SELECT 
                 sc.id, 
@@ -414,15 +418,24 @@ router.get('/mesas/:id/sessoes', checarNivelAcesso (['geral', 'pedidos']), checa
                 sc.data_inicio, 
                 sc.data_fim, 
                 sc.status,
-                sc.forma_pagamento, -- <<< CAMPO ADICIONADO AQUI
+                sc.forma_pagamento,
                 (
                     SELECT SUM(p.quantidade * p.preco_unitario) 
                     FROM pedidos p 
                     WHERE p.id_sessao = sc.id AND p.status != 'cancelado'
-                ) AS total_gasto
+                ) AS total_gasto,
+                -- Subquery para buscar o nome do usuário que fechou a sessão
+                (
+                    SELECT l.nome_usuario 
+                    FROM logs l 
+                    WHERE l.acao = 'FECHOU_SESSAO' 
+                      AND l.detalhes LIKE CONCAT('%sessão ID ', sc.id, '%')
+                    ORDER BY l.data_hora DESC
+                    LIMIT 1
+                ) AS finalizado_por
             FROM sessoes_cliente sc
             WHERE sc.id_mesa = ?
-            ORDER BY sc.data_inicio DESC;
+            ORDER BY FIELD(sc.status, 'ativa') DESC, sc.data_inicio DESC;
         `;
         
         const sessoes = await query(sql, [id]);
@@ -434,9 +447,11 @@ router.get('/mesas/:id/sessoes', checarNivelAcesso (['geral', 'pedidos']), checa
         res.json(sessoesFormatadas);
 
     } catch (error) {
+        console.error('Erro ao buscar histórico da mesa:', error);
         res.status(500).json({ message: 'Erro no servidor ao buscar o histórico da mesa.' });
     }
 });
+
 
 // POST /sessoes/iniciar
 router.post('/sessoes/iniciar', async (req, res) => {
@@ -489,17 +504,18 @@ router.get('/sessoes/:id/conta',  async (req, res) => {
 // ==================================================================
 // ROTA PARA FECHAR A CONTA DE UMA SESSÃO (VERSÃO FINAL E CORRIGIDA)
 // ==================================================================
+// Em seu arquivo api.js
+// SUBSTITUA A ROTA DE FECHAMENTO DE SESSÃO INTEIRA POR ESTA VERSÃO
+
 router.post('/sessoes/:id/fechar', checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params; // id da sessão
-    const { forma_pagamento } = req.body; // Pega a forma de pagamento do corpo da requisição
+    const { forma_pagamento } = req.body;
 
-    // Validação: verifica se a forma de pagamento foi enviada
     if (!forma_pagamento || !['dinheiro', 'cartao', 'pix'].includes(forma_pagamento)) {
         return res.status(400).json({ message: 'Forma de pagamento inválida ou não fornecida.' });
     }
 
     try {
-        // Atualiza a sessão, definindo o status, a data de fim E a forma de pagamento
         const sql = "UPDATE sessoes_cliente SET status = 'finalizada', data_fim = NOW(), forma_pagamento = ? WHERE id = ? AND status = 'ativa'";
         const result = await query(sql, [forma_pagamento, id]);
 
@@ -507,8 +523,13 @@ router.post('/sessoes/:id/fechar', checarUsuarioParaLog, async (req, res) => {
             return res.status(404).json({ message: 'Sessão não encontrada ou já está finalizada.' });
         }
 
-        const nomeParaLog = req.usuario.nome || req.usuario.nome_usuario;
-        // Log aprimorado
+        // ==================================================================
+        // --- AQUI ESTÁ A CORREÇÃO CRÍTICA ---
+        // Garantimos que estamos usando req.usuario.nome, que é o nome completo,
+        // em vez de req.usuario.nome_usuario.
+        // ==================================================================
+        const nomeParaLog = req.usuario.nome; 
+
         await registrarLog(req.usuario.id, nomeParaLog, 'FECHOU_SESSAO', `Fechou a sessão ID ${id} com pagamento via ${forma_pagamento}.`);
 
         res.json({ message: 'Conta fechada com sucesso!' });
@@ -517,6 +538,7 @@ router.post('/sessoes/:id/fechar', checarUsuarioParaLog, async (req, res) => {
         res.status(500).json({ message: 'Erro no servidor ao fechar a conta.' });
     }
 });
+
 
 // ==================================================================
 // --- ROTAS DE PEDIDOS ---
@@ -527,6 +549,11 @@ router.post('/sessoes/:id/fechar', checarUsuarioParaLog, async (req, res) => {
 
 // ROTA DE PEDIDOS ATUALIZADA para incluir o status 'pendente'
 // Verifique se sua rota está exatamente assim
+// Em api.js, SUBSTITUA a rota POST /pedidos
+
+// Em seu arquivo api.js
+// SUBSTITUA A ROTA POST /pedidos INTEIRA POR ESTA VERSÃO FINAL
+
 router.post('/pedidos', checarUsuarioParaLog, async (req, res) => {
     const { pedidos } = req.body;
 
@@ -534,41 +561,49 @@ router.post('/pedidos', checarUsuarioParaLog, async (req, res) => {
         return res.status(400).json({ message: 'O corpo da requisição deve conter um array de pedidos.' });
     }
 
-    for (const pedido of pedidos) {
-        if (!pedido.id_mesa || !pedido.id_sessao || !pedido.id_produto || pedido.quantidade === undefined || pedido.preco_unitario === undefined) {
-            return res.status(400).json({ message: 'Dados do pedido incompletos ou inválidos.' });
-        }
-    }
-
     try {
-        const promessasDePedidos = pedidos.map(pedido => {
-            // A query DEVE incluir a coluna 'status'
-            const sql = 'INSERT INTO pedidos (id_sessao, id_produto, quantidade, preco_unitario, observacao, status) VALUES (?, ?, ?, ?, ?, ?)';
+        for (const pedido of pedidos) {
+            if (!pedido.id_sessao || !pedido.id_produto || pedido.quantidade === undefined) {
+                throw new Error(`Dados do pedido incompletos. id_sessao, id_produto e quantidade são obrigatórios.`);
+            }
+
+            const [produtoInfo] = await query('SELECT preco FROM produtos WHERE id = ?', [pedido.id_produto]);
+            if (!produtoInfo) {
+                throw new Error(`Produto com ID ${pedido.id_produto} não encontrado.`);
+            }
+
+            // ==================================================================
+            // --- CORREÇÃO FINAL: Removendo 'nome_produto' do INSERT ---
+            // A tabela 'pedidos' não tem esta coluna.
+            // ==================================================================
+            const sql = `
+                INSERT INTO pedidos 
+                    (id_sessao, id_produto, quantidade, preco_unitario, observacao, status) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            `;
             const params = [
                 pedido.id_sessao,
                 pedido.id_produto,
                 pedido.quantidade,
-                pedido.preco_unitario,
+                produtoInfo.preco, // Usando o preço do banco
                 pedido.observacao || null,
-                'pendente' // E o valor 'pendente' DEVE ser passado aqui
+                'pendente'
             ];
-            return query(sql, params);
-        });
-
-        await Promise.all(promessasDePedidos);
+            await query(sql, params);
+        }
 
         if (req.broadcast) {
             req.broadcast({ type: 'NOVO_PEDIDO' });
         }
-
         res.status(201).json({ message: 'Pedido recebido e enviado para a cozinha com sucesso!' });
 
     } catch (error) {
         console.error('Falha crítica ao inserir pedidos em lote:', error);
-        registrarLog(req.usuario.id, req.usuario.nome_usuario, 'ERRO_PEDIDO', `Falha ao registrar pedido em lote. Erro: ${error.message}`);
-        res.status(500).json({ message: 'Erro interno no servidor ao tentar salvar o pedido.' });
+        res.status(400).json({ message: error.message });
     }
 });
+
+
 
 
 
@@ -578,17 +613,51 @@ router.post('/pedidos', checarUsuarioParaLog, async (req, res) => {
 // --- ROTA DE LOGS ---
 // ==================================================================
 
+// Em seu arquivo api.js
+// SUBSTITUA A ROTA DE LOGS INTEIRA POR ESTA VERSÃO
+
 router.get('/logs', checarUsuarioParaLog, async (req, res) => {
     if (req.usuario.nivel_acesso !== 'geral') {
         return res.status(403).json({ message: 'Acesso negado.' });
     }
+
     try {
-        const logs = await query('SELECT * FROM logs ORDER BY data_hora DESC LIMIT 100');
+        // Pega os parâmetros da URL, se existirem
+        const { data, termo } = req.query;
+
+        let sql = 'SELECT * FROM logs';
+        const params = [];
+        const conditions = [];
+
+        // Adiciona condição de data, se fornecida
+        if (data) {
+            conditions.push('DATE(data_hora) = ?');
+            params.push(data);
+        }
+
+        // Adiciona condição de busca por termo, se fornecido
+        if (termo) {
+            conditions.push('detalhes LIKE ?');
+            params.push(`%${termo}%`);
+        }
+
+        // Monta a cláusula WHERE se houver condições
+        if (conditions.length > 0) {
+            sql += ' WHERE ' + conditions.join(' AND ');
+        }
+
+        // Adiciona a ordenação e o limite
+        sql += ' ORDER BY data_hora DESC LIMIT 200'; // Aumentamos o limite para buscas
+
+        const logs = await query(sql, params);
         res.json(logs);
+
     } catch (error) {
+        console.error('Erro ao buscar logs:', error);
         res.status(500).json({ message: 'Erro ao buscar logs', error: error.message });
     }
 });
+
 
 // ==================================================================
 // --- ROTA OTIMIZADA PARA O CARDÁPIO DO CLIENTE ---
@@ -619,46 +688,86 @@ router.get('/cardapio-completo', async (req, res) => {
 
 
 
-// ==================================================================
-// --- ROTA PARA CANCELAR UM ITEM DE PEDIDO (VERSÃO CORRIGIDA) ---
-// ==================================================================
-// 1. Adicionamos o middleware checarNivelAcesso.
-//    Decidi que apenas 'geral' pode cancelar, para manter a segurança.
-//    Se quisesse que 'pedidos' também pudesse, seria: checarNivelAcesso(['geral', 'pedidos'])
+// Em seu arquivo api.js
+// SUBSTITUA A ROTA POST /pedidos/:id/cancelar INTEIRA POR ESTA VERSÃO FINAL
+
 router.post('/pedidos/:id/cancelar', checarNivelAcesso(['geral', 'pedidos']), checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params;
-    const { motivo } = req.body;
-
-    // 2. A verificação de permissão manual foi REMOVIDA, pois o middleware já faz isso.
+    const { motivo, quantidade } = req.body;
 
     if (!motivo || motivo.trim() === '') {
         return res.status(400).json({ message: 'O motivo do cancelamento é obrigatório.' });
     }
+    if (!quantidade || typeof quantidade !== 'number' || quantidade <= 0) {
+        return res.status(400).json({ message: 'A quantidade a ser cancelada deve ser um número válido e maior que zero.' });
+    }
 
     try {
-        const [pedido] = await query('SELECT * FROM pedidos WHERE id = ?', [id]);
-        if (!pedido) {
+        // Fazemos um JOIN para pegar o nome do produto para o log
+        const sqlSelect = `
+            SELECT p.*, prod.nome AS nome_produto 
+            FROM pedidos p 
+            JOIN produtos prod ON p.id_produto = prod.id 
+            WHERE p.id = ?
+        `;
+        const [pedidoOriginal] = await query(sqlSelect, [id]);
+
+        if (!pedidoOriginal) {
             return res.status(404).json({ message: 'Item do pedido não encontrado.' });
         }
-        if (pedido.status === 'cancelado') {
+        if (pedidoOriginal.status === 'cancelado') {
             return res.status(400).json({ message: 'Este item já foi cancelado.' });
         }
+        if (quantidade > pedidoOriginal.quantidade) {
+            return res.status(400).json({ message: `Não é possível cancelar ${quantidade} itens, pois existem apenas ${pedidoOriginal.quantidade} no pedido.` });
+        }
 
-        await query(
-            "UPDATE pedidos SET status = 'cancelado', motivo_cancelamento = ? WHERE id = ?",
-            [motivo.trim(), id]
-        );
-        
         const nomeGerente = req.usuario.nome;
-        await registrarLog(req.usuario.id, nomeGerente, 'CANCELOU_PEDIDO', `Cancelou o item de pedido ID ${id} pelo motivo: "${motivo.trim()}".`);
+        const idUsuario = req.usuario.id;
+        const nomeProdutoParaLog = pedidoOriginal.nome_produto; // Agora este valor vem do JOIN
 
-        res.json({ message: 'Item do pedido cancelado com sucesso!' });
+        if (quantidade === pedidoOriginal.quantidade) {
+            await query("UPDATE pedidos SET status = 'cancelado', motivo_cancelamento = ? WHERE id = ?", [motivo.trim(), id]);
+            await registrarLog(idUsuario, nomeGerente, 'CANCELOU_PEDIDO_TOTAL', `Cancelou totalmente o item de pedido ID ${id} (${quantidade}x ${nomeProdutoParaLog}) pelo motivo: "${motivo.trim()}".`);
+            return res.json({ message: 'Item do pedido cancelado com sucesso!' });
+        }
+
+        if (quantidade < pedidoOriginal.quantidade) {
+            const novaQuantidade = pedidoOriginal.quantidade - quantidade;
+            await query("UPDATE pedidos SET quantidade = ? WHERE id = ?", [novaQuantidade, id]);
+
+            // ==================================================================
+            // --- CORREÇÃO FINAL: Removendo 'nome_produto' do INSERT ---
+            // ==================================================================
+            const sqlInsert = `
+                INSERT INTO pedidos 
+                    (id_sessao, id_produto, quantidade, preco_unitario, observacao, status, motivo_cancelamento) 
+                VALUES (?, ?, ?, ?, ?, 'cancelado', ?)
+            `;
+            const paramsInsert = [
+                pedidoOriginal.id_sessao,
+                pedidoOriginal.id_produto,
+                quantidade,
+                pedidoOriginal.preco_unitario || 0,
+                pedidoOriginal.observacao || null,
+                motivo.trim()
+            ];
+            await query(sqlInsert, paramsInsert);
+
+            await registrarLog(idUsuario, nomeGerente, 'CANCELOU_PEDIDO_PARCIAL', `Cancelou ${quantidade} de ${pedidoOriginal.quantidade} do item de pedido ID ${id} (${nomeProdutoParaLog}) pelo motivo: "${motivo.trim()}".`);
+            return res.json({ message: `${quantidade} item(s) cancelado(s) com sucesso.` });
+        }
 
     } catch (error) {
+        console.error('================================================');
         console.error('Erro ao cancelar item do pedido:', error);
-        res.status(500).json({ message: 'Erro interno no servidor.' });
+        res.status(500).json({ message: 'Erro interno no servidor ao tentar cancelar o pedido.' });
     }
 });
+
+
+
+
 
 
 // ==================================================================
@@ -908,44 +1017,45 @@ const checarPermissaoRelatorios = (req, res, next) => {
 };
 
 // Função para obter o intervalo de datas com base no período
+// Em seu arquivo api.js
+// SUBSTITUA A FUNÇÃO INTEIRA POR ESTA VERSÃO CORRIGIDA
+
+// Em seu arquivo api.js
+// SUBSTITUA A FUNÇÃO obterIntervaloDeDatas POR ESTA VERSÃO
+
 function obterIntervaloDeDatas(periodo) {
     const agora = new Date();
-    // Define o fuso horário diretamente para consistência
-    agora.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
-
-    const fim = new Date(agora);
     let inicio = new Date(agora);
+
+    // Zera a hora para o início do dia
+    inicio.setHours(0, 0, 0, 0);
 
     switch (periodo) {
         case 'hoje':
-            inicio.setHours(0, 0, 0, 0);
+            // O início já é hoje às 00:00
             break;
         case 'semana':
-            const diaDaSemana = inicio.getDay(); // 0=Dom, 1=Seg,...
+            const diaDaSemana = inicio.getDay();
             const diasParaSubtrair = diaDaSemana === 0 ? 6 : diaDaSemana - 1;
             inicio.setDate(inicio.getDate() - diasParaSubtrair);
-            inicio.setHours(0, 0, 0, 0);
             break;
         case 'mes':
             inicio.setDate(1);
-            inicio.setHours(0, 0, 0, 0);
             break;
         case 'ano':
             inicio.setMonth(0, 1);
-            inicio.setHours(0, 0, 0, 0);
             break;
         default:
             throw new Error('Período inválido');
     }
-    // Retorna no formato que o MySQL entende (YYYY-MM-DD HH:MM:SS)
-    return {
-        inicio: inicio.toISOString().slice(0, 19).replace('T', ' '),
-        fim: fim.toISOString().slice(0, 19).replace('T', ' ')
-    };
+    // Retorna as datas como objetos Date
+    return { inicio, fim: agora };
 }
 
+
+
 // Rota principal de relatórios (Refatorada)
-router.get('/relatorios', checarNivelAcesso (['geral', 'pedidos']),checarPermissaoRelatorios, async (req, res) => {
+router.get('/relatorios', checarNivelAcesso(['geral', 'pedidos']), checarPermissaoRelatorios, async (req, res) => {
     const { periodo } = req.query;
     const periodosValidos = ['hoje', 'semana', 'mes', 'ano'];
 
@@ -956,7 +1066,9 @@ router.get('/relatorios', checarNivelAcesso (['geral', 'pedidos']),checarPermiss
     try {
         const { inicio, fim } = obterIntervaloDeDatas(periodo);
 
-        // 1. Query ÚNICA e Otimizada: Busca sessões e seus pedidos de uma vez
+        // ==================================================================
+        // --- CORREÇÃO DE FUSO HORÁRIO NA CONSULTA SQL ---
+        // ==================================================================
         const sql = `
             SELECT
                 s.id,
@@ -968,13 +1080,11 @@ router.get('/relatorios', checarNivelAcesso (['geral', 'pedidos']),checarPermiss
             JOIN pedidos p ON s.id = p.id_sessao
             WHERE s.status = 'finalizada'
               AND p.status != 'cancelado'
-              AND s.data_fim BETWEEN ? AND ?;
+              AND CONVERT_TZ(s.data_fim, 'UTC', 'America/Sao_Paulo') BETWEEN ? AND ?;
         `;
         const resultados = await query(sql, [inicio, fim]);
 
-        // 2. Processar os dados na aplicação (muito mais rápido)
         const dadosFormatados = formatarDadosParaFrontend(resultados, periodo);
-
         res.status(200).json(dadosFormatados);
 
     } catch (error) {
@@ -982,7 +1092,6 @@ router.get('/relatorios', checarNivelAcesso (['geral', 'pedidos']),checarPermiss
         res.status(500).json({ message: 'Erro interno ao processar os dados do relatório.' });
     }
 });
-
 /**
  * Formata os dados brutos do banco para a estrutura JSON que o frontend precisa.
  * @param {Array<Object>} dadosBrutos - Lista de pedidos com informações da sessão.
@@ -1175,16 +1284,50 @@ router.get('/pedidos-ativos',checarNivelAcesso (['geral', 'pedidos']), checarUsu
 // ==================================================================
 // --- ROTA PARA MARCAR UM ITEM DE PEDIDO COMO ENTREGUE ---
 // ==================================================================
+// Em seu arquivo api.js
+// SUBSTITUA A ROTA DE MARCAR COMO ENTREGUE POR ESTA VERSÃO
+
+// Em seu arquivo api.js
+// SUBSTITUA A ROTA DE MARCAR COMO ENTREGUE INTEIRA POR ESTA VERSÃO FINAL
+
 router.patch('/pedidos/:id/entregar', checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params; // id do item específico do pedido
 
     try {
-        const sql = "UPDATE pedidos SET status = 'entregue' WHERE id = ? AND status = 'pendente'";
-        const result = await query(sql, [id]);
+        // ==================================================================
+        // --- AQUI ESTÁ A CORREÇÃO: Buscando o nome do produto com JOIN ---
+        // Fazemos um JOIN com a tabela 'produtos' para obter o nome correto.
+        // ==================================================================
+        const sqlSelect = `
+            SELECT prod.nome 
+            FROM pedidos p 
+            JOIN produtos prod ON p.id_produto = prod.id 
+            WHERE p.id = ?
+        `;
+        const [pedidoInfo] = await query(sqlSelect, [id]);
+
+        if (!pedidoInfo) {
+            return res.status(404).json({ message: 'Item do pedido não encontrado.' });
+        }
+
+        // Agora, atualizamos o status do pedido
+        const sqlUpdate = "UPDATE pedidos SET status = 'entregue' WHERE id = ? AND status = 'pendente'";
+        const result = await query(sqlUpdate, [id]);
 
         if (result.affectedRows === 0) {
+            // Isso pode acontecer se o item já foi entregue por outro funcionário
             return res.status(404).json({ message: 'Item do pedido não encontrado ou já foi entregue.' });
         }
+
+        // Finalmente, registramos a ação no log com o nome correto do produto
+        const nomeParaLog = req.usuario.nome;
+        await registrarLog(
+            req.usuario.id, 
+            nomeParaLog, 
+            'ENTREGOU_PEDIDO', 
+            `Entregou o item "${pedidoInfo.nome}" (Pedido Item ID: ${id}).`
+        );
+        // ==================================================================
 
         // Notifica todos os painéis para se atualizarem
         if (req.broadcast) {
@@ -1198,6 +1341,7 @@ router.patch('/pedidos/:id/entregar', checarUsuarioParaLog, async (req, res) => 
         res.status(500).json({ message: 'Erro no servidor ao atualizar o item.' });
     }
 });
+
 
 
 
@@ -1313,8 +1457,11 @@ router.get('/usuarios-para-relatorio', checarPermissaoConfig, async (req, res) =
     }
 });
 
-// GET /api/relatorio-atividade?usuarioId=X&periodo=Y
-// Gera o relatório de atividade para um usuário e período específicos.
+
+
+// Em seu arquivo api.js
+// SUBSTITUA A ROTA DE RELATÓRIO DE ATIVIDADE INTEIRA POR ESTA VERSÃO FINAL
+
 router.get('/relatorio-atividade', checarPermissaoConfig, async (req, res) => {
     const { usuarioId, periodo } = req.query;
 
@@ -1323,27 +1470,48 @@ router.get('/relatorio-atividade', checarPermissaoConfig, async (req, res) => {
     }
 
     try {
-        // A função obterIntervaloDeDatas já existe no seu arquivo api.js, na seção de relatórios de vendas.
-        // Vamos reutilizá-la aqui.
         const { inicio, fim } = obterIntervaloDeDatas(periodo);
 
-        const sql = `
+        // Consulta única que já pega todas as ações necessárias
+        const sqlLogs = `
             SELECT acao, COUNT(id) as total
             FROM logs
             WHERE id_usuario = ? AND data_hora BETWEEN ? AND ?
             GROUP BY acao
-            ORDER BY total DESC;
+            ORDER BY FIELD(acao, 'FECHOU_SESSAO', 'ENTREGOU_PEDIDO') DESC, total DESC;
         `;
+        const atividades = await query(sqlLogs, [usuarioId, inicio, fim]);
 
-        const atividades = await query(sql, [usuarioId, inicio, fim]);
-        
-        res.json(atividades);
+        // ==================================================================
+        // --- AQUI ESTÁ A MUDANÇA: Formatando os nomes das ações ---
+        // ==================================================================
+        const atividadesFormatadas = atividades.map(ativ => {
+            let nomeAcao = ativ.acao;
+            switch (ativ.acao) {
+                case 'FECHOU_SESSAO':
+                    nomeAcao = 'Mesas Fechadas';
+                    break;
+                case 'ENTREGOU_PEDIDO':
+                    nomeAcao = 'Pedidos Entregues';
+                    break;
+                default:
+                    // Formata outras ações de forma genérica
+                    nomeAcao = ativ.acao.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+                    break;
+            }
+            return { acao: nomeAcao, total: ativ.total };
+        });
+
+        res.json(atividadesFormatadas);
 
     } catch (error) {
         console.error('Erro ao gerar relatório de atividade:', error);
         res.status(500).json({ message: 'Erro no servidor ao gerar relatório.' });
     }
 });
+
+
+
 
 
 // ==================================================================

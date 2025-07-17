@@ -1416,189 +1416,447 @@ li.inactive .slider {
 }
 
 
-/* ================================================================== */
-/* --- ESTILOS PARA A PÁGINA DE CONFIGURAÇÕES (configuracoes.html) --- */
-/* ================================================================== */
+/* ==================================================================
+ * CSS DA PÁGINA DE CONFIGURAÇÕES (VERSÃO PROFISSIONAL)
+ * Adicionar ao final do seu arquivo adm.css
+ * ================================================================== */
 
-/* Layout principal da página de configurações */
+/* --- Grid Principal da Página de Configurações --- */
 .config-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 2rem;
-    padding: 2rem;
+    /* Cria um layout responsivo com cards que se ajustam */
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 24px; /* Espaçamento consistente */
+    padding: 24px;
+    background-color: #f8f9fa; /* Fundo geral da página */
 }
 
-/* Estilo base para cada card de configuração */
+/* --- Estilo Base do Card de Configuração --- */
 .config-card {
     background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 12px; /* Bordas mais suaves */
+    border: 1px solid #e9ecef;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .config-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
-/* Cabeçalho de cada card */
+/* --- Cabeçalho do Card --- */
 .config-card-header {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 1.25rem 1.5rem;
-    background-color: #f8f9fa;
+    gap: 12px;
+    padding: 16px 20px;
     border-bottom: 1px solid #e9ecef;
+    background-color: #f8f9fa; /* Leve destaque para o cabeçalho */
 }
 
 .config-card-header i {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     color: #495057;
 }
 
 .config-card-header h2 {
     margin: 0;
-    font-size: 1.25rem;
-    color: #343a40;
+    font-size: 1.15rem;
+    color: #212529;
+    font-weight: 600;
 }
 
-/* Corpo de cada card */
+/* --- Corpo do Card --- */
 .config-card-body {
-    padding: 1.5rem;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    flex-grow: 1; /* Faz o corpo do card crescer */
+    gap: 16px; /* Espaçamento entre os elementos do corpo */
+    flex-grow: 1;
 }
 
 .config-card-body p {
-    margin-top: 0;
-    margin-bottom: 0.5rem;
+    margin: 0 0 8px 0;
     color: #6c757d;
-    line-height: 1.6;
+    font-size: 0.95rem;
+    line-height: 1.5;
 }
 
-/* Estilos para grupos de formulário */
+/* --- Estilos de Formulário (Inputs, Selects) --- */
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .form-group-inline {
     display: flex;
-    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.form-group label,
+.form-group-inline label {
+    font-weight: 500;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    background-color: #fff;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+/* --- Botões --- */
+.btn {
+    display: inline-flex;
     align-items: center;
-    gap: 1rem;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
 }
 
-.form-group-inline .form-control {
-    flex-grow: 1;
-}
-
-/* Estilo para botões de largura total */
-.full-width {
+.btn.full-width {
     width: 100%;
 }
 
-/* Grid para as checkboxes de permissão */
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+.btn-primary:hover { background-color: #0069d9; }
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+.btn-success:hover { background-color: #218838; }
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+.btn-danger:hover { background-color: #c82333; }
+
+/* --- Card de Permissões --- */
 .permissions-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-    margin-bottom: 1rem;
+    grid-template-columns: 1fr 1fr; /* Duas colunas */
+    gap: 12px;
 }
 
 .permission-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
     background-color: #f8f9fa;
-    padding: 0.75rem;
+    padding: 10px;
     border-radius: 6px;
 }
 
 .permission-item input[type="checkbox"] {
     width: 18px;
     height: 18px;
+    accent-color: #007bff; /* Cor do checkbox quando marcado */
 }
 
-/* Estilos para a Zona de Perigo */
+.permission-item label {
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+/* --- Card da Zona de Perigo --- */
 .danger-zone {
-    border: 2px solid #dc3545;
+    border-color: #f5c6cb; /* Borda vermelha */
+    background-color: #f8d7da; /* Fundo vermelho claro */
 }
 
 .danger-zone .config-card-header {
-    background-color: #f8d7da;
-    border-bottom-color: #f5c6cb;
+    background-color: transparent;
+    border-bottom: 1px solid #f5c6cb;
 }
 
-.danger-zone .config-card-header i,
-.danger-zone .config-card-header h2 {
+.danger-zone .config-card-header h2,
+.danger-zone .config-card-header i {
+    color: #721c24; /* Texto e ícone mais escuros */
+}
+
+.danger-zone .config-card-body p,
+.danger-zone .danger-action strong,
+.danger-zone .danger-action small {
     color: #721c24;
 }
 
 .danger-action {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background-color: #fff3f4;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    background-color: rgba(255, 255, 255, 0.5);
     border-radius: 8px;
 }
 
 .danger-action strong {
-    color: #721c24;
+    font-size: 1.1rem;
 }
 
 .danger-action small {
-    display: block;
-    color: #721c24;
-    opacity: 0.8;
+    font-size: 0.9rem;
+    line-height: 1.4;
 }
 
-/* Estilos para o container de resultado do relatório */
+/* --- Estilos para o resultado do relatório --- */
 #relatorio-resultado-container {
     margin-top: 1rem;
-    padding: 1rem;
+    padding: 16px;
     background-color: #e9ecef;
     border-radius: 8px;
-    border: 1px solid #dee2e6;
 }
 
 #relatorio-resultado-container ul {
-    list-style-type: none;
-    padding-left: 0;
+    padding-left: 20px;
     margin: 0;
 }
 
 #relatorio-resultado-container li {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #ced4da;
+    margin-bottom: 8px;
+    color: #343a40;
 }
 
-#relatorio-resultado-container li:last-child {
+
+
+/* ==================================================================
+ * CSS PROFISSIONAL PARA O MODAL DE EDIÇÃO DE PEDIDOS
+ * Adicionar ao final do arquivo adm.css
+ * ================================================================== */
+
+/* --- Lista de Pedidos no Modal --- */
+.edit-pedidos-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 60vh; /* Limita a altura e adiciona scroll */
+    overflow-y: auto;
+}
+
+.edit-pedido-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s;
+}
+
+.edit-pedido-item:last-child {
     border-bottom: none;
 }
 
-/* Estilos para o texto dentro do modal SweetAlert */
-.swal-text {
-    color: #555;
-    text-align: left;
-    margin-bottom: 1rem !important;
+.edit-pedido-item:not(.cancelado):hover {
+    background-color: #f8f9fa;
 }
 
-/* Estilo para a página de erro de acesso negado */
-.error-page {
+/* --- Informações do Item (Nome, Preço) --- */
+.edit-pedido-item .item-info {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    gap: 4px;
+}
+
+.edit-pedido-item .item-nome {
+    font-weight: 600;
+    color: #343a40;
+    font-size: 1rem;
+}
+
+.edit-pedido-item .item-preco {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+/* --- Ações (Botão Cancelar, Status Cancelado) --- */
+.edit-pedido-item .item-actions .action-btn.cancel-item-btn {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+}
+
+.edit-pedido-item .item-actions .action-btn.cancel-item-btn:hover {
+    background-color: #f1b0b7;
+    border-color: #eea2aa;
+    transform: translateY(-1px);
+}
+
+.edit-pedido-item.cancelado {
+    background-color: #f1f3f5;
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.edit-pedido-item.cancelado .item-nome,
+.edit-pedido-item.cancelado .item-preco {
+    color: #6c757d;
+}
+
+.motivo-cancelamento {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #28a745; /* Verde para indicar status finalizado */
+    display: flex;
     align-items: center;
-    height: 100vh;
+    gap: 6px;
+}
+
+/* Em adm.css, adicione ao final */
+
+.edit-pedido-item .motivo-texto {
+    font-size: 0.85rem;
+    color: #dc3545; /* Vermelho para destacar o motivo */
+    font-style: italic;
+    margin-top: 4px;
+}
+
+.edit-pedido-item .status-cancelado {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #6c757d; /* Cinza para o status */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+
+/* Em adm.css, adicione ao final */
+
+.session-body .finalizado-por {
+    font-size: 0.9em;
+    color: #28a745; /* Verde para indicar sucesso/finalização */
+    margin-top: 4px;
+}
+
+
+
+/* ================================================================== */
+/* --- ESTILOS PARA A PÁGINA DE LOGS (logs.html) --- */
+/* ================================================================== */
+
+/* Container principal da página de logs */
+.logs-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* Espaçamento entre os filtros e a tabela */
+}
+
+/* Cabeçalho com os filtros de busca */
+.logs-filter-header {
+    background-color: #ffffff;
+    padding: 1.25rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: flex-end; /* Alinha os itens na parte de baixo */
+    gap: 1.5rem;
+    flex-wrap: wrap; /* Permite que os filtros quebrem a linha em telas menores */
+}
+
+/* Grupo de filtro individual (label + input) */
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex-grow: 1; /* Faz com que os grupos de filtro ocupem o espaço disponível */
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Estilo para os inputs dos filtros, herdando do .form-control */
+.logs-filter-header .form-control {
+    min-width: 200px; /* Largura mínima para os inputs */
+}
+
+/* Container para os botões de ação */
+.filter-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Tabela de logs */
+#logs-table {
+    width: 100%;
+    border-collapse: collapse; /* Remove espaços entre as células */
+    background-color: #ffffff;
+    border-radius: 8px;
+    overflow: hidden; /* Garante que o border-radius seja aplicado nas bordas da tabela */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+#logs-table th,
+#logs-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef; /* Linha sutil entre as linhas */
+}
+
+#logs-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #343a40;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#logs-table tbody tr:hover {
+    background-color: #f1f3f5; /* Efeito de hover suave */
+}
+
+/* Estilo para a tag da ação, para dar destaque */
+.log-action {
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 0.25rem 0.6rem;
+    border-radius: 15px; /* Pílula arredondada */
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: inline-block;
+    white-space: nowrap; /* Evita que a tag quebre a linha */
+}
+
+/* Centraliza texto para mensagens de "nenhum log" ou "carregando" */
+#logs-table .text-center {
     text-align: center;
     padding: 2rem;
+    color: #6c757d;
 }

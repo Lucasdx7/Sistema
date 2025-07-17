@@ -60,15 +60,17 @@
             <h2>Encerrar Sessão da Mesa</h2>
             <p>Para liberar a mesa, confirme os dados e a forma de pagamento.</p>
             <form id="logout-form">
+    <!-- CAMPOS ALTERADOS PARA PEDIR NOME DE USUÁRIO -->
                 <div class="form-group">
-                    <label for="mesa-usuario">Usuário da Mesa</label>
-                    <input type="text" id="mesa-usuario" required readonly class="virtual-input">
+                    <label for="funcionario-usuario">Nome de Usuário do Funcionário</label>
+                    <input type="text" id="funcionario-usuario" class="virtual-input" required autocomplete="off" placeholder="Digite o nome de usuário...">
                 </div>
                 <div class="form-group">
-                    <label for="mesa-senha">Senha da Mesa</label>
-                    <input type="password" id="mesa-senha" required readonly class="virtual-input">
+                    <label for="funcionario-senha">Senha do Funcionário</label>
+                    <input type="password" id="funcionario-senha" class="virtual-input" required autocomplete="off" placeholder="Digite a senha...">
                 </div>
 
+                <!-- Seção de Pagamento (sem alterações) -->
                 <div class="form-group">
                     <label>Forma de Pagamento</label>
                     <div class="payment-options">
@@ -84,7 +86,7 @@
                     </div>
                     <input type="hidden" id="forma-pagamento-input" required>
                 </div>
-                <button type="submit" class="auth-submit-btn">Confirmar e Encerrar</button>
+                <button type="submit" class="auth-submit-btn">Autorizar e Encerrar Conta</button>
                 <p id="logout-message" class="message"></p>
             </form>
         </div>

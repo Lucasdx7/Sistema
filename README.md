@@ -79,7 +79,6 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
 ### Próximos Passos (Roadmap):
 -   [ ] **Cozinha:** Criar uma interface para a cozinha visualizar os pedidos que chegam em tempo real.
 -   [ ] **Deployment:** Preparar o sistema para ser hospedado em um servidor online.
--   [ ] **Testes Unitários e de Integração:** Adicionar uma camada de testes para garantir a estabilidade contínua do sistema.
 
 ---
 

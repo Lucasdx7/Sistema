@@ -1,11 +1,48 @@
 /**
  * ==================================================================
  * SCRIPT PRINCIPAL DA PÁGINA DO CARDÁPIO DO CLIENTE (Paginausuario.html)
+ * VERSÃO FINAL E COM DEPURAÇÃO
  * ==================================================================
- * Controla a exibição do cardápio, categorias, carrinho e modal de detalhes.
- *
- * Depende do objeto `Notificacao` fornecido por `notificacoes.js` (versão cliente).
  */
+
+/**
+ * Aplica uma família de fontes ao corpo do documento e loga a ação.
+ * @param {string} fontFamily - A string da família de fontes (ex: "'Poppins', sans-serif").
+ */
+function aplicarFonteGlobal(fontFamily) {
+    console.log(`[FONTE] Aplicando a fonte "${fontFamily}" ao CSS.`);
+    document.documentElement.style.setProperty('--font-principal-cliente', fontFamily);
+}
+
+/**
+ * Busca a configuração de fonte da API e a aplica na página.
+ */
+async function carregarEaplicarFonte() {
+    try {
+        console.log("[FONTE] Buscando a fonte da API em /api/public/config/fonte.");
+        const response = await fetch('/api/public/config/fonte');
+
+        if (!response.ok) {
+            console.error(`[FONTE] Erro na busca! Status: ${response.status}. Usando fonte padrão.`);
+            aplicarFonteGlobal("'Roboto', sans-serif");
+            return;
+        }
+
+        const data = await response.json();
+        console.log("[FONTE] Resposta da API recebida:", data);
+
+        if (data && data.fonte_cliente) {
+            aplicarFonteGlobal(data.fonte_cliente);
+        } else {
+            console.warn("[FONTE] A API respondeu, mas não encontrou a chave 'fonte_cliente'. Usando fonte padrão.");
+            aplicarFonteGlobal("'Roboto', sans-serif");
+        }
+    } catch (error) {
+        console.error("[FONTE] Falha crítica ao buscar a fonte.", error);
+        aplicarFonteGlobal("'Roboto', sans-serif");
+    }
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- Bloco de autenticação inicial ---
@@ -62,14 +99,12 @@ document.addEventListener('DOMContentLoaded', () => {
         carrinho.push(produto);
         localStorage.setItem('carrinho', JSON.stringify(carrinho));
         atualizarBadgeCarrinho();
-        
         Notificacao.sucesso(`${produto.nome} adicionado ao pedido!`);
-        
         const addButton = document.querySelector(`.menu-item[data-id='${produto.id}'] .add-button`);
-        if(addButton) {
+        if (addButton) {
             addButton.innerHTML = '<i class="fas fa-check"></i>';
             addButton.classList.add('added');
-            setTimeout(() => { 
+            setTimeout(() => {
                 addButton.innerHTML = '+';
                 addButton.classList.remove('added');
             }, 1200);
@@ -86,17 +121,14 @@ document.addEventListener('DOMContentLoaded', () => {
         navMenu.innerHTML = '';
         categorias.forEach(cat => {
             if (!cat.ativo) return;
-
             const li = document.createElement('li');
             li.className = 'nav-item';
             li.dataset.filter = cat.id;
             li.textContent = cat.nome;
-
             if (cat.is_happy_hour && !isHappyHourAtivo(cat.happy_hour_inicio, cat.happy_hour_fim)) {
                 li.classList.add('happy-hour-inativo');
                 li.title = `Happy Hour disponível das ${cat.happy_hour_inicio.slice(0,5)} às ${cat.happy_hour_fim.slice(0,5)}`;
             }
-            
             navMenu.appendChild(li);
         });
     }
@@ -104,31 +136,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderizarProdutos(idCategoria) {
         const categoria = cardapioCompleto.find(cat => cat.id == idCategoria);
         menuList.innerHTML = '';
-
         if (!categoria || !categoria.produtos || categoria.produtos.length === 0) {
             menuList.innerHTML = '<p>Nenhum produto encontrado nesta categoria.</p>';
             return;
         }
-
         const happyHourInativo = categoria.is_happy_hour && !isHappyHourAtivo(categoria.happy_hour_inicio, categoria.happy_hour_fim);
-
         categoria.produtos.forEach(prod => {
             if (!prod.ativo) return;
-
             const itemDiv = document.createElement('div');
             itemDiv.className = 'menu-item';
-            Object.keys(prod).forEach(key => {
-                itemDiv.dataset[key] = prod[key];
-            });
-
-            const botaoAdicionar = happyHourInativo 
-                ? `<button class="add-button" disabled title="Disponível apenas durante o Happy Hour">+</button>`
-                : `<button class="add-button">+</button>`;
-
-            // Converte 'serve_pessoas' para número para fazer a verificação
+            Object.keys(prod).forEach(key => { itemDiv.dataset[key] = prod[key]; });
+            const botaoAdicionar = happyHourInativo ? `<button class="add-button" disabled title="Disponível apenas durante o Happy Hour">+</button>` : `<button class="add-button">+</button>`;
             const servePessoas = parseInt(prod.serve_pessoas, 10) || 0;
-
-            // --- CÓDIGO CORRIGIDO E INTEGRADO ---
             itemDiv.innerHTML = `
                 <img src="${prod.imagem_svg || 'https://via.placeholder.com/150x100'}" alt="${prod.nome}">
                 <div class="item-details">
@@ -144,11 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="item-price">R$ ${parseFloat(prod.preco ).toFixed(2)}</span>
                 </div>
             `;
-            
-            if (happyHourInativo) {
-                itemDiv.classList.add('item-inativo');
-            }
-
+            if (happyHourInativo) itemDiv.classList.add('item-inativo');
             menuList.appendChild(itemDiv);
         });
     }
@@ -169,21 +184,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Função Principal de Inicialização ---
     async function inicializarCardapio() {
         try {
+            // A chamada para carregar a fonte agora está aqui, no início.
+            await carregarEaplicarFonte();
+            
             cardapioCompleto = await apiCall('/cardapio-completo');
             renderizarCategorias(cardapioCompleto);
-
             const urlParams = new URLSearchParams(window.location.search);
             const categoriaIdDesejada = urlParams.get('categoria');
-            let categoriaInicial = null;
-
-            if (categoriaIdDesejada) {
-                categoriaInicial = cardapioCompleto.find(cat => cat.id == categoriaIdDesejada && cat.ativo);
-            }
-
-            if (!categoriaInicial) {
-                categoriaInicial = cardapioCompleto.find(cat => cat.ativo && (!cat.is_happy_hour || isHappyHourAtivo(cat.happy_hour_inicio, cat.happy_hour_fim)));
-            }
-
+            let categoriaInicial = cardapioCompleto.find(cat => cat.id == categoriaIdDesejada && cat.ativo) || cardapioCompleto.find(cat => cat.ativo && (!cat.is_happy_hour || isHappyHourAtivo(cat.happy_hour_inicio, cat.happy_hour_fim)));
             if (categoriaInicial) {
                 renderizarProdutos(categoriaInicial.id);
                 const itemMenuAtivo = navMenu.querySelector(`li[data-filter='${categoriaInicial.id}']`);
@@ -192,8 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 menuList.innerHTML = '<p>Nenhum item disponível no cardápio no momento.</p>';
             }
         } catch (error) {
-            Notificacao.erro('Falha ao Carregar', 'Não foi possível carregar o cardápio. Verifique a conexão ou chame um garçom.');
-            menuList.innerHTML = '<p class="error-message">Não foi possível carregar o cardápio. Tente novamente mais tarde.</p>';
+            Notificacao.erro('Falha ao Carregar', 'Não foi possível carregar o cardápio.');
+            menuList.innerHTML = '<p class="error-message">Não foi possível carregar o cardápio.</p>';
         }
     }
 
@@ -210,29 +218,12 @@ document.addEventListener('DOMContentLoaded', () => {
     menuList.addEventListener('click', (e) => {
         const menuItem = e.target.closest('.menu-item');
         if (!menuItem) return;
-
         if (e.target.closest('.add-button') && !e.target.closest('.add-button').disabled) {
-            // --- CÓDIGO CORRIGIDO E INTEGRADO ---
-            const produto = {
-                id: menuItem.dataset.id,
-                nome: menuItem.dataset.nome,
-                descricao: menuItem.dataset.descricao,
-                preco: parseFloat(menuItem.dataset.preco),
-                imagem_svg: menuItem.dataset.imagem_svg,
-                descricao_detalhada: menuItem.dataset.descricao_detalhada,
-                serve_pessoas: parseInt(menuItem.dataset.serve_pessoas, 10) || 0 
-            };
+            const produto = { id: menuItem.dataset.id, nome: menuItem.dataset.nome, descricao: menuItem.dataset.descricao, preco: parseFloat(menuItem.dataset.preco), imagem_svg: menuItem.dataset.imagem_svg, descricao_detalhada: menuItem.dataset.descricao_detalhada, serve_pessoas: parseInt(menuItem.dataset.serve_pessoas, 10) || 0 };
             adicionarAoCarrinho(produto);
         }
-
         if (e.target.closest('.details-button')) {
-            const produto = {
-                nome: menuItem.dataset.nome,
-                descricao: menuItem.dataset.descricao,
-                descricao_detalhada: menuItem.dataset.descricao_detalhada,
-                serve_pessoas: menuItem.dataset.serve_pessoas,
-                imagem_svg: menuItem.dataset.imagem_svg
-            };
+            const produto = { nome: menuItem.dataset.nome, descricao: menuItem.dataset.descricao, descricao_detalhada: menuItem.dataset.descricao_detalhada, serve_pessoas: menuItem.dataset.serve_pessoas, imagem_svg: menuItem.dataset.imagem_svg };
             abrirModalDeDetalhesProduto(produto);
         }
     });
@@ -246,23 +237,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     productModalCloseBtn.addEventListener('click', () => productModal.classList.add('hidden'));
-    productModal.addEventListener('click', (e) => {
-        if (e.target === productModal) {
-            productModal.classList.add('hidden');
-        }
-    });
+    productModal.addEventListener('click', (e) => { if (e.target === productModal) productModal.classList.add('hidden'); });
 
     // --- Lógica do WebSocket ---
     function conectarWebSocket() {
         const socket = new WebSocket(`ws://${window.location.host}?sessaoId=${sessaoId}`);
-        socket.onopen = () => console.log(`Conectado ao servidor via WebSocket para a sessão: ${sessaoId}`);
+
+        socket.onopen = () => console.log(`[WEBSOCKET] Conexão estabelecida.`);
+
         socket.onmessage = (event) => {
+            console.log('[WEBSOCKET] Mensagem recebida:', event.data);
             const data = JSON.parse(event.data);
+
             switch (data.type) {
+                case 'CONFIG_ATUALIZADA':
+                    console.log('[WEBSOCKET] Evento CONFIG_ATUALIZADA detectado. Payload:', data.payload);
+                    if (data.payload && data.payload.fonte_cliente) {
+                        Notificacao.info('A aparência do cardápio foi atualizada!');
+                        aplicarFonteGlobal(data.payload.fonte_cliente);
+                    } else {
+                        console.warn('[WEBSOCKET] Evento recebido, mas sem payload de fonte.');
+                    }
+                    break;
+                
                 case 'CARDAPIO_ATUALIZADO':
                     Notificacao.sucesso('O cardápio foi atualizado!');
                     inicializarCardapio();
                     break;
+
                 case 'LOGOUT_FORCADO':
                     localStorage.clear();
                     Notificacao.erro('Sessão Encerrada', data.message || 'Sua sessão foi encerrada pela gerência.')
@@ -270,11 +272,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
             }
         };
-        socket.onclose = () => setTimeout(conectarWebSocket, 3000);
-        socket.onerror = (error) => {
-            console.error('Erro no WebSocket:', error);
-            socket.close();
+
+        socket.onclose = () => {
+            console.log('[WEBSOCKET] Conexão fechada. Tentando reconectar...');
+            setTimeout(conectarWebSocket, 5000);
         };
+
+        socket.onerror = (error) => console.error('[WEBSOCKET] Erro na conexão:', error);
     }
 
     // --- INICIALIZAÇÃO ---

@@ -177,37 +177,61 @@ async function carregarPedidosAtivos() {
     /**
      * Conecta ao WebSocket para receber atualizações em tempo real.
      */
-    function conectarWebSocket() {
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${wsProtocol}//${window.location.host}`;
-        const ws = new WebSocket(wsUrl );
+    // /Frontend/Pagina gerencia/pedidos.js
 
-        ws.onopen = () => console.log('Conexão WebSocket estabelecida para acompanhamento de pedidos.');
+// ... (outras funções) ...
 
-        ws.onmessage = (event) => {
-            const mensagem = JSON.parse(event.data);
-            switch (mensagem.type) {
-                case 'NOVO_PEDIDO':
-                case 'PEDIDO_ATUALIZADO':
-                case 'PAGAMENTO_FINALIZADO':
-                    // Para qualquer evento relevante, recarrega tudo para manter a consistência.
-                    carregarPedidosAtivos();
-                    break;
-                
-                case 'CHAMADO_GARCOM':
-                    Notificacao.aviso('Chamado de Garçom', `A ${mensagem.nomeMesa} está solicitando atendimento.`);
-                    const cardChamado = document.querySelector(`#sessao-${mensagem.sessaoId}`); // Assumindo que a sessão ID é enviada
-                    if (cardChamado) cardChamado.classList.add('chamando');
-                    break;
-            }
-        };
+function conectarWebSocket() {
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.host}`;
+    const ws = new WebSocket(wsUrl );
 
-        ws.onclose = () => setTimeout(conectarWebSocket, 5000);
-        ws.onerror = (error) => {
-            console.error('Erro no WebSocket:', error);
-            ws.close();
-        };
-    }
+    ws.onopen = () => console.log('Conexão WebSocket estabelecida para acompanhamento de pedidos.');
+
+    ws.onmessage = (event) => {
+        const mensagem = JSON.parse(event.data);
+        switch (mensagem.type) {
+            case 'NOVO_PEDIDO':
+            case 'PEDIDO_ATUALIZADO':
+            case 'PAGAMENTO_FINALIZADO':
+                carregarPedidosAtivos();
+                break;
+            
+            case 'CHAMADO_GARCOM':
+                // ==================================================================
+                // --- A CORREÇÃO ESTÁ AQUI ---
+                // Usamos a configuração de pop-up que exige confirmação.
+                // ==================================================================
+                if (usuario.nivel_acesso === 'geral' || usuario.nivel_acesso === 'pedidos') {
+                    Swal.fire({
+                        title: '<strong>Chamado!</strong>',
+                        html: `<h2>A <strong>${mensagem.nomeMesa}</strong> está solicitando atendimento.</h2>`,
+                        icon: 'warning', // Ícone de aviso, mais chamativo
+                        confirmButtonText: 'OK, Entendido!',
+                        allowOutsideClick: false, // Impede que o alerta seja fechado ao clicar fora
+                        allowEscapeKey: false // Impede que o alerta seja fechado com a tecla 'Esc'
+                    });
+
+                    // A lógica de destacar o card é mantida
+                    if (mensagem.sessaoId) {
+                        const cardChamado = document.querySelector(`#sessao-${mensagem.sessaoId}`);
+                        if (cardChamado) cardChamado.classList.add('chamando');
+                    }
+                }
+                break;
+        }
+    };
+
+    ws.onclose = () => setTimeout(conectarWebSocket, 5000);
+    ws.onerror = (error) => {
+        console.error('Erro no WebSocket:', error);
+        ws.close();
+    };
+}
+
+// ... (resto do seu arquivo) ...
+
+    
 
     // --- Inicialização e Event Listeners ---
     carregarPedidosAtivos();

@@ -121,6 +121,8 @@ app.get('/dados-cliente', (req, res) => { res.sendFile(path.join(__dirname, '..'
 app.get('/chamados', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'chamado.html')); });
 app.get('/relatorios', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'relatorio.html')); });
 app.get('/acompanhar', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'pedidos.html')); });
+app.get('/configuracoes', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'configuracoes.html')); });
+
 app.get('/', (req, res) => { res.redirect('/login'); });
 console.log('[DEBUG] Rotas de arquivos HTML servidas.');
 

@@ -1,12 +1,32 @@
 /**
  * ==================================================================
- * SCRIPT DA PÁGINA DE CONFIRMAÇÃO DE PEDIDO (confirmar_pedido.html)
+ * SCRIPT DA PÁGINA DE CONFIRMAÇÃO DE PEDIDO (confirmar_pedido.html) - VERSÃO ATUALIZADA
  * ==================================================================
- * - Gerencia o resumo do carrinho de pré-pedido.
- * - Permite adicionar/editar observações nos itens usando um teclado virtual.
- * - Carrega sugestões de produtos.
- * - Envia o pedido final para a API.
  */
+
+/**
+ * Aplica uma família de fontes ao corpo do documento.
+ * @param {string} fontFamily - A string da família de fontes (ex: "'Poppins', sans-serif").
+ */
+function aplicarFonteGlobal(fontFamily) {
+    document.documentElement.style.setProperty('--font-principal-cliente', fontFamily);
+}
+
+/**
+ * Busca a configuração de fonte da API e a aplica na página.
+ */
+async function carregarEaplicarFonte() {
+    try {
+        const response = await fetch('/api/public/config/fonte');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.fonte_cliente) {
+            aplicarFonteGlobal(data.fonte_cliente);
+        }
+    } catch (error) {
+        console.error("Não foi possível carregar a fonte personalizada.");
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- Autenticação e Variáveis de Estado ---
@@ -40,23 +60,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
     // ==================================================================
-    // INÍCIO DA LÓGICA DO TECLADO VIRTUAL
+    // LÓGICA DO TECLADO VIRTUAL
     // ==================================================================
     const keyboard = document.getElementById('virtual-keyboard-alphanumeric');
-    const keyboardInput = document.getElementById('modal-textarea'); // O único input que ativa o teclado
+    const keyboardInput = document.getElementById('modal-textarea');
     const shiftKey = document.getElementById('shift-key');
     const alphaKeys = keyboard.querySelectorAll('.keyboard-key[data-key]');
-
     let isShiftActive = false;
 
     const showKeyboard = () => {
         const keyboardLabel = keyboard.querySelector('#keyboard-target-label');
         const productName = document.getElementById('modal-product-name').textContent;
-        
-        if (keyboardLabel && productName) {
-            keyboardLabel.textContent = `Observação para: ${productName}`;
-        }
-
+        if (keyboardLabel && productName) keyboardLabel.textContent = `Observação para: ${productName}`;
         keyboard.classList.remove('hidden');
         setTimeout(() => keyboard.classList.add('visible'), 10);
         document.body.classList.add('keyboard-active');
@@ -80,17 +95,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    keyboardInput.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showKeyboard();
-    });
+    keyboardInput.addEventListener('click', (e) => { e.stopPropagation(); showKeyboard(); });
 
     keyboard.addEventListener('click', (e) => {
         const target = e.target.closest('.keyboard-key');
         if (!target) return;
-
         const key = target.dataset.key;
-
         if (key) {
             let char = key;
             if (isShiftActive || keyboardInput.value.length === 0 || keyboardInput.value.slice(-1) === ' ') {
@@ -99,23 +109,15 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 keyboardInput.value += char;
             }
-        } else if (target.id === 'shift-key') {
-            toggleShift();
-        } else if (target.id === 'backspace-key') {
-            keyboardInput.value = keyboardInput.value.slice(0, -1);
-        } else if (target.id === 'confirm-key') {
-            hideKeyboard();
-        }
+        } else if (target.id === 'shift-key') toggleShift();
+        else if (target.id === 'backspace-key') keyboardInput.value = keyboardInput.value.slice(0, -1);
+        else if (target.id === 'confirm-key') hideKeyboard();
     });
-    
     keyboard.querySelector('.keyboard-close-btn').addEventListener('click', hideKeyboard);
     // ==================================================================
-    // FIM DA LÓGICA DO TECLADO VIRTUAL
+    // FIM DO TECLADO VIRTUAL
     // ==================================================================
 
-    /**
-     * Agrupa itens pela combinação de ID e observação.
-     */
     function agruparItensDoCarrinho(carrinhoBruto) {
         if (!carrinhoBruto || carrinhoBruto.length === 0) return [];
         const itensAgrupados = {};
@@ -133,16 +135,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function atualizarCarrinho(novoCarrinho, redesenhar = true) {
         carrinho = novoCarrinho;
         localStorage.setItem('carrinho', JSON.stringify(carrinho));
-        if (redesenhar) {
-            renderizarPagina();
-        }
+        if (redesenhar) renderizarPagina();
     }
 
     function renderizarPagina() {
         const itensAgrupados = agruparItensDoCarrinho(carrinho);
         listaResumo.innerHTML = '';
         let subtotal = 0;
-
         if (itensAgrupados.length === 0) {
             listaResumo.innerHTML = '<p class="empty-cart-message">Seu carrinho de pré-pedido está vazio.</p>';
             confirmarBtn.disabled = true;
@@ -151,52 +150,37 @@ document.addEventListener('DOMContentLoaded', () => {
             confirmarBtn.disabled = false;
             confirmarBtn.style.opacity = '1';
         }
-
-        // ... dentro da função renderizarPagina()
-
-            itensAgrupados.forEach(item => {
-                const li = document.createElement('li');
-                li.className = 'order-item';
-                li.dataset.produtoId = item.id;
-                li.dataset.observacao = item.observacao || '';
-
-                const precoTotalItem = item.preco * item.quantidade;
-                const temObservacao = item.observacao && item.observacao.trim() !== '';
-
-                // --- LÓGICA ADICIONADA AQUI ---
-                // Converte 'serve_pessoas' para número para fazer a verificação
-                const servePessoas = parseInt(item.serve_pessoas, 10) || 0;
-
-                // --- TEMPLATE HTML MODIFICADO ---
-                li.innerHTML = `
-                    <img src="${item.imagem_svg || '/img/placeholder.svg'}" alt="${item.nome}" class="order-item-image">
-                    <div class="order-item-details">
-                        <h3>
-                            ${item.nome}
-                            ${servePessoas > 0 ? `<span class="serves-info">Serve até ${servePessoas} ${servePessoas > 1 ? 'pessoas' : 'pessoa'}</span>` : ''}
-                        </h3>
-                        <div class="quantity-control">
-                            <button class="quantity-btn decrease-btn" title="Diminuir">-</button>
-                            <span class="quantity-value">${item.quantidade}</span>
-                            <button class="quantity-btn increase-btn" title="Aumentar">+</button>
-                        </div>
-                        <span class="item-price">R$ ${precoTotalItem.toFixed(2)}</span>
-                        ${temObservacao ? `<p class="observacao-info">Obs: <em>${item.observacao}</em></p>` : ''}
+        itensAgrupados.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'order-item';
+            li.dataset.produtoId = item.id;
+            li.dataset.observacao = item.observacao || '';
+            const precoTotalItem = item.preco * item.quantidade;
+            const temObservacao = item.observacao && item.observacao.trim() !== '';
+            const servePessoas = parseInt(item.serve_pessoas, 10) || 0;
+            li.innerHTML = `
+                <img src="${item.imagem_svg || '/img/placeholder.svg'}" alt="${item.nome}" class="order-item-image">
+                <div class="order-item-details">
+                    <h3>
+                        ${item.nome}
+                        ${servePessoas > 0 ? `<span class="serves-info">Serve até ${servePessoas} ${servePessoas > 1 ? 'pessoas' : 'pessoa'}</span>` : ''}
+                    </h3>
+                    <div class="quantity-control">
+                        <button class="quantity-btn decrease-btn" title="Diminuir">-</button>
+                        <span class="quantity-value">${item.quantidade}</span>
+                        <button class="quantity-btn increase-btn" title="Aumentar">+</button>
                     </div>
-                    <div class="order-item-actions">
-                        <button class="action-btn observation-btn ${temObservacao ? 'active' : ''}" title="Adicionar/Editar Observação">
-                            <i class="fas fa-comment-dots"></i>
-                        </button>
-                        <button class="action-btn remove-item-btn" title="Remover '${item.nome}' com esta observação">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                `;
-                listaResumo.appendChild(li);
-                subtotal += precoTotalItem;
-            });
-
-
+                    <span class="item-price">R$ ${precoTotalItem.toFixed(2)}</span>
+                    ${temObservacao ? `<p class="observacao-info">Obs: <em>${item.observacao}</em></p>` : ''}
+                </div>
+                <div class="order-item-actions">
+                    <button class="action-btn observation-btn ${temObservacao ? 'active' : ''}" title="Adicionar/Editar Observação"><i class="fas fa-comment-dots"></i></button>
+                    <button class="action-btn remove-item-btn" title="Remover '${item.nome}' com esta observação"><i class="fas fa-times"></i></button>
+                </div>
+            `;
+            listaResumo.appendChild(li);
+            subtotal += precoTotalItem;
+        });
         subtotalEl.textContent = `R$ ${subtotal.toFixed(2)}`;
         totalEl.textContent = `R$ ${subtotal.toFixed(2)}`;
         cartBadge.textContent = carrinho.length;
@@ -206,7 +190,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function abrirModalObservacao(produtoId, obsAtual) {
         const itemOriginal = carrinho.find(p => p.id == produtoId);
         if (!itemOriginal) return;
-
         produtoIdParaObservacao = produtoId;
         observacaoOriginalParaEdicao = obsAtual;
         modalProductName.textContent = itemOriginal.nome;
@@ -215,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function fecharModalObservacao() {
-        hideKeyboard(); // Garante que o teclado feche junto com o modal
+        hideKeyboard();
         observationModal.classList.add('hidden');
         produtoIdParaObservacao = null;
         observacaoOriginalParaEdicao = '';
@@ -224,14 +207,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function salvarObservacao() {
         if (!produtoIdParaObservacao) return;
         const novaObservacao = modalTextarea.value.trim();
-        
         const novoCarrinho = carrinho.map(item => {
             if (item.id == produtoIdParaObservacao && (item.observacao || '') === observacaoOriginalParaEdicao) {
                 return { ...item, observacao: novaObservacao };
             }
             return item;
         });
-        
         atualizarCarrinho(novoCarrinho);
         fecharModalObservacao();
     }
@@ -239,11 +220,9 @@ document.addEventListener('DOMContentLoaded', () => {
     listaResumo.addEventListener('click', async (e) => {
         const itemLi = e.target.closest('.order-item');
         if (!itemLi) return;
-
         const produtoId = itemLi.dataset.produtoId;
         const obs = itemLi.dataset.observacao;
         const itemAmostra = carrinho.find(item => item.id == produtoId && (item.observacao || '') === obs);
-
         if (e.target.closest('.increase-btn')) {
             if (itemAmostra) atualizarCarrinho([...carrinho, { ...itemAmostra }]);
         } else if (e.target.closest('.decrease-btn')) {
@@ -314,10 +293,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function confirmarPedido() {
         const confirmado = await Notificacao.confirmar('Confirmar Pedido', 'Seu pedido será enviado para a cozinha. Deseja continuar?');
         if (!confirmado) return;
-
         confirmarBtn.disabled = true;
         confirmarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-
         const pedidosParaEnviar = agruparItensDoCarrinho(carrinho).map(item => ({
             id_mesa: mesaId,
             id_sessao: sessaoId,
@@ -326,27 +303,19 @@ document.addEventListener('DOMContentLoaded', () => {
             preco_unitario: item.preco,
             observacao: item.observacao || null
         }));
-
         try {
             const response = await fetch('/api/pedidos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ pedidos: pedidosParaEnviar })
             });
-
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido ao enviar pedido.' }));
                 throw new Error(errorData.message);
             }
-            
             atualizarCarrinho([]);
-
             Notificacao.sucesso('Pedido Enviado!', 'Seu pedido foi enviado para a cozinha e já está sendo preparado.');
-
-            setTimeout(() => {
-                window.location.href = '/cardapio';
-            }, 2000);
-
+            setTimeout(() => { window.location.href = '/cardapio'; }, 2000);
         } catch (error) {
             console.error('Falha ao confirmar pedido:', error);
             Notificacao.erro('Falha ao Enviar', `${error.message}. Por favor, tente novamente ou chame um garçom.`);
@@ -356,10 +325,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- Event Listeners ---
     voltarBtn.addEventListener('click', () => window.location.href = '/cardapio');
     confirmarBtn.addEventListener('click', confirmarPedido);
     profileIcon.addEventListener('click', () => window.location.href = '/conta');
 
+     // ... (todo o código existente da página)
+
+    // --- Lógica do WebSocket ---
+    function conectarWebSocket() {
+        const socket = new WebSocket(`ws://${window.location.host}?sessaoId=${sessaoId}`);
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'CONFIG_ATUALIZADA' && data.payload && data.payload.fonte_cliente) {
+                Notificacao.info('A aparência foi atualizada!');
+                aplicarFonteGlobal(data.payload.fonte_cliente);
+            }
+        };
+        socket.onclose = () => setTimeout(conectarWebSocket, 5000);
+    }
+
+    // --- INICIALIZAÇÃO ---
+    carregarEaplicarFonte();
     renderizarPagina();
     carregarSugestao();
+    conectarWebSocket(); // Adiciona a chamada aqui
 });

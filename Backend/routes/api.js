@@ -3,20 +3,18 @@ const router = express.Router();
 const { query, registrarLog } = require('../configurar/db');
 const bcrypt = require('bcryptjs');
 
-
-const authMiddleware = require('../middleware/authMiddleware'); 
+// ==================================================================
+// --- A CORREÇÃO ESTÁ AQUI ---
+// Importamos a função específica 'checarNivelAcesso' do middleware.
+// ==================================================================
+const { checarNivelAcesso } = require('../middleware/authMiddleware');
 
 const PDFDocument = require('pdfkit');
-const fs = require('fs'); 
-
+const fs = require('fs');
 const fetch = require('node-fetch');
-
-// NOVA LINHA DE IMPORTAÇÃO - MAIS ROBUSTA
 const thermalPrinter = require('node-thermal-printer');
 
-
 // --- Middleware de verificação ---
-// Middleware de verificação (seu código original, mantido como está)
 const checarUsuarioParaLog = (req, res, next) => {
     if (req.usuario && (req.usuario.nome || req.usuario.nome_usuario)) {
         return next();
@@ -40,7 +38,7 @@ router.get('/categorias', async (req, res) => {
 });
 
 // POST /categorias
-router.post('/categorias', checarUsuarioParaLog, async (req, res) => {
+router.post('/categorias',checarNivelAcesso (['geral']), checarUsuarioParaLog, async (req, res) => {
     try {
         const { nome, is_happy_hour, happy_hour_inicio, happy_hour_fim } = req.body;
         if (!nome) return res.status(400).json({ message: 'O nome da categoria é obrigatório.' });
@@ -63,7 +61,7 @@ router.post('/categorias', checarUsuarioParaLog, async (req, res) => {
 });
 
 // PUT /categorias/:id (EDITAR)
-router.put('/categorias/:id', checarUsuarioParaLog, async (req, res) => {
+router.put('/categorias/:id',checarNivelAcesso (['geral']), checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params;
     const { nome, is_happy_hour, happy_hour_inicio, happy_hour_fim } = req.body;
     if (!nome) return res.status(400).json({ message: 'O nome é obrigatório.' });
@@ -89,7 +87,7 @@ router.put('/categorias/:id', checarUsuarioParaLog, async (req, res) => {
 });
 
 // DELETE /categorias/:id
-router.delete('/categorias/:id', checarUsuarioParaLog, async (req, res) => {
+router.delete('/categorias/:id',checarNivelAcesso (['geral']), checarUsuarioParaLog, async (req, res) => {
     try {
         const { id } = req.params;
         const categoria = await query('SELECT nome FROM categorias WHERE id = ?', [id]);
@@ -104,7 +102,7 @@ router.delete('/categorias/:id', checarUsuarioParaLog, async (req, res) => {
 });
 
 // POST /categorias/ordenar
-router.post('/categorias/ordenar', checarUsuarioParaLog, async (req, res) => {
+router.post('/categorias/ordenar',checarNivelAcesso (['geral']), checarUsuarioParaLog, async (req, res) => {
     try {
         const { ordem } = req.body;
         if (!Array.isArray(ordem)) return res.status(400).json({ message: 'O corpo da requisição deve ser um array de IDs.' });
@@ -170,7 +168,7 @@ router.post('/produtos', checarUsuarioParaLog, async (req, res) => {
 });
 
 // PUT /produtos/:id (EDITAR)
-router.put('/produtos/:id', checarUsuarioParaLog, async (req, res) => {
+router.put('/produtos/:id', checarNivelAcesso (['geral']),checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params;
     const novosDados = req.body;
 
@@ -222,7 +220,7 @@ router.put('/produtos/:id', checarUsuarioParaLog, async (req, res) => {
 });
 
 // DELETE /produtos/:id
-router.delete('/produtos/:id', checarUsuarioParaLog, async (req, res) => {
+router.delete('/produtos/:id',checarNivelAcesso (['geral']),checarUsuarioParaLog, async (req, res) => {
     try {
         const { id } = req.params;
         const produto = await query('SELECT nome FROM produtos WHERE id = ?', [id]);
@@ -263,11 +261,11 @@ const atualizarStatus = async (req, res, tipoTabela) => {
     }
 };
 
-router.patch('/categorias/:id/status', checarUsuarioParaLog, (req, res) => {
+router.patch('/categorias/:id/status',checarNivelAcesso (['geral']), checarUsuarioParaLog, (req, res) => {
     atualizarStatus(req, res, 'categorias');
 });
 
-router.patch('/produtos/:id/status', checarUsuarioParaLog, (req, res) => {
+router.patch('/produtos/:id/status', checarNivelAcesso (['geral']), checarUsuarioParaLog, (req, res) => {
     atualizarStatus(req, res, 'produtos');
 });
 
@@ -275,7 +273,7 @@ router.patch('/produtos/:id/status', checarUsuarioParaLog, (req, res) => {
 // No seu arquivo de rotas da API (ex: api.js)
 
 // Rota para ATUALIZAR uma categoria (parcialmente)
-router.patch('/categorias/:id', async (req, res) => {
+router.patch('/categorias/:id',checarNivelAcesso (['geral']), async (req, res) => {
     const { id } = req.params;
     const { ativo } = req.body; // Pega apenas o campo 'ativo'
 
@@ -300,7 +298,7 @@ router.patch('/categorias/:id', async (req, res) => {
 });
 
 // Rota para ATUALIZAR um produto (parcialmente)
-router.patch('/produtos/:id', async (req, res) => {
+router.patch('/produtos/:id',checarNivelAcesso (['geral']), async (req, res) => {
     const { id } = req.params;
     // Pega os campos que podem ser atualizados: ativo, pode_ser_sugestao, etc.
     const { ativo, pode_ser_sugestao } = req.body; 
@@ -371,7 +369,7 @@ router.post('/mesas', checarUsuarioParaLog, async (req, res) => {
 });
 
 // DELETE /mesas/:id
-router.delete('/mesas/:id', checarUsuarioParaLog, async (req, res) => {
+router.delete('/mesas/:id',checarNivelAcesso (['geral']), checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params;
     try {
         const mesa = await query('SELECT nome_usuario FROM mesas WHERE id = ?', [id]);
@@ -404,7 +402,7 @@ router.get('/mesas/status', checarUsuarioParaLog, async (req, res) => {
 // ==================================================================
 // --- ROTA DE SESSÕES COM A CONSULTA DO TOTAL CORRIGIDA ---
 // ==================================================================
-router.get('/mesas/:id/sessoes', checarUsuarioParaLog, async (req, res) => {
+router.get('/mesas/:id/sessoes', checarNivelAcesso (['geral', 'pedidos']), checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params;
     try {
         // --- CONSULTA SQL ATUALIZADA ---
@@ -460,7 +458,7 @@ router.post('/sessoes/iniciar', async (req, res) => {
 // Em Backend/routes/api.js
 
 // ROTA CORRIGIDA para a conta do cliente
-router.get('/sessoes/:id/conta', checarUsuarioParaLog, async (req, res) => {
+router.get('/sessoes/:id/conta',  async (req, res) => {
     const { id } = req.params;
     if (!id) return res.status(400).json({ message: 'O ID da sessão é obrigatório.' });
     try {
@@ -620,22 +618,24 @@ router.get('/cardapio-completo', async (req, res) => {
 
 
 
-// **ROTA AJUSTADA** POST /pedidos/:id/cancelar (Cancela um item de pedido específico)
-router.post('/pedidos/:id/cancelar', checarUsuarioParaLog, async (req, res) => {
-    const { id } = req.params; // ID do item do pedido
+
+// ==================================================================
+// --- ROTA PARA CANCELAR UM ITEM DE PEDIDO (VERSÃO CORRIGIDA) ---
+// ==================================================================
+// 1. Adicionamos o middleware checarNivelAcesso.
+//    Decidi que apenas 'geral' pode cancelar, para manter a segurança.
+//    Se quisesse que 'pedidos' também pudesse, seria: checarNivelAcesso(['geral', 'pedidos'])
+router.post('/pedidos/:id/cancelar', checarNivelAcesso(['geral', 'pedidos']), checarUsuarioParaLog, async (req, res) => {
+    const { id } = req.params;
     const { motivo } = req.body;
 
-    // Verificação de Permissão
-    if (req.usuario.nivel_acesso !== 'geral') {
-        return res.status(403).json({ message: 'Acesso negado. Apenas a gerência pode cancelar itens.' });
-    }
+    // 2. A verificação de permissão manual foi REMOVIDA, pois o middleware já faz isso.
 
     if (!motivo || motivo.trim() === '') {
         return res.status(400).json({ message: 'O motivo do cancelamento é obrigatório.' });
     }
 
     try {
-        // Verifica se o pedido existe
         const [pedido] = await query('SELECT * FROM pedidos WHERE id = ?', [id]);
         if (!pedido) {
             return res.status(404).json({ message: 'Item do pedido não encontrado.' });
@@ -644,17 +644,13 @@ router.post('/pedidos/:id/cancelar', checarUsuarioParaLog, async (req, res) => {
             return res.status(400).json({ message: 'Este item já foi cancelado.' });
         }
 
-        // Atualiza o status do item no banco de dados
         await query(
             "UPDATE pedidos SET status = 'cancelado', motivo_cancelamento = ? WHERE id = ?",
             [motivo.trim(), id]
         );
         
-        // Registra o log da ação
         const nomeGerente = req.usuario.nome;
         await registrarLog(req.usuario.id, nomeGerente, 'CANCELOU_PEDIDO', `Cancelou o item de pedido ID ${id} pelo motivo: "${motivo.trim()}".`);
-
-        // A query que causava o erro foi REMOVIDA daqui.
 
         res.json({ message: 'Item do pedido cancelado com sucesso!' });
 
@@ -664,13 +660,15 @@ router.post('/pedidos/:id/cancelar', checarUsuarioParaLog, async (req, res) => {
     }
 });
 
-// **ROTA FINAL** GET /sessoes/:id/pedidos (Busca todos os pedidos de uma sessão)
-router.get('/sessoes/:id/pedidos', checarUsuarioParaLog, async (req, res) => {
-    // 1. ADICIONAR ESTA VERIFICAÇÃO DE PERMISSÃO
-    if (req.usuario.nivel_acesso !== 'geral') {
-        return res.status(403).json({ message: 'Acesso negado. Rota exclusiva para gerentes.' });
-    }
-    // 2. O RESTO DO CÓDIGO PERMANECE IGUAL
+
+// ==================================================================
+// --- ROTA PARA BUSCAR PEDIDOS DE UMA SESSÃO (VERSÃO CORRIGIDA) ---
+// ==================================================================
+// 1. Adicionamos o middleware checarNivelAcesso.
+//    Aqui, permitimos que tanto 'geral' quanto 'pedidos' possam ver a lista de pedidos.
+router.get('/sessoes/:id/pedidos', checarNivelAcesso(['geral', 'pedidos']), checarUsuarioParaLog, async (req, res) => {
+    // 2. A verificação de permissão manual foi REMOVIDA.
+
     const { id } = req.params;
     try {
         const sql = `
@@ -684,6 +682,9 @@ router.get('/sessoes/:id/pedidos', checarUsuarioParaLog, async (req, res) => {
         res.status(500).json({ message: 'Erro no servidor ao buscar os pedidos da sessão.' });
     }
 });
+
+
+
 
 
 // 2. CRIAR A NOVA ROTA PARA BUSCAR SUGESTÃO ALEATÓRIA
@@ -721,7 +722,7 @@ router.get('/produtos/sugestao', checarUsuarioParaLog, async (req, res) => {
 
 // Coloque esta rota perto das outras rotas PATCH de status
 
-router.patch('/produtos/:id/sugestao', checarUsuarioParaLog, async (req, res) => {
+router.patch('/produtos/:id/sugestao',checarNivelAcesso (['geral', 'pedidos']), checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params;
     const { pode_ser_sugestao } = req.body;
 
@@ -864,7 +865,7 @@ router.get('/chamados', checarUsuarioParaLog, async (req, res) => {
 });
 
 // PATCH /api/chamados/:id/atender - Marca um chamado como atendido
-router.patch('/chamados/:id/atender', checarUsuarioParaLog, async (req, res) => {
+router.patch('/chamados/:id/atender', checarNivelAcesso(['geral', 'pedidos']), checarUsuarioParaLog, async (req, res) => {
     const { id } = req.params;
     try {
         const sql = "UPDATE chamados SET status = 'atendido' WHERE id = ? AND status = 'pendente'";
@@ -885,7 +886,7 @@ router.patch('/chamados/:id/atender', checarUsuarioParaLog, async (req, res) => 
 // Em /Backend/routes/api.js
 
 // GET /api/chamados/pendentes/count - Retorna apenas a contagem de chamados pendentes
-router.get('/chamados/pendentes/count', checarUsuarioParaLog, async (req, res) => {
+router.get('/chamados/pendentes/count',checarNivelAcesso (['geral', 'pedidos']), checarUsuarioParaLog, async (req, res) => {
     try {
         const sql = "SELECT COUNT(id) AS count FROM chamados WHERE status = 'pendente' AND DATE(data_hora) = CURDATE()";
         const [result] = await query(sql);
@@ -944,7 +945,7 @@ function obterIntervaloDeDatas(periodo) {
 }
 
 // Rota principal de relatórios (Refatorada)
-router.get('/relatorios', checarPermissaoRelatorios, async (req, res) => {
+router.get('/relatorios', checarNivelAcesso (['geral', 'pedidos']),checarPermissaoRelatorios, async (req, res) => {
     const { periodo } = req.query;
     const periodosValidos = ['hoje', 'semana', 'mes', 'ano'];
 
@@ -1079,23 +1080,17 @@ function obterChaveGrafico(periodo, data) {
 // ====================================================================================
 // ROTA PARA LIMPAR CHAMADOS ATENDIDOS (SEGUINDO O PADRÃO DO PROJETO)
 // ====================================================================================
-router.delete('/chamados/limpar-atendidos', checarPermissaoRelatorios, async (req, res) => {
+router.delete('/chamados/limpar-atendidos', checarNivelAcesso(['geral', 'pedidos']), checarUsuarioParaLog, async (req, res) => {
     try {
-        // 1. Descobrir quantos chamados serão deletados (para o log)
-        // Usamos a função 'query' do seu projeto. O '?' é o placeholder padrão para o driver 'mysql' ou 'mysql2'.
         const chamadosParaDeletar = await query("SELECT COUNT(*) as total FROM chamados WHERE status = 'atendido'");
         const totalDeletado = chamadosParaDeletar[0].total;
 
-        // Se não houver nada para deletar, apenas retorne com sucesso.
         if (totalDeletado === 0) {
             return res.status(200).json({ message: 'Nenhum chamado atendido para limpar.' });
         }
 
-        // 2. Executar a deleção dos chamados
         await query("DELETE FROM chamados WHERE status = 'atendido'");
 
-        // 3. Registrar a ação no log do sistema
-        // Usando a mesma estrutura do seu exemplo, com o usuário que fez a requisição.
         await registrarLog(
             req.usuario.id, 
             req.usuario.nome, 
@@ -1103,17 +1098,13 @@ router.delete('/chamados/limpar-atendidos', checarPermissaoRelatorios, async (re
             `Limpou o histórico de ${totalDeletado} chamados de garçom que já haviam sido atendidos.`
         );
 
-        // 4. Notificar clientes (opcional, mas bom para consistência)
-        // Se houver uma tela que possa ser atualizada com essa limpeza, enviamos o broadcast.
         if (req.broadcast) {
             req.broadcast({ type: 'CHAMADOS_ATUALIZADOS' });
         }
 
-        // 5. Enviar a resposta de sucesso
         res.status(200).json({ message: `Histórico de ${totalDeletado} chamados atendidos foi limpo com sucesso.` });
 
     } catch (error) {
-        // Em caso de erro, registra no console e envia uma resposta de erro padronizada
         console.error('Erro ao limpar chamados atendidos:', error);
         res.status(500).json({ message: 'Erro ao limpar chamados atendidos', error: error.message });
     }
@@ -1122,11 +1113,8 @@ router.delete('/chamados/limpar-atendidos', checarPermissaoRelatorios, async (re
 
 
 
-router.get('/pedidos-ativos', checarUsuarioParaLog, async (req, res) => {
+router.get('/pedidos-ativos',checarNivelAcesso (['geral', 'pedidos']), checarUsuarioParaLog, async (req, res) => {
     // Proteção de Nível de Acesso
-    if (req.usuario.nivel_acesso !== 'geral') {
-        return res.status(403).json({ message: 'Acesso negado. Rota exclusiva para a gerência.' });
-    }
 
     try {
         // Query aprimorada para incluir sessões sem pedidos e mais detalhes dos itens.
@@ -1216,12 +1204,9 @@ router.patch('/pedidos/:id/entregar', checarUsuarioParaLog, async (req, res) => 
 // ==================================================================
 // --- ROTA PARA CONTAR ITENS DE PEDIDOS PENDENTES ---
 // ==================================================================
-router.get('/pedidos/pendentes/count', checarUsuarioParaLog, async (req, res) => {
+router.get('/pedidos/pendentes/count',checarNivelAcesso (['geral', 'pedidos']), checarUsuarioParaLog, async (req, res) => {
     // Garante que apenas a gerência possa acessar esta informação
-    if (req.usuario.nivel_acesso !== 'geral') {
-        return res.status(403).json({ message: 'Acesso negado.' });
-    }
-
+    
     try {
         // Query SQL que conta todos os registros na tabela 'pedidos'
         // onde o status é 'pendente' e que pertencem a uma sessão 'ativa'.
@@ -1243,4 +1228,300 @@ router.get('/pedidos/pendentes/count', checarUsuarioParaLog, async (req, res) =>
     }
 });
 
+
+// ==================================================================
+// --- ROTAS DE CONFIGURAÇÕES ---
+// ==================================================================
+
+// Middleware para proteger rotas de configuração (apenas acesso 'geral')
+const checarPermissaoConfig = (req, res, next) => {
+    if (req.usuario && req.usuario.nivel_acesso === 'geral') {
+        return next();
+    }
+    return res.status(403).json({ message: 'Acesso negado. Apenas a gerência pode acessar as configurações.' });
+};
+
+// GET /api/configuracoes/:chaves
+// Busca múltiplas configurações de uma vez. Ex: /api/configuracoes/fonte_cliente,permissoes_home
+router.get('/configuracoes/:chaves', checarPermissaoConfig, async (req, res) => {
+    try {
+        const chaves = req.params.chaves.split(',');
+        const placeholders = chaves.map(() => '?').join(','); // Cria ?,?,?
+        const sql = `SELECT chave, valor FROM configuracoes WHERE chave IN (${placeholders})`;
+        
+        const resultados = await query(sql, chaves);
+
+        // Transforma o array de resultados em um objeto chave-valor para fácil uso no frontend
+        const configs = resultados.reduce((obj, item) => {
+            obj[item.chave] = item.valor;
+            return obj;
+        }, {});
+
+        res.json(configs);
+    } catch (error) {
+        console.error('Erro ao buscar configurações:', error);
+        res.status(500).json({ message: 'Erro no servidor ao buscar configurações.' });
+    }
+});
+
+// POST /api/configuracoes
+// Salva uma ou mais configurações. Espera um body como { "fonte_cliente": "...", "outra_config": "..." }
+router.post('/configuracoes', checarPermissaoConfig, async (req, res) => {
+    try {
+        const configsParaSalvar = req.body;
+        const promessas = [];
+
+        for (const chave in configsParaSalvar) {
+            if (Object.hasOwnProperty.call(configsParaSalvar, chave)) {
+                const valor = configsParaSalvar[chave];
+                // "INSERT ... ON DUPLICATE KEY UPDATE" é uma forma eficiente de inserir ou atualizar.
+                const sql = 'INSERT INTO configuracoes (chave, valor) VALUES (?, ?) ON DUPLICATE KEY UPDATE valor = ?';
+                promessas.push(query(sql, [chave, valor, valor]));
+            }
+        }
+
+        await Promise.all(promessas);
+
+        // Registra um log genérico da ação
+        await registrarLog(req.usuario.id, req.usuario.nome, 'ATUALIZOU_CONFIGS', 'O usuário salvou alterações na página de configurações.');
+
+        // Notifica outros painéis abertos sobre a mudança (útil para a fonte do cliente)
+        if (req.broadcast) {
+            req.broadcast({ type: 'CONFIG_ATUALIZADA', payload: configsParaSalvar });
+        }
+
+        res.status(200).json({ message: 'Configurações salvas com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao salvar configurações:', error);
+        res.status(500).json({ message: 'Erro no servidor ao salvar configurações.' });
+    }
+});
+
+
+
+// GET /api/usuarios-para-relatorio
+// Busca uma lista de todos os usuários para preencher o seletor no frontend.
+router.get('/usuarios-para-relatorio', checarPermissaoConfig, async (req, res) => {
+    try {
+        // CORREÇÃO: Adicionamos 'nivel_acesso' à lista de colunas selecionadas.
+        const sql = "SELECT id, nome, email, nivel_acesso FROM usuarios ORDER BY nome ASC";
+        const usuarios = await query(sql);
+        res.json(usuarios);
+    } catch (error) {
+        console.error('Erro ao buscar usuários para relatório:', error);
+        res.status(500).json({ message: 'Erro no servidor ao buscar usuários.' });
+    }
+});
+
+// GET /api/relatorio-atividade?usuarioId=X&periodo=Y
+// Gera o relatório de atividade para um usuário e período específicos.
+router.get('/relatorio-atividade', checarPermissaoConfig, async (req, res) => {
+    const { usuarioId, periodo } = req.query;
+
+    if (!usuarioId || !periodo) {
+        return res.status(400).json({ message: 'ID do usuário e período são obrigatórios.' });
+    }
+
+    try {
+        // A função obterIntervaloDeDatas já existe no seu arquivo api.js, na seção de relatórios de vendas.
+        // Vamos reutilizá-la aqui.
+        const { inicio, fim } = obterIntervaloDeDatas(periodo);
+
+        const sql = `
+            SELECT acao, COUNT(id) as total
+            FROM logs
+            WHERE id_usuario = ? AND data_hora BETWEEN ? AND ?
+            GROUP BY acao
+            ORDER BY total DESC;
+        `;
+
+        const atividades = await query(sql, [usuarioId, inicio, fim]);
+        
+        res.json(atividades);
+
+    } catch (error) {
+        console.error('Erro ao gerar relatório de atividade:', error);
+        res.status(500).json({ message: 'Erro no servidor ao gerar relatório.' });
+    }
+});
+
+
+// ==================================================================
+// --- ROTA PARA RESETAR O BANCO DE DADOS (VERSÃO FINAL E CORRIGIDA) ---
+// ==================================================================
+// REMOVEMOS o middleware 'checarPermissaoRelatorios' daqui
+router.post('/reset-database', async (req, res) => {
+    // A verificação de permissão já acontece implicitamente pelo 'protegerRota'
+    // que protege todo o arquivo /api. E a validação principal é a da chave secreta.
+    if (req.usuario.nivel_acesso !== 'geral') {
+        return res.status(403).json({ message: 'Apenas o administrador geral pode executar esta ação.' });
+    }
+
+    const { secretKey } = req.body;
+
+    // 1. Validação da chave secreta
+    if (!secretKey || secretKey !== process.env.RESET_SECRET_TOKEN) {
+        return res.status(403).json({ message: 'Chave de acesso para reset inválida ou não fornecida.' });
+    }
+
+    try {
+        // 2. Desativa temporariamente a verificação de chaves estrangeiras
+        await query('SET FOREIGN_KEY_CHECKS = 0;');
+
+        // 3. Define a ordem correta de TRUNCATE
+        const tabelasParaLimpar = [
+            'pedidos', 'sessoes_cliente', 'chamados', 'produtos', 'mesas', 'categorias', 'configuracoes'
+        ];
+
+        // 4. Executa o TRUNCATE para cada tabela
+        for (const tabela of tabelasParaLimpar) {
+            await query(`TRUNCATE TABLE ${tabela};`);
+        }
+
+        // 5. Reativa a verificação de chaves estrangeiras
+        await query('SET FOREIGN_KEY_CHECKS = 1;');
+
+        // 6. Registra o log da ação
+        await registrarLog(req.usuario.id, req.usuario.nome, 'RESET_SISTEMA', 'O banco de dados foi resetado para o estado inicial (exceto logs e usuários).');
+
+        // 7. Envia a resposta de sucesso
+        res.status(200).json({ message: 'Sistema resetado com sucesso! Produtos, categorias, mesas e todas as sessões foram apagados.' });
+
+    } catch (error) {
+        console.error("Erro crítico ao resetar o banco de dados:", error);
+        await query('SET FOREIGN_KEY_CHECKS = 1;');
+        res.status(500).json({ message: 'Ocorreu um erro grave durante o reset do banco de dados.', error: error.message });
+    }
+});
+
+
+
+// GET /api/configuracoes/:chaves
+// Busca múltiplas configurações de uma vez. Ex: /api/configuracoes/fonte_cliente,permissoes_home
+router.get('/configuracoes/:chaves', checarPermissaoConfig, async (req, res) => {
+    try {
+        const chaves = req.params.chaves.split(',');
+        const placeholders = chaves.map(() => '?').join(',');
+        const sql = `SELECT chave, valor FROM configuracoes WHERE chave IN (${placeholders})`;
+        const resultados = await query(sql, chaves);
+        const configs = resultados.reduce((obj, item) => {
+            try {
+                // Tenta fazer o parse do valor, se for um JSON válido (para permissões)
+                obj[item.chave] = JSON.parse(item.valor);
+            } catch (e) {
+                // Se não for JSON, usa o valor como string (para a fonte)
+                obj[item.chave] = item.valor;
+            }
+            return obj;
+        }, {});
+        res.json(configs);
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no servidor ao buscar configurações.' });
+    }
+});
+
+// POST /api/configuracoes
+// Salva uma ou mais configurações.
+router.post('/configuracoes', checarPermissaoConfig, async (req, res) => {
+    try {
+        const configsParaSalvar = req.body;
+        const promessas = [];
+
+        for (const chave in configsParaSalvar) {
+            if (Object.hasOwnProperty.call(configsParaSalvar, chave)) {
+                let valor = configsParaSalvar[chave];
+                // Se o valor for um objeto (como a lista de permissões), converte para string JSON
+                if (typeof valor === 'object') {
+                    valor = JSON.stringify(valor);
+                }
+                const sql = 'INSERT INTO configuracoes (chave, valor) VALUES (?, ?) ON DUPLICATE KEY UPDATE valor = ?';
+                promessas.push(query(sql, [chave, valor, valor]));
+            }
+        }
+
+        await Promise.all(promessas);
+        await registrarLog(req.usuario.id, req.usuario.nome, 'ATUALIZOU_CONFIGS', `Salvou alterações na página de configurações.`);
+        
+        if (req.broadcast) {
+            req.broadcast({ type: 'CONFIG_ATUALIZADA', payload: configsParaSalvar });
+        }
+
+        res.status(200).json({ message: 'Configurações salvas com sucesso!' });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no servidor ao salvar configurações.' });
+    }
+});
+
+// GET /api/usuarios-para-relatorio
+// Busca uma lista de todos os usuários para preencher o seletor.
+
+
+// GET /api/relatorio-atividade?usuarioId=X&periodo=Y
+// Gera o relatório de atividade.
+router.get('/relatorio-atividade', checarPermissaoConfig, async (req, res) => {
+    const { usuarioId, periodo } = req.query;
+    if (!usuarioId || !periodo) return res.status(400).json({ message: 'ID do usuário e período são obrigatórios.' });
+    try {
+        const { inicio, fim } = obterIntervaloDeDatas(periodo);
+        const sql = `SELECT acao, COUNT(id) as total FROM logs WHERE id_usuario = ? AND data_hora BETWEEN ? AND ? GROUP BY acao ORDER BY total DESC;`;
+        const atividades = await query(sql, [usuarioId, inicio, fim]);
+        res.json(atividades);
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no servidor ao gerar relatório.' });
+    }
+});
+
+// DELETE /api/usuarios/:id
+// Rota para deletar um funcionário.
+router.delete('/usuarios/:id', checarPermissaoConfig, async (req, res) => {
+    const { id } = req.params;
+    const idGerenteLogado = req.usuario.id;
+
+    if (parseInt(id, 10) === idGerenteLogado) {
+        return res.status(400).json({ message: 'Você não pode deletar a si mesmo.' });
+    }
+
+    try {
+        const [usuario] = await query('SELECT nome FROM usuarios WHERE id = ?', [id]);
+        if (!usuario) return res.status(404).json({ message: 'Funcionário não encontrado.' });
+
+        await query('DELETE FROM usuarios WHERE id = ?', [id]);
+        await registrarLog(req.usuario.id, req.usuario.nome, 'DELETOU_USUARIO', `Deletou o funcionário '${usuario.nome}' (ID: ${id}).`);
+        res.status(200).json({ message: `Funcionário '${usuario.nome}' deletado com sucesso.` });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no servidor ao deletar funcionário.' });
+    }
+});
+
+// POST /api/reset-database
+// Rota perigosa para limpar as tabelas principais.
+router.post('/reset-database', checarPermissaoConfig, async (req, res) => {
+    const { secretKey } = req.body;
+
+    if (!secretKey || secretKey !== process.env.RESET_SECRET_TOKEN) {
+        return res.status(403).json({ message: 'Chave de acesso para reset inválida ou não fornecida.' });
+    }
+
+    try {
+        await query('SET FOREIGN_KEY_CHECKS = 0;');
+        const tabelasParaLimpar = ['pedidos', 'sessoes_cliente', 'chamados', 'produtos', 'categorias', 'configuracoes'];
+        const promessasDeLimpeza = tabelasParaLimpar.map(tabela => query(`TRUNCATE TABLE ${tabela};`));
+        await Promise.all(promessasDeLimpeza);
+        await query('SET FOREIGN_KEY_CHECKS = 1;');
+        await registrarLog(req.usuario.id, req.usuario.nome, 'RESET_DATABASE', 'Executou um reset completo do banco de dados.');
+        if (req.broadcast) req.broadcast({ type: 'SISTEMA_RESETADO' });
+        res.status(200).json({ message: 'O sistema foi resetado com sucesso!' });
+    } catch (error) {
+        await query('SET FOREIGN_KEY_CHECKS = 1;');
+        res.status(500).json({ message: 'Ocorreu um erro grave durante o reset.' });
+    }
+});
+
+
+
+
 module.exports = router;
+
+
+
+

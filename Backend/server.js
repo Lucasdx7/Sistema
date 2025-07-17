@@ -1,15 +1,9 @@
-// /Backend/server.js - VERSÃO DE DEPURAÇÃO PARA ENCONTRAR O ERRO
+// /Backend/server.js - VERSÃO FINAL E CORRIGIDA
 
 // --- 1. Módulos Necessários ---
 console.log('[DEBUG] 1. Iniciando o carregamento dos módulos...');
 require('dotenv').config();
 const express = require('express');
-const dbConfig = {
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-};
 const cors = require('cors');
 const path = require('path');
 const http = require('http' );
@@ -19,26 +13,16 @@ console.log('[DEBUG] 1. Módulos básicos carregados com sucesso.');
 
 // --- 2. Importação das Rotas e Middlewares ---
 console.log('[DEBUG] 2. Tentando carregar os arquivos de rotas e middlewares...');
-
-// VAMOS CARREGAR UM DE CADA VEZ PARA ISOLAR O ERRO
-console.log('[DEBUG] 2a. Carregando ./routes/auth.js...');
 const authRoutes = require('./routes/auth');
-console.log('[DEBUG] 2a. SUCESSO: ./routes/auth.js carregado.');
-
-console.log('[DEBUG] 2b. Carregando ./routes/api.js...');
 const apiRoutes = require('./routes/api');
-console.log('[DEBUG] 2b. SUCESSO: ./routes/api.js carregado.');
-
-console.log('[DEBUG] 2c. Carregando ./middleware/authMiddleware.js...');
+const publicRoutes = require('./routes/public'); // Rota pública
 const { protegerRota } = require('./middleware/authMiddleware');
-console.log('[DEBUG] 2c. SUCESSO: ./middleware/authMiddleware.js carregado.');
-
 console.log('[DEBUG] 2. Todos os arquivos de rotas e middlewares foram carregados sem erro.');
 
 // --- 3. Configuração Inicial ---
 console.log('[DEBUG] 3. Configurando o Express...');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; // Usa a porta do ambiente ou 3000 como padrão
 console.log('[DEBUG] 3. Express configurado.');
 
 // --- 4. Middlewares Globais do Express ---
@@ -54,7 +38,6 @@ console.log('[DEBUG] 5. Configurando o servidor HTTP e WebSocket...');
 const server = http.createServer(app );
 const wss = new WebSocketServer({ server });
 
-// Função para enviar uma mensagem para TODOS os clientes (broadcast)
 function broadcast(data) {
     wss.clients.forEach(client => {
         if (client.readyState === client.OPEN) {
@@ -63,51 +46,39 @@ function broadcast(data) {
     });
 }
 
-// NOVA FUNÇÃO: Envia uma mensagem para uma sessão específica
-function sendToSession(sessaoId, data) {
-    wss.clients.forEach(client => {
-        if (client.sessaoId === sessaoId && client.readyState === client.OPEN) {
-            client.send(JSON.stringify(data));
-        }
-    });
-}
-
-// Lógica de conexão WebSocket
 wss.on('connection', (ws, req) => {
     const parameters = url.parse(req.url, true);
     const sessaoId = parameters.query.sessaoId;
     if (sessaoId) {
         ws.sessaoId = sessaoId;
-        // Removido console.log daqui para não poluir o teste
     }
-    ws.on('close', () => {});
-    ws.on('error', (error) => {});
+    ws.on('error', (error) => console.error('Erro no WebSocket:', error));
 });
 
-// Disponibiliza as funções de envio para as rotas da API
 app.use((req, res, next) => {
     req.broadcast = broadcast;
-    req.sendToSession = sendToSession;
     next();
 });
 console.log('[DEBUG] 5. Servidor WebSocket configurado.');
 
-// --- 6. Definição das Rotas ---
-console.log('[DEBUG] 6. Tentando VINCULAR as rotas ao Express...');
+// --- 6. Definição das Rotas da API ---
+console.log('[DEBUG] 6. Vinculando as rotas da API...');
 
-// VAMOS VINCULAR UMA DE CADA VEZ
-console.log('[DEBUG] 6a. Vinculando rota /auth...');
+// ROTA PÚBLICA (para fontes, permissões, etc.) - SEM PROTEÇÃO
+// **DEVE VIR ANTES** da rota principal da API para não ser bloqueada.
+app.use('/api/public', publicRoutes);
+console.log('[DEBUG] 6a. Rota PÚBLICA /api/public vinculada.');
+
+// ROTA DE AUTENTICAÇÃO (login, registro) - SEM PROTEÇÃO
 app.use('/auth', authRoutes);
-console.log('[DEBUG] 6a. SUCESSO: Rota /auth vinculada.');
+console.log('[DEBUG] 6b. Rota de AUTENTICAÇÃO /auth vinculada.');
 
-console.log('[DEBUG] 6b. Vinculando rota /api...');
+// ROTA PRINCIPAL DA API - COM PROTEÇÃO
 app.use('/api', protegerRota, apiRoutes);
-console.log('[DEBUG] 6b. SUCESSO: Rota /api vinculada.');
+console.log('[DEBUG] 6c. Rota PROTEGIDA /api vinculada.');
 
-console.log('[DEBUG] 6. Todas as rotas principais foram vinculadas sem erro.');
-
-// --- Rotas para servir as páginas HTML ---
-console.log('[DEBUG] Servindo rotas de arquivos HTML...');
+// --- 7. Rotas para servir as páginas HTML ---
+console.log('[DEBUG] 7. Servindo rotas de arquivos HTML...');
 app.get('/login-gerencia', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'login.html')); });
 app.get('/gerencia-home', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'Gerencia-Home.html')); });
 app.get('/gerencia', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'Gerencia.html')); });
@@ -121,11 +92,12 @@ app.get('/dados-cliente', (req, res) => { res.sendFile(path.join(__dirname, '..'
 app.get('/chamados', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'chamado.html')); });
 app.get('/relatorios', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'relatorio.html')); });
 app.get('/acompanhar', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'pedidos.html')); });
+app.get('/configuracoes', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'configuracoes.html')); });
 app.get('/', (req, res) => { res.redirect('/login'); });
-console.log('[DEBUG] Rotas de arquivos HTML servidas.');
+console.log('[DEBUG] 7. Rotas de arquivos HTML servidas.');
 
-// --- 7. Inicia o Servidor ---
-console.log('[DEBUG] 7. TENTANDO INICIAR O SERVIDOR...');
+// --- 8. Inicia o Servidor ---
+console.log('[DEBUG] 8. TENTANDO INICIAR O SERVIDOR...');
 server.listen(PORT, () => {
     console.log('================================================');
     console.log('🎉 SERVIDOR INICIADO COM SUCESSO! 🎉');

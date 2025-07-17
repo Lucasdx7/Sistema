@@ -1,12 +1,308 @@
         @import url('https://fonts.googleapis.com/css2?family=Sua-Fonte-Aqui&display=swap' );
         
-        
+
+/* ================================================================== */
+/* --- ARQUIVO CSS COMPLETO E CORRIGIDO PARA O FRONTEND DO CLIENTE --- */
+/* ================================================================== */
+
+/* --- Importação de Fontes --- */
+/* Esta linha é um placeholder, o HTML carrega as fontes do Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Roboto&family=Open+Sans&family=Lato&family=Montserrat&family=Poppins&family=Nunito&display=swap' );
+
+/* --- Variáveis Globais --- */
+:root {
+    /* Define a fonte padrão e a variável que será alterada pelo JS */
+    --font-principal-cliente: 'Roboto', sans-serif;
+}
+
+/* --- Estilos Base e Layout Principal --- */
+body {
+    /* A CORREÇÃO CRÍTICA ESTÁ AQUI: */
+    /* Usamos a variável CSS para que o JavaScript possa controlá-la. */
+    /* As outras declarações de font-family foram removidas. */
+    font-family: var(--font-principal-cliente);
+
+    margin: 0;
+    background-color: #f0ebe5;
+}
+
+.container, .container-full {
+    display: flex;
+    height: 100vh;
+}
+
+.container-full {
+    flex-direction: column;
+}
+
+/* --- Barra Lateral (Sidebar) --- */
+.sidebar {
+    width: 250px;
+    background-color: #2b1515;
+    color: #f0ebe5;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.logo {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid #ff0303;
+}
+
+.logo h1 { margin: 0; font-size: 28px; font-weight: bold; }
+.logo p { margin: 0; font-size: 12px; letter-spacing: 1px; }
+
+.nav-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.nav-menu li {
+    padding: 20px 25px;
+    font-size: 22px;
+    cursor: pointer;
+    border-bottom: 1px solid #6a4a4a;
+    transition: background-color 0.3s;
+}
+
+.nav-menu li:hover, .nav-menu li.active {
+    background-color: #6a4a4a;
+}
+
+.nav-item.happy-hour-inativo {
+    color: #999;
+    cursor: not-allowed;
+    background-color: #4b2e2e;
+}
+
+/* --- Conteúdo Principal e Cabeçalho --- */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: hidden;
+}
+
+.header, .sheader {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 15px 30px;
+    background-color: #311515;
+    color: white;
+    flex-shrink: 0;
+    height: 80px;
+    box-sizing: border-box;
+}
+
+.sheader {
+    justify-content: space-between;
+}
+
+.sheader-logo { text-align: left; }
+.sheader-logo h1 { margin: 0; font-size: 28px; font-weight: bold; color: #ffffff; line-height: 1; }
+.sheader-logo p { margin: 4px 0 0; font-size: 12px; letter-spacing: 1px; color: #f0ebe5; opacity: 0.8; }
+
+.header-icons, .sheader-icons { display: flex; align-items: center; gap: 25px; }
+.header-icons .icon, .sheader-icons .icon { font-size: 28px; cursor: pointer; position: relative; }
+
+.cart-icon .badge {
+    position: absolute;
+    top: -8px;
+    right: -12px;
+    background-color: #d9534f;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* --- Lista de Itens do Cardápio --- */
+.menu-list {
+    padding: 20px;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    padding: 15px;
+    border-bottom: 2px solid #f0ebe5;
+}
+
+.menu-item.hidden { display: none; }
+
+.menu-item img {
+    width: 150px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-right: 20px;
+}
+
+.item-details { flex-grow: 1; }
+.item-details h3 { margin: 0 0 5px 0; font-size: 18px; color: #333; }
+.item-details h3 .serves-info { color: #D9534F; font-size: 0.85em; font-weight: 500; margin-left: 10px; vertical-align: middle; }
+.item-details p { margin: 0; font-size: 14px; color: #666; line-height: 1.4; }
+
+.item-action { display: flex; flex-direction: column; align-items: center; margin-left: 20px; }
+.item-price { font-size: 16px; font-weight: bold; color: #333; }
+
+.add-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #333;
+    background-color: transparent;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.menu-item.item-inativo { opacity: 0.6; background-color: #fafafa; }
+.menu-item .add-button:disabled { background-color: #ccc !important; color: #666; cursor: not-allowed; border-color: #ccc; }
+.menu-item .add-button.added { background-color: #28a745 !important; color: white; border-color: #28a745; }
+
+.details-button { background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.2em; padding: 5px; transition: color 0.2s ease; }
+.details-button:hover { color: #c0392b; }
+
+/* --- Estilos para Modais --- */
+.modal-overlay {
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+    width: 100% !important; height: 100% !important;
+    z-index: 1000 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background-color: rgba(0, 0, 0, 0.6);
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.hidden { opacity: 0; pointer-events: none; }
+
+.modal-content {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    width: 90%;
+    max-width: 480px;
+    position: relative;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.hidden .modal-content { transform: scale(0.9); }
+
+.modal-content .close-button, .modal-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #888;
+}
+
+/* Modal de Detalhes do Produto */
+.modal-content.product-modal { padding: 0; overflow: hidden; }
+.product-modal .modal-body { padding: 0; }
+.product-modal-image { width: 100%; height: 250px; object-fit: cover; }
+.product-modal-content { padding: 25px 30px; }
+.product-modal-content h2 { margin-top: 0; margin-bottom: 8px; font-size: 2em; color: #2c3e50; line-height: 1.2; }
+.product-modal-content .serves { display: block; font-size: 0.95em; color: #7f8c8d; margin-bottom: 20px; font-style: italic; }
+.product-modal-content p { font-size: 1.05em; line-height: 1.7; color: #34495e; }
+
+/* --- Página de Confirmação de Pedido --- */
+.confirmation-page { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; padding: 30px; flex-grow: 1; overflow-y: auto; }
+.confirmation-page .panel { background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 25px; }
+.panel-title { font-size: 1.6em; color: #2b1515; margin-top: 0; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
+
+/* Lista de Resumo do Pedido */
+#lista-resumo-pedido { list-style: none; padding: 0; margin: 0; }
+.order-item { display: flex; align-items: flex-start; gap: 15px; padding: 15px 0; border-bottom: 1px solid #f0f0f0; }
+.order-item:last-child { border-bottom: none; }
+.order-item-image { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.order-item-details { flex-grow: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.order-item-details h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+.quantity-control { display: flex; align-items: center; gap: 12px; }
+.quantity-btn { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #ccc; background-color: #f5f5f5; color: #333; font-size: 1.2rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; transition: background-color 0.2s, border-color 0.2s; }
+.quantity-btn:hover { background-color: #e9e9e9; border-color: #aaa; }
+.quantity-value { font-size: 1.1rem; font-weight: 500; min-width: 20px; text-align: center; }
+.order-item-details .item-price { font-weight: bold; color: #28a745; font-size: 1.1rem; }
+.order-item-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-left: auto; }
+.action-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid #ddd; background-color: #f8f8f8; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #888; transition: all 0.2s ease; }
+.action-btn:hover { background-color: #e9e9e9; color: #333; }
+.action-btn.remove-item-btn:hover { background-color: #fbebeb; border-color: #f5c6cb; color: #dc3545; }
+.action-btn.observation-btn.active { background-color: #e9f5ec; border-color: #a3d9b1; color: #28a745; }
+.observacao-info { margin: 4px 0 0 0; font-size: 0.85rem; color: #666; }
+.observacao-info em { font-style: italic; color: #333; }
+
+/* --- Página da Conta do Cliente --- */
+.account-main { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+#lista-pedidos { list-style: none; padding: 0; margin: 0; }
+#lista-pedidos li { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+#lista-pedidos li:last-child { border-bottom: none; }
+#lista-pedidos .produto-info { display: flex; align-items: center; flex-grow: 1; gap: 15px; }
+#lista-pedidos .produto-info img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+#lista-pedidos .produto-info div { display: flex; flex-direction: column; }
+#lista-pedidos .produto-info strong { font-size: 1em; color: #333; margin-bottom: 4px; }
+#lista-pedidos .produto-info span { font-size: 0.9em; color: #666; }
+#lista-pedidos > li > span { font-weight: bold; font-size: 1em; color: #333; margin-left: 15px; }
+#lista-pedidos li.cancelado { opacity: 0.6; }
+#lista-pedidos li.cancelado .produto-info strong, #lista-pedidos li.cancelado > span { text-decoration: line-through; }
+.cancelado-tag { font-size: 0.8em !important; font-style: italic; color: #e74c3c !important; margin-top: 5px; text-decoration: none !important; }
+
+/* --- Teclados Virtuais --- */
+.virtual-input { cursor: pointer; }
+.virtual-keyboard-container { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #212121; color: white; padding: 10px; box-shadow: 0 -5px 15px rgba(0,0,0,0.3); z-index: 1000; transform: translateY(100%); transition: transform 0.3s ease-in-out; }
+.virtual-keyboard-container.visible { transform: translateY(0); }
+.keyboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 10px; font-size: 1.1em; font-weight: bold; }
+.keyboard-close-btn { background: none; border: none; color: white; font-size: 2em; line-height: 1; cursor: pointer; }
+.keyboard-keys { display: grid; gap: 5px; }
+.keyboard-key { padding: 10px 5px; font-size: 1.5em; background-color: #424242; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; display: flex; align-items: center; justify-content: center; }
+.keyboard-key:active { background-color: #616161; }
+.keyboard-key.key-special { background-color: #333; font-size: 1.2em; }
+#virtual-keyboard .keyboard-keys { grid-template-columns: repeat(3, 1fr); grid-auto-rows: minmax(60px, auto); }
+#virtual-keyboard-alpha .keyboard-keys, #virtual-keyboard-alphanumeric .keyboard-keys { grid-template-columns: repeat(10, 1fr); grid-auto-rows: minmax(50px, auto); }
+.key-space { grid-column: span 8; }
+#confirm-alpha, #confirm-key { grid-column: span 2; }
+#shift-key.active { background-color: #a0a0a0; color: #000; }
+body.keyboard-active { padding-bottom: 300px; transition: padding-bottom 0.3s ease-in-out; }
+
+
+        :root {
+    --font-principal-cliente: 'Roboto', sans-serif;
+}
+
+
+
+
+
+
         /* Seus estilos CSS permanecem os mesmos */
         body {
-            margin: 0;
-            font-family: sans-serif;
-            background-color: #f0ebe5;
-        }
+    /* Deixamos APENAS a declaração que usa a variável CSS */
+    font-family: var(--font-principal-cliente); 
+    
+    /* Mantemos as outras propriedades que já estavam corretas */
+    margin: 0;
+    background-color: #f0ebe5;
+}
         .container {
             display: flex;
             height: 100vh;

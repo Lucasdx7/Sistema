@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             limparChamadosAtendidos();
         }
     });
-
+    
     // --- Inicialização ---
     carregarChamados();
     conectarWebSocket();

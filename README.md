@@ -214,21 +214,21 @@ CREATE TABLE IF NOT EXISTS configuracoes (
 );
 
 -- Tabela de Logs (Adicionada para auditoria)
-CREATE TABLE IF NOT EXISTS logs (
+'''CREATE TABLE IF NOT EXISTS logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nivel VARCHAR(20) NOT NULL,
     mensagem VARCHAR(255) NOT NULL,
     detalhes TEXT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+);'''
 
--- Inserções Iniciais
+'''-- Inserções Iniciais
 INSERT INTO categorias (nome) VALUES ('Hambúrgueres'), ('Bebidas');
 INSERT INTO produtos (id_categoria, nome, descricao, preco, imagem_svg) VALUES
 (1, 'X-Skina', 'Hambúrguer da casa com 180g de carne, queijo e molho especial.', 35.90, '<svg>...</svg>'),
 (2, 'Coca-Cola Lata', 'Refrigerante de cola 350ml.', 6.00, '<svg>...</svg>');
 INSERT INTO usuarios (nome, email, usuario, senha, nivel_acesso)
-VALUES ('Admin Geral', 'admin@skina67.com', 'admin', '$2b$10$abcdefghijklmnopqrstuv', 'geral');
+VALUES ('Admin Geral', 'admin@skina67.com', 'admin', '$2b$10$abcdefghijklmnopqrstuv', 'geral');'''
 
 
 

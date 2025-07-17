@@ -267,3 +267,13 @@ VALUES ('Admin Geral', 'admin@skina67.com', 'admin', '$2b$10$abcdefghijklmnopqrs
 -   **Interface do Cliente:** Abra outra aba e acesse `http://localhost:3000/login`
 
 
+
+
+---
+
+## 👨‍💻 Autor
+
+Feito com ❤️ por **Lucas Felipe**.
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white )](https://www.linkedin.com/in/lucas-felipe-pereira-amorim-2773092a7/ )
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white )](https://github.com/Lucasdx7 )

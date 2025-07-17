@@ -28,7 +28,7 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
     -   [x] Middleware de permissão (`checarNivelAcesso`) para controle granular de acesso às rotas da API.
 -   [x] **Sistema de Autenticação Robusto:**
     -   [x] Telas de login separadas e seguras para **Gerência** e **Mesas**.
-    -   [x] **(NOVO)** Rota de login da gerência flexível, aceitando tanto **email** quanto **nome de usuário**.
+    -   [x] Rota de login da gerência flexível, aceitando tanto **email** quanto **nome de usuário**.
     -   [x] Criptografia de senhas no banco de dados (`bcryptjs`).
     -   [x] Logout seguro que não interfere em outras sessões ativas.
 -   [x] **Painel de Gerenciamento (CRUD Completo):**
@@ -36,27 +36,34 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
     -   [x] **Gestão de Mesas:**
         -   [x] Cadastrar e remover mesas.
         -   [x] Painel interativo para visualizar o histórico de sessões de cada mesa, com sessões **ativas** priorizadas no topo.
-        -   [x] **(NOVO)** Exibição do **nome do funcionário** que finalizou cada sessão, para maior rastreabilidade.
-        -   [x] **(NOVO)** Sistema robusto para **cancelamento parcial ou total** de itens de um pedido, com registro de motivo.
+        -   [x] Exibição do **nome do funcionário** que finalizou cada sessão, para maior rastreabilidade.
+        -   [x] Sistema robusto para **cancelamento parcial ou total** de itens de um pedido, com registro de motivo.
     -   [x] **Gestão de Chamados:**
         -   [x] Página dedicada para visualizar chamados de garçom em tempo real.
         -   [x] Contador de chamados pendentes no menu principal.
         -   [x] Funcionalidade para marcar um chamado como "Atendido" e limpar o histórico.
-    -   [x] **(NOVO) Acompanhamento de Pedidos Profissional:**
+    -   [x] **Acompanhamento de Pedidos Profissional:**
         -   [x] Interface com design aprimorado para acompanhar o status dos pedidos de todas as mesas ativas.
         -   [x] Botão para **confirmar a entrega** de cada item, com registro de log para auditoria.
     -   [x] **Geração de Recibos Profissionais:**
         -   [x] Geração de recibo com layout otimizado para **impressoras térmicas de 80mm**.
         -   [x] Impressão direta acionada pelo navegador.
         -   [x] Recibo inclui todos os dados da sessão: cliente, telefone, CPF, itens, totais e forma de pagamento.
-    -   [x] **(NOVO) Página de Logs com Filtros:**
+    -   [x] **Página de Logs com Filtros:**
         -   [x] Interface aprimorada com filtros para pesquisar logs por **data específica** e por **termo de busca** nos detalhes.
         -   [x] Rota de API otimizada para lidar com as consultas filtradas de forma eficiente.
+-   [x] **(NOVO) Dashboard de Relatórios Avançados:**
+    -   [x] **Visualização por Período:** Filtros dinâmicos para analisar vendas de **Hoje, Semana, Mês e Ano**.
+    -   [x] **KPIs Abrangentes:** Métricas chave como Vendas Totais, Total de Pedidos, Ticket Médio e Produto Mais Vendido.
+    -   [x] **Gráficos Inteligentes:**
+        -   [x] **Vendas Durante o Período:** Gráfico de barras que **exibe todos os pontos de dados do período (meses, dias, etc.)**, mesmo aqueles com vendas zeradas, para uma visualização contínua e precisa.
+        -   [x] **Vendas por Método de Pagamento:** Gráfico de rosca mostrando a distribuição entre Cartão, Dinheiro e PIX.
+        -   [x] **Top 5 Produtos Mais Vendidos:** Gráfico de barras horizontais para fácil leitura.
+        -   [x] **Horários de Pico de Vendas:** Gráfico de linha para identificar os horários de maior movimento.
+    -   [x] **Backend Robusto:** A API de relatórios foi otimizada para ser compatível com o modo `sql_mode=only_full_group_by` do MySQL e para pré-processar os dados, garantindo que os gráficos sejam sempre completos.
 -   [x] **Página de Configurações Avançadas:**
     -   [x] **Personalização de Aparência:** Alteração da fonte das páginas do cliente em tempo real.
-    -   [x] **(NOVO) Relatório de Atividade de Funcionários Aprimorado:**
-        -   [x] Análise de desempenho individual por período, corrigida para lidar com **fuso horário (timezone)**.
-        -   [x] Exibe métricas chave como **mesas fechadas** e **pedidos entregues**, além das ações gerais.
+    -   [x] **Relatório de Atividade de Funcionários Aprimorado:** Análise de desempenho individual por período, com métricas chave como **mesas fechadas** e **pedidos entregues**.
     -   [x] **Gestão de Permissões:** Controle dinâmico dos módulos que usuários do nível "Pedidos" podem acessar.
     -   [x] **Zona de Perigo:** Funcionalidade segura para **resetar o banco de dados**, protegida por chave de acesso.
 -   [x] **Interface do Cliente (Ciclo Completo e Inteligente):**
@@ -64,17 +71,15 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
     -   [x] Teclado Virtual Customizado integrado em todas as telas de input.
     -   [x] Cardápio Dinâmico com regras de negócio (status, happy hour).
     -   [x] Confirmação de Pedido Profissional com observações e sugestões.
-    -   [x] **(NOVO) Fechamento de Conta com Autorização de Funcionário:**
-        -   [x] O encerramento da sessão agora exige autenticação de um funcionário com **nome de usuário e senha**.
-        -   [x] Aumenta a segurança e a rastreabilidade da operação de pagamento.
+    -   [x] **Fechamento de Conta com Autorização de Funcionário:** O encerramento da sessão agora exige autenticação de um funcionário com **nome de usuário e senha**, aumentando a segurança.
 -   [x] **Comunicação em Tempo Real (WebSockets):**
     -   [x] Atualização automática do cardápio e da aparência do cliente.
     -   [x] Notificação instantânea de chamados de garçom para a gerência.
 
 ### Próximos Passos (Roadmap):
 -   [ ] **Cozinha:** Criar uma interface para a cozinha visualizar os pedidos que chegam em tempo real.
--   [ ] **Relatórios Avançados:** Aprimorar o dashboard com mais indicadores (ex: produtos mais vendidos, horários de pico).
 -   [ ] **Deployment:** Preparar o sistema para ser hospedado em um servidor online.
+-   [ ] **Testes Unitários e de Integração:** Adicionar uma camada de testes para garantir a estabilidade contínua do sistema.
 
 ---
 
@@ -91,6 +96,7 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
 
 *   **Frontend:**
     *   HTML5, CSS3, JavaScript (Vanilla)
+    *   [Chart.js](https://www.chartjs.org/ ): Para a criação dos gráficos de relatórios.
     *   [Font Awesome](https://fontawesome.com/ ): Para os ícones da interface.
     *   [SweetAlert2](https://sweetalert2.github.io/ ): Para notificações e modais elegantes.
 

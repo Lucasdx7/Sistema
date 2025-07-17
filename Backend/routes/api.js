@@ -1092,6 +1092,172 @@ router.get('/relatorios', checarNivelAcesso(['geral', 'pedidos']), checarPermiss
         res.status(500).json({ message: 'Erro interno ao processar os dados do relatório.' });
     }
 });
+
+
+
+
+
+
+
+
+// Em seu arquivo de rotas da API (api.js)
+// SUBSTITUA a rota /api/relatorios/avancado inteira por esta versão corrigida
+
+// Em seu arquivo de rotas da API (api.js)
+// SUBSTITUA a rota /api/relatorios/avancado inteira por esta versão corrigida
+
+// Em seu arquivo de rotas da API (api.js)
+// SUBSTITUA a rota /api/relatorios/avancado inteira por esta versão final
+
+function formatarDataParaMySQL(date) {
+    const pad = (num) => num.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+router.get('/relatorios/avancado', checarNivelAcesso(['geral']), async (req, res) => {
+    const { periodo } = req.query;
+
+    try {
+        const { inicio, fim } = obterIntervaloDeDatas(periodo);
+        if (!inicio || !fim) {
+            return res.status(400).json({ message: 'Período inválido fornecido.' });
+        }
+
+        const inicioFormatado = formatarDataParaMySQL(inicio);
+        const fimFormatado = formatarDataParaMySQL(fim);
+
+        let groupByClause, selectClause, orderByClause;
+
+        switch (periodo) {
+            case 'ano':
+                selectClause = `DATE_FORMAT(MIN(s.data_fim), '%b')`;
+                groupByClause = `YEAR(s.data_fim), MONTH(s.data_fim)`;
+                orderByClause = `MIN(s.data_fim)`;
+                break;
+            case 'mes':
+            case 'semana':
+                selectClause = `DATE_FORMAT(MIN(s.data_fim), '%d/%m')`;
+                groupByClause = `YEAR(s.data_fim), MONTH(s.data_fim), DAY(s.data_fim)`;
+                orderByClause = `MIN(s.data_fim)`;
+                break;
+            case 'hoje':
+                selectClause = `DATE_FORMAT(MIN(s.data_fim), '%H:00')`;
+                groupByClause = `YEAR(s.data_fim), MONTH(s.data_fim), DAY(s.data_fim), HOUR(s.data_fim)`;
+                orderByClause = `MIN(s.data_fim)`;
+                break;
+            default:
+                return res.status(400).json({ message: 'Período inválido.' });
+        }
+
+        const vendasQuerySQL = `
+            SELECT ${selectClause} as label, SUM(p.quantidade * p.preco_unitario) as valor
+            FROM sessoes_cliente s
+            JOIN pedidos p ON s.id = p.id_sessao
+            WHERE s.status = 'finalizada' AND p.status != 'cancelado' AND s.data_fim BETWEEN ? AND ?
+            GROUP BY ${groupByClause}
+            ORDER BY ${orderByClause};
+        `;
+        
+        const vendasQueryPromise = query(vendasQuerySQL, [inicioFormatado, fimFormatado]);
+
+        // --- OUTRAS CONSULTAS (permanecem as mesmas) ---
+        const kpisQuery = query(`SELECT COALESCE(SUM(p.quantidade * p.preco_unitario), 0) AS vendasTotais, COUNT(DISTINCT s.id) AS totalPedidos FROM sessoes_cliente s JOIN pedidos p ON s.id = p.id_sessao WHERE s.status = 'finalizada' AND p.status != 'cancelado' AND s.data_fim BETWEEN ? AND ?;`, [inicioFormatado, fimFormatado]);
+        const pagamentosQuery = query(`SELECT forma_pagamento, SUM(p.quantidade * p.preco_unitario) as total FROM sessoes_cliente s JOIN pedidos p ON s.id = p.id_sessao WHERE s.status = 'finalizada' AND p.status != 'cancelado' AND s.data_fim BETWEEN ? AND ? GROUP BY forma_pagamento;`, [inicioFormatado, fimFormatado]);
+        const produtosQuery = query(`SELECT prod.nome, SUM(p.quantidade) as quantidade_vendida FROM pedidos p JOIN produtos prod ON p.id_produto = prod.id JOIN sessoes_cliente s ON s.id = p.id_sessao WHERE s.status = 'finalizada' AND p.status != 'cancelado' AND s.data_fim BETWEEN ? AND ? GROUP BY prod.nome ORDER BY quantidade_vendida DESC LIMIT 5;`, [inicioFormatado, fimFormatado]);
+        const horariosQuery = query(`SELECT EXTRACT(HOUR FROM s.data_fim) as hora, COUNT(DISTINCT s.id) as numero_sessoes FROM sessoes_cliente s WHERE s.status = 'finalizada' AND s.data_fim BETWEEN ? AND ? GROUP BY hora ORDER BY hora ASC;`, [inicioFormatado, fimFormatado]);
+        
+        const [kpisResult, vendasResult, pagamentosResult, produtosResult, horariosResult] = await Promise.all([
+            kpisQuery, vendasQueryPromise, pagamentosQuery, produtosQuery, horariosQuery
+        ]);
+
+        // ==================================================================
+        // --- NOVA LÓGICA PARA PREENCHER OS DADOS FALTANTES DO GRÁFICO ---
+        // ==================================================================
+        const dadosVendasCompletos = {};
+        const agora = new Date();
+
+        if (periodo === 'ano') {
+            const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            for (let i = 0; i <= agora.getMonth(); i++) {
+                dadosVendasCompletos[meses[i]] = 0;
+            }
+        } else if (periodo === 'mes') {
+            for (let i = 1; i <= agora.getDate(); i++) {
+                const diaFormatado = `${i.toString().padStart(2, '0')}/${(agora.getMonth() + 1).toString().padStart(2, '0')}`;
+                dadosVendasCompletos[diaFormatado] = 0;
+            }
+        } else if (periodo === 'semana') {
+            for (let i = 6; i >= 0; i--) {
+                const dataDia = new Date();
+                dataDia.setDate(agora.getDate() - i);
+                const diaFormatado = `${dataDia.getDate().toString().padStart(2, '0')}/${(dataDia.getMonth() + 1).toString().padStart(2, '0')}`;
+                dadosVendasCompletos[diaFormatado] = 0;
+            }
+        } else if (periodo === 'hoje') {
+            for (let i = 0; i <= agora.getHours(); i++) {
+                const horaFormatada = `${i.toString().padStart(2, '0')}:00`;
+                dadosVendasCompletos[horaFormatada] = 0;
+            }
+        }
+
+        // Preenche o objeto com os dados que vieram do banco
+        vendasResult.forEach(r => {
+            if (dadosVendasCompletos.hasOwnProperty(r.label)) {
+                dadosVendasCompletos[r.label] = parseFloat(r.valor);
+            }
+        });
+
+        const graficoVendas = {
+            labels: Object.keys(dadosVendasCompletos),
+            valores: Object.values(dadosVendasCompletos)
+        };
+        // ==================================================================
+
+        // --- FORMATAÇÃO DOS DADOS (KPIs, Pagamentos, etc. - permanece a mesma) ---
+        const kpisData = kpisResult[0] || { vendasTotais: 0, totalPedidos: 0 };
+        const kpis = {
+            vendasTotais: parseFloat(kpisData.vendasTotais),
+            totalPedidos: parseInt(kpisData.totalPedidos, 10),
+            ticketMedio: kpisData.totalPedidos > 0 ? kpisData.vendasTotais / kpisData.totalPedidos : 0,
+            produtoMaisVendido: produtosResult.length > 0 ? produtosResult[0].nome : '-'
+        };
+
+        const graficoPagamentos = { cartao: 0, dinheiro: 0, pix: 0 };
+        pagamentosResult.forEach(r => {
+            if (graficoPagamentos.hasOwnProperty(r.forma_pagamento)) {
+                graficoPagamentos[r.forma_pagamento] = parseFloat(r.total);
+            }
+        });
+
+        const graficoProdutos = {
+            labels: produtosResult.map(r => r.nome),
+            valores: produtosResult.map(r => parseInt(r.quantidade_vendida, 10))
+        };
+
+        const graficoHorariosPico = {
+            labels: horariosResult.map(r => `${r.hora.toString().padStart(2, '0')}:00`),
+            valores: horariosResult.map(r => parseInt(r.numero_sessoes, 10))
+        };
+
+        res.json({ kpis, graficoVendas, graficoPagamentos, graficoProdutos, graficoHorariosPico });
+
+    } catch (error) {
+        console.error('Erro ao buscar relatórios avançados:', error);
+        res.status(500).json({ message: 'Erro interno do servidor ao processar relatórios.' });
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * Formata os dados brutos do banco para a estrutura JSON que o frontend precisa.
  * @param {Array<Object>} dadosBrutos - Lista de pedidos com informações da sessão.

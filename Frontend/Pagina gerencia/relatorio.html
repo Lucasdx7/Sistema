@@ -40,7 +40,7 @@
             </div>
         </header>
 
-        <main id="relatorio-para-pdf" class="relatorios-container"> <!-- Adicionado ID aqui -->
+                <main id="relatorio-para-pdf" class="relatorios-container">
             <!-- Filtros e Controles -->
             <div class="relatorios-filtros">
                 <div>
@@ -52,14 +52,14 @@
                         <option value="ano">Este Ano</option>
                     </select>
                 </div>
-                <!-- Botão para Criar PDF -->
                 <button id="btn-criar-pdf" class="botao-acao">
                     <i class="fas fa-file-pdf"></i> Criar PDF
                 </button>
             </div>
 
-            <!-- Cards de Resumo (KPIs ) -->
+            <!-- Cards de Resumo (KPIs) -->
             <div class="kpi-grid">
+                <!-- KPIs Existentes -->
                 <div class="kpi-card">
                     <div class="kpi-icon" style="background-color: #28a745;">
                         <i class="fas fa-dollar-sign"></i>
@@ -87,10 +87,21 @@
                         <span id="kpi-ticket-medio" class="kpi-value">R$ 0,00</span>
                     </div>
                 </div>
+                <!-- NOVO KPI: Produto Mais Vendido -->
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background-color: #dc3545;">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <span class="kpi-title">Produto Mais Vendido</span>
+                        <span id="kpi-produto-mais-vendido" class="kpi-value">-</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Gráficos -->
             <div class="graficos-grid">
+                <!-- Gráficos Existentes -->
                 <div class="grafico-card">
                     <h3>Vendas Durante o Período</h3>
                     <canvas id="grafico-vendas-ano"></canvas>
@@ -99,9 +110,18 @@
                     <h3>Vendas por Método de Pagamento</h3>
                     <canvas id="grafico-metodos-pagamento"></canvas>
                 </div>
+                <!-- NOVOS GRÁFICOS -->
+                <div class="grafico-card">
+                    <h3>Top 5 Produtos Mais Vendidos</h3>
+                    <canvas id="grafico-produtos-vendidos"></canvas>
+                </div>
+                <div class="grafico-card">
+                    <h3>Horários de Pico de Vendas</h3>
+                    <canvas id="grafico-horarios-pico"></canvas>
+                </div>
             </div>
         </main>
-    </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script src="../Pagina gerencia/notificacoes.js"></script>

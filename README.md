@@ -114,8 +114,123 @@ Para rodar este projeto em sua máquina, siga os passos abaixo.
 
 ### 1. Configuração do Banco de Dados
 -   Crie um banco de dados no seu MySQL com o nome `cardapio_db` (ou o nome que preferir).
--   Execute os scripts SQL necessários para criar todas as tabelas (`usuarios`, `mesas`, `categorias`, `produtos`, `sessoes_cliente`, `pedidos`, `chamados`, `logs`, `configuracoes`).
--   No arquivo `Backend/configurar/db.js`, configure suas credenciais do MySQL através das variáveis de ambiente.
+-   Execute o script SQL abaixo para criar e configurar todas as tabelas necessárias. Este script consolidado já inclui todas as criações, alterações e inserções iniciais.
+
+```sql
+-- Criação do Banco de Dados
+CREATE DATABASE IF NOT EXISTS cardapio_db;
+USE cardapio_db;
+
+-- Tabela de Mesas (deve ser criada antes de sessoes_cliente e chamados)
+CREATE TABLE IF NOT EXISTS mesas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome_usuario VARCHAR(255) NOT NULL UNIQUE,
+    senha VARCHAR(255) NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabela de Categorias
+CREATE TABLE IF NOT EXISTS categorias (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL UNIQUE,
+    is_happy_hour BOOLEAN NOT NULL DEFAULT FALSE,
+    happy_hour_inicio TIME NULL,
+    happy_hour_fim TIME NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabela de Produtos
+CREATE TABLE IF NOT EXISTS produtos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_categoria INT NOT NULL,
+    nome VARCHAR(255) NOT NULL,
+    descricao TEXT NOT NULL,
+    descricao_detalhada TEXT NULL DEFAULT NULL,
+    preco DECIMAL(10, 2) NOT NULL,
+    imagem_svg LONGTEXT,
+    serve_pessoas INT DEFAULT 1,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    pode_ser_sugestao BOOLEAN NOT NULL DEFAULT FALSE,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_categoria) REFERENCES categorias(id) ON DELETE CASCADE
+);
+
+-- Tabela de Usuários (Gerência)
+CREATE TABLE IF NOT EXISTS usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    usuario VARCHAR(100) NOT NULL UNIQUE,
+    senha VARCHAR(255) NOT NULL,
+    nivel_acesso ENUM('geral', 'pedidos') NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabela de Sessões de Cliente
+CREATE TABLE IF NOT EXISTS sessoes_cliente (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_mesa INT NOT NULL,
+    nome_cliente VARCHAR(255) NOT NULL,
+    telefone_cliente VARCHAR(20),
+    cpf_cliente VARCHAR(14),
+    status ENUM('ativa', 'finalizada', 'cancelada') DEFAULT 'ativa',
+    forma_pagamento ENUM('dinheiro', 'cartao', 'pix') NULL,
+    data_inicio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_fim TIMESTAMP NULL,
+    FOREIGN KEY (id_mesa) REFERENCES mesas(id) ON DELETE CASCADE
+);
+
+-- Tabela de Pedidos
+CREATE TABLE IF NOT EXISTS pedidos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_sessao INT NOT NULL,
+    id_produto INT NOT NULL,
+    quantidade INT NOT NULL DEFAULT 1,
+    preco_unitario DECIMAL(10, 2) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'pendente',
+    motivo_cancelamento TEXT NULL DEFAULT NULL,
+    observacao TEXT NULL DEFAULT NULL,
+    data_pedido DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_sessao) REFERENCES sessoes_cliente(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_produto) REFERENCES produtos(id) ON DELETE CASCADE
+);
+
+-- Tabela de Chamados de Garçom
+CREATE TABLE IF NOT EXISTS chamados (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_mesa INT NOT NULL,
+    nome_mesa VARCHAR(255) NOT NULL,
+    data_hora DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('pendente', 'atendido') NOT NULL DEFAULT 'pendente',
+    FOREIGN KEY (id_mesa) REFERENCES mesas(id) ON DELETE CASCADE
+);
+
+-- Tabela de Configurações Gerais
+CREATE TABLE IF NOT EXISTS configuracoes (
+  chave VARCHAR(50) PRIMARY KEY,
+  valor TEXT NOT NULL,
+  ultima_modificacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Tabela de Logs (Adicionada para auditoria)
+CREATE TABLE IF NOT EXISTS logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nivel VARCHAR(20) NOT NULL,
+    mensagem VARCHAR(255) NOT NULL,
+    detalhes TEXT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Inserções Iniciais
+INSERT INTO categorias (nome) VALUES ('Hambúrgueres'), ('Bebidas');
+INSERT INTO produtos (id_categoria, nome, descricao, preco, imagem_svg) VALUES
+(1, 'X-Skina', 'Hambúrguer da casa com 180g de carne, queijo e molho especial.', 35.90, '<svg>...</svg>'),
+(2, 'Coca-Cola Lata', 'Refrigerante de cola 350ml.', 6.00, '<svg>...</svg>');
+INSERT INTO usuarios (nome, email, usuario, senha, nivel_acesso)
+VALUES ('Admin Geral', 'admin@skina67.com', 'admin', '$2b$10$abcdefghijklmnopqrstuv', 'geral');
+
+
 
 ### 2. Variáveis de Ambiente
 -   Crie um arquivo `.env` na pasta `Backend`.

@@ -4,6 +4,7 @@
  * ==================================================================
  * Controla a visualização, adição e gerenciamento de mesas, suas sessões,
  * e a geração de recibos detalhados.
+ * 
  */
 document.addEventListener('DOMContentLoaded', () => {
     // --- Elementos do DOM ---

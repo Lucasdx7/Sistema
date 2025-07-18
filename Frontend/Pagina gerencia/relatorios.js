@@ -6,6 +6,7 @@
  * produtos mais vendidos e horários de pico.
  */
 
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- Elementos do DOM ---
     const profileMenuBtn = document.getElementById('profile-menu-btn');

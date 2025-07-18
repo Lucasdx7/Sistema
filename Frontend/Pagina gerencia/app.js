@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_URL = '/api';
     const WS_URL = `ws://${window.location.host}`;
 
+    
     // --- Elementos do DOM ---
     const listaCategorias = document.getElementById('lista-categorias');
     const listaProdutos = document.getElementById('lista-produtos');

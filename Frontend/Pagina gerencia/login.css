@@ -9,7 +9,9 @@ body {
     background-color: #f4f7f6;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
+    overflow-y: auto;
 }
+
 
 /* --- Caixa de Login Principal --- */
 .login-container {
@@ -17,6 +19,7 @@ body {
 }
 
 .login-box {
+    overflow-y: auto !important;
     background: white;
     padding: 40px;
     border-radius: 8px;
@@ -26,8 +29,9 @@ body {
 
 .login-box h2 {
     color: #4b2e2e;
-    margin-top: 0;
+    margin-top: 0 !important;
 }
+
 
 .login-box p {
     color: #666;
@@ -211,4 +215,15 @@ input[type="radio"]:checked::before {
 
 input[type="radio"]:checked {
     border-color: #4b2e2e;
+}
+
+/* ================================================================== */
+/* CORREÇÃO PARA O "SALTO" DA PÁGINA AO ABRIR MODAL (SWEETALERT2)     */
+/* ================================================================== */
+/*
+  Esta regra impede que o body mude de tamanho quando um modal do 
+  SweetAlert2 é ativado, corrigindo o "salto" do conteúdo.
+*/
+body.swal2-height-auto {
+    height: 100vh !important;
 }

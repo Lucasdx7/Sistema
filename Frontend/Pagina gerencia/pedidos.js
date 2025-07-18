@@ -181,6 +181,7 @@ async function carregarPedidosAtivos() {
 
 // ... (outras funções) ...
 
+
 function conectarWebSocket() {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${wsProtocol}//${window.location.host}`;

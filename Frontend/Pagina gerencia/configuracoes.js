@@ -3,7 +3,8 @@
  * SCRIPT DA PÁGINA DE CONFIGURAÇÕES (configuracoes.js) - VERSÃO FINAL
  * Com a exibição correta de "Mesas Fechadas" no relatório de atividade.
  * ==================================================================
- */
+ */ 
+
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- Elementos do DOM ---

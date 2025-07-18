@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(() => window.location.href = '/login-gerencia');
             return;
         }
+        
 
         const usuario = JSON.parse(usuarioString);
         preencherPerfil(usuario);

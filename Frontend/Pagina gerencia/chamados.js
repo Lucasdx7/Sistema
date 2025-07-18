@@ -7,6 +7,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    
     // --- Elementos do DOM ---
     const chamadosGrid = document.getElementById('chamados-grid');
     const profileMenuBtn = document.getElementById('profile-menu-btn');

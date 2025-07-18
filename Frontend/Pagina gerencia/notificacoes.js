@@ -4,16 +4,6 @@
  * ==================================================================
  * Este arquivo centraliza a criação de notificações para todo o sistema,
  * garantindo um visual consistente e facilitando a manutenção.
- *
- * Para usar, inclua este arquivo no seu HTML DEPOIS de incluir a
- * biblioteca SweetAlert2, e ANTES do seu script principal (ex: app.js).
- *
- * Exemplo de uso:
- * Notificacao.sucesso('Item salvo com sucesso!');
- * Notificacao.erro('Oops...', 'Ocorreu um erro ao salvar.');
- * const confirmado = await Notificacao.confirmar('Tem certeza?', 'A ação não pode ser desfeita.');
- * if (confirmado) { ... }
- * Notificacao.mostrarCarregando('Processando...');
  */
 
 const Notificacao = {
@@ -80,9 +70,9 @@ const Notificacao = {
         });
         return resultado.isConfirmed;
     },
-
+    
     /**
-     * NOVO MÉTODO: Mostra um pop-up de carregamento sem botões.
+     * Mostra um pop-up de carregamento sem botões.
      * Ideal para aguardar respostas do servidor.
      * @param {string} titulo - O título a ser exibido no pop-up (ex: 'Carregando...').
      */
@@ -90,10 +80,37 @@ const Notificacao = {
         Swal.fire({
             title: titulo,
             text: 'Por favor, aguarde.',
-            allowOutsideClick: false, // Impede que o usuário feche clicando fora
+            allowOutsideClick: false,
+            background: '#2f3452ff', // Mantendo o estilo
+            color: '#ecf0f1',       // Mantendo o estilo
             didOpen: () => {
-                Swal.showLoading(); // Ativa a animação de carregamento
+                Swal.showLoading();
             }
+        });
+    },
+
+    /**
+     * ==================================================================
+     * NOVA FUNÇÃO ADAPTADA PARA O SEU ESTILO
+     * ==================================================================
+     * Exibe uma notificação de SUCESSO em formato de MODAL que fecha sozinha.
+     * Perfeita para o login, pois garante que o usuário veja a mensagem antes de ser redirecionado.
+     * @param {string} titulo - O título da mensagem (ex: 'Login bem-sucedido!').
+     * @param {string} texto - O texto de apoio (ex: 'Você será redirecionado...').
+     * @param {number} [timer=2000] - Tempo em milissegundos para a notificação ficar visível.
+     */
+    sucessoComTimer(titulo, texto, timer = 2000) {
+        return Swal.fire({
+            icon: 'success',
+            title: titulo,
+            text: texto,
+            timer: timer,
+            timerProgressBar: true,
+            showConfirmButton: false, // Esconde o botão "OK"
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            background: '#2f3452ff', // Usando a mesma cor de fundo dos outros modais
+            color: '#ecf0f1'       // Usando a mesma cor de texto
         });
     }
 };

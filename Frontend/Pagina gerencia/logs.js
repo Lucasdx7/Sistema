@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     const usuario = JSON.parse(usuarioString);
+    
 
     // --- Funções ---
 

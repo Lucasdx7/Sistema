@@ -12,6 +12,9 @@
     <button id="hidden-logout-button" class="hidden-button" title="Encerrar Sessão"></button>
 
     <div class="dashboard-container">
+        <!-- ================================================== -->
+        <!-- HEADER REVERTIDO PARA O ESTILO ORIGINAL -->
+        <!-- ================================================== -->
         <header class="main-header">
             <a href="/cardapio" class="back-button" title="Voltar ao Cardápio">
                 <i class="fas fa-arrow-left"></i>
@@ -40,7 +43,7 @@
                     <span id="subtotal-valor">R$ 0,00</span>
                 </div>
                 <div class="summary-item">
-                    <span>Taxa de Serviço (10% )</span>
+                    <span>Taxa de Serviço (10%  )</span>
                     <span id="taxa-servico">R$ 0,00</span>
                 </div>
                 <hr>
@@ -60,14 +63,16 @@
             <h2>Encerrar Sessão da Mesa</h2>
             <p>Para liberar a mesa, confirme os dados e a forma de pagamento.</p>
             <form id="logout-form">
-    <!-- CAMPOS ALTERADOS PARA PEDIR NOME DE USUÁRIO -->
+                <!-- ================================================== -->
+                <!-- CAMPOS COM A CORREÇÃO DO TECLADO DUPLO MANTIDA -->
+                <!-- ================================================== -->
                 <div class="form-group">
                     <label for="funcionario-usuario">Nome de Usuário do Funcionário</label>
-                    <input type="text" id="funcionario-usuario" class="virtual-input" required autocomplete="off" placeholder="Digite o nome de usuário...">
+                    <input type="text" id="funcionario-usuario" class="virtual-input" required autocomplete="off" placeholder="Toque para digitar..." readonly>
                 </div>
                 <div class="form-group">
                     <label for="funcionario-senha">Senha do Funcionário</label>
-                    <input type="password" id="funcionario-senha" class="virtual-input" required autocomplete="off" placeholder="Digite a senha...">
+                    <input type="password" id="funcionario-senha" class="virtual-input" required autocomplete="off" placeholder="Toque para digitar..." readonly>
                 </div>
 
                 <!-- Seção de Pagamento (sem alterações) -->
@@ -92,10 +97,7 @@
         </div>
     </div>
 
-    <!-- ================================================== -->
-    <!-- ESTRUTURA CORRETA DO TECLADO VIRTUAL ALFANUMÉRICO   -->
-    <!-- ================================================== -->
-    <div id="virtual-keyboard-alphanumeric" class="virtual-keyboard-container hidden">
+     <div id="virtual-keyboard-alphanumeric" class="virtual-keyboard-container hidden">
         <div class="keyboard-header">
             <span id="keyboard-target-label"></span>
             <button type="button" class="keyboard-close-btn">&times;</button>

@@ -2099,3 +2099,136 @@ body.keyboard-active {
     margin-left: 10px; /* Espaçamento em relação ao nome do produto */
     vertical-align: middle; /* Ajuda no alinhamento vertical com o texto ao lado */
 }
+
+
+/* ================================================== */
+/* --- ESTILOS MELHORADOS PARA A PÁGINA SOBRE --- */
+/* ================================================== */
+
+/* Garante que a página ocupe a tela, mas com rolagem se necessário */
+.about-page {
+    padding: 20px;
+    max-width: 900px; /* Define uma largura máxima para o conteúdo em telas grandes */
+    margin: 0 auto; /* Centraliza o painel principal */
+}
+
+/* Imagem principal do restaurante - CORRIGIDA */
+.about-main-image {
+    width: 100%; /* Faz a imagem ocupar 100% da largura do seu container (.panel) */
+    max-height: 400px; /* Define uma altura máxima para evitar que fique muito grande */
+    height: auto; /* Mantém a proporção da imagem */
+    border-radius: 12px; /* Bordas mais arredondadas */
+    margin-bottom: 25px;
+    object-fit: cover; /* Garante que a imagem cubra a área sem distorcer */
+    display: block; /* Remove espaços extras abaixo da imagem */
+}
+
+/* Conteúdo de texto dentro do painel */
+.about-content {
+    padding: 0 10px; /* Adiciona um pequeno preenchimento lateral */
+}
+
+/* Título para a seção da equipe */
+.team-title {
+    margin-top: 30px;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 25px;
+    text-align: center;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+/* Container para os membros da equipe */
+.team-container {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+/* Estilo individual de cada membro da equipe */
+.team-member {
+    max-width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.team-member img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+}
+
+.team-member h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+    font-weight: 600;
+}
+
+.team-member span {
+    font-size: 0.95rem;
+    color: #666;
+}
+
+/* Seção de ações com o botão - CORRIGIDA */
+.about-actions {
+    text-align: center;
+    margin-top: 40px;
+    padding-top: 25px;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* Estilo geral para botões (se ainda não tiver um) */
+.btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Estilo específico para o botão "Voltar ao Cardápio" - CORRIGIDO */
+.btn.btn-primary {
+    background-color: #3a0606; /* Um tom de roxo mais sofisticado */
+    color: white;
+    box-shadow: 0 4px 15px rgba(90, 62, 141, 0.3);
+}
+
+.btn.btn-primary:hover {
+    background-color: #640a0a;
+    transform: translateY(-2px); /* Efeito de elevação ao passar o mouse */
+    box-shadow: 0 6px 20px rgba(90, 62, 141, 0.4);
+}
+
+/* Ajustes para telas menores (Responsividade) */
+@media (max-width: 768px) {
+    .about-page {
+        padding: 15px;
+    }
+
+    .team-container {
+        gap: 20px;
+    }
+
+    .team-member img {
+        width: 120px;
+        height: 120px;
+    }
+}
+
+
+

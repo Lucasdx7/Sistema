@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmarBtn = document.getElementById('confirmar-pedido-btn');
     const cartBadge = document.querySelector('.cart-icon .badge');
     const profileIcon = document.getElementById('profile-icon');
+    const aboutIcon = document.getElementById('about-icon'); // <-- ALTERAÇÃO 1: Adicionada a referência ao ícone "Sobre"
     const suggestionContainer = document.getElementById('suggestion-item');
     const observationModal = document.getElementById('observation-modal');
     const modalProductName = document.getElementById('modal-product-name');
@@ -330,7 +331,12 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmarBtn.addEventListener('click', confirmarPedido);
     profileIcon.addEventListener('click', () => window.location.href = '/conta');
 
-     // ... (todo o código existente da página)
+    // <-- ALTERAÇÃO 2: Adicionado o evento de clique para o ícone "Sobre"
+    if (aboutIcon) {
+        aboutIcon.addEventListener('click', () => {
+            window.location.href = '/sobre';
+        });
+    }
 
     // --- Lógica do WebSocket ---
     function conectarWebSocket() {
@@ -349,5 +355,5 @@ document.addEventListener('DOMContentLoaded', () => {
     carregarEaplicarFonte();
     renderizarPagina();
     carregarSugestao();
-    conectarWebSocket(); // Adiciona a chamada aqui
+    conectarWebSocket();
 });

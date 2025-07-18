@@ -93,6 +93,7 @@ app.get('/chamados', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Fr
 app.get('/relatorios', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'relatorio.html')); });
 app.get('/acompanhar', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'pedidos.html')); });
 app.get('/configuracoes', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'configuracoes.html')); });
+app.get('/sobre', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina cliente', 'sobre.html')); });
 app.get('/', (req, res) => { res.redirect('/login'); });
 console.log('[DEBUG] 7. Rotas de arquivos HTML servidas.');
 

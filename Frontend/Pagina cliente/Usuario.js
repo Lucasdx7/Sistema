@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const navMenu = document.querySelector('.nav-menu');
     const menuList = document.querySelector('.menu-list');
     const profileIcon = document.querySelector('.fa-user.icon');
+    const aboutIcon = document.querySelector('.fa-info-circle.icon'); // <-- ALTERAÇÃO 1: Adicionada a referência ao ícone "Sobre"
     const cartIcon = document.querySelector('.cart-icon');
     const cartBadge = document.querySelector('.cart-icon .badge');
     const productModal = document.getElementById('product-details-modal');
@@ -160,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="item-action">
                     <button class="details-button" title="Ver detalhes"><i class="fas fa-info-circle"></i></button>
                     ${botaoAdicionar}
-                    <span class="item-price">R$ ${parseFloat(prod.preco ).toFixed(2)}</span>
+                    <span class="item-price">R$ ${parseFloat(prod.preco  ).toFixed(2)}</span>
                 </div>
             `;
             if (happyHourInativo) itemDiv.classList.add('item-inativo');
@@ -178,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p>${produto.descricao_detalhada || produto.descricao}</p>
             </div>
         `;
-        productModal.classList.remove('hidden' );
+        productModal.classList.remove('hidden'  );
     }
 
     // --- Função Principal de Inicialização ---
@@ -207,6 +208,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Event Listeners ---
     profileIcon.addEventListener('click', () => { window.location.href = '/conta'; });
+
+    // <-- ALTERAÇÃO 2: Adicionado o evento de clique para o ícone "Sobre"
+    if (aboutIcon) {
+        aboutIcon.addEventListener('click', () => {
+            window.location.href = '/sobre';
+        });
+    }
+    
     cartIcon.addEventListener('click', () => {
         if (carrinho.length === 0) {
             Notificacao.erro('Carrinho Vazio', 'Adicione itens ao seu pedido antes de continuar.');

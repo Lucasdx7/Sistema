@@ -1,6 +1,6 @@
 # Sistema de Gestão de Cardápio e Pedidos
 
-![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow) ![Progresso](https://img.shields.io/badge/progresso-89%25-brightgreen) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet)
+![Status do Projeto](https://img.shields.io/badge/status-em%20desenvolvimento-yellow) ![Progresso](https://img.shields.io/badge/progresso-92%25-brightgreen) ![Tecnologia](https://img.shields.io/badge/backend-Node.js%20%26%20Express-green) ![Tecnologia](https://img.shields.io/badge/frontend-HTML,%20CSS,%20JS-blue) ![Banco de Dados](https://img.shields.io/badge/database-MySQL-blueviolet)
 
 Sistema de gerenciamento completo para restaurantes, com foco em segurança, usabilidade e atualizações em tempo real. A plataforma permite que a gerência administre o cardápio, mesas e relatórios de forma dinâmica, enquanto os clientes realizam seus pedidos diretamente por um tablet na mesa.
 
@@ -8,19 +8,19 @@ Sistema de gerenciamento completo para restaurantes, com foco em segurança, usa
 
 O objetivo deste sistema é modernizar a experiência do cliente e otimizar a gestão do restaurante. Ele é dividido em duas interfaces principais:
 
-1.  **Painel de Gerenciamento:** Uma área administrativa segura onde a equipe gerencial pode administrar o cardápio, mesas, chamados de garçom, acompanhar o histórico de sessões e gerar relatórios de vendas.
+1.  **Painel de Gerenciamento:** Uma área administrativa segura onde a equipe gerencial pode administrar o cardápio, mesas, chamados de garçom, acompanhar o histórico de sessões, gerar relatórios de vendas e solicitar suporte técnico.
 2.  **Interface do Cliente (Tablet):** Um sistema completo que guia o cliente desde o login da mesa, passando pela visualização do cardápio, montagem do pedido, até o fechamento da conta com a assistência de um funcionário.
 
 O sistema utiliza WebSockets para garantir que qualquer alteração feita pela gerência ou solicitação do cliente seja refletida **em tempo real** em todas as telas conectadas, sem a necessidade de recarregar a página.
 
 ---
 
-## 🚀 Status Atual (Progresso: 89%)
+## 🚀 Status Atual (Progresso: 92%)
 
 O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de interação do cliente e as principais funcionalidades de gerenciamento implementadas e estáveis.
 
 ### Funcionalidades Concluídas:
--   [x] **Backend:** Estrutura do servidor com Node.js e Express.
+-   [x] **Backend:** Estrutura do servidor com Node.js.
 -   [x] **Banco de Dados:** Schema robusto com tabelas para `usuarios`, `mesas`, `sessoes_cliente`, `pedidos`, `categorias`, `produtos`, `chamados`, `logs` e `configuracoes`.
 -   [x] **API Segura e Middleware Inteligente:**
     -   [x] Endpoints protegidos que exigem autenticação JWT para acesso.
@@ -52,7 +52,7 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
     -   [x] **Página de Logs com Filtros:**
         -   [x] Interface aprimorada com filtros para pesquisar logs por **data específica** e por **termo de busca** nos detalhes.
         -   [x] Rota de API otimizada para lidar com as consultas filtradas de forma eficiente.
--   [x] **(NOVO) Dashboard de Relatórios Avançados:**
+-   [x] **Dashboard de Relatórios Avançados:**
     -   [x] **Visualização por Período:** Filtros dinâmicos para analisar vendas de **Hoje, Semana, Mês e Ano**.
     -   [x] **KPIs Abrangentes:** Métricas chave como Vendas Totais, Total de Pedidos, Ticket Médio e Produto Mais Vendido.
     -   [x] **Gráficos Inteligentes:**
@@ -66,6 +66,10 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
     -   [x] **Relatório de Atividade de Funcionários Aprimorado:** Análise de desempenho individual por período, com métricas chave como **mesas fechadas** e **pedidos entregues**.
     -   [x] **Gestão de Permissões:** Controle dinâmico dos módulos que usuários do nível "Pedidos" podem acessar.
     -   [x] **Zona de Perigo:** Funcionalidade segura para **resetar o banco de dados**, protegida por chave de acesso.
+-   [x] **Sistema de Suporte Técnico Integrado:**
+    -   [x] Página dedicada para que os usuários da gerência possam abrir chamados de suporte.
+    -   [x] Formulário coleta nome, telefone e descrição do problema.
+    -   [x] Backend envia um e-mail formatado para o endereço de suporte técnico via SMTP do Gmail, utilizando autenticação segura com "App Password".
 -   [x] **Interface do Cliente (Ciclo Completo e Inteligente):**
     -   [x] Login da Mesa e Coleta de Dados do Cliente.
     -   [x] Teclado Virtual Customizado integrado em todas as telas de input.
@@ -92,6 +96,10 @@ O projeto está em uma fase madura de desenvolvimento, com o fluxo completo de i
     *   [bcryptjs](https://github.com/dcodeIO/bcrypt.js): Para criptografia segura de senhas.
     *   [ws](https://github.com/websockets/ws): Biblioteca para implementação de WebSockets.
     *   [dotenv](https://github.com/motdotla/dotenv): Para gerenciamento de variáveis de ambiente.
+    *   [nodemailer](https://nodemailer.com/): Biblioteca para envio de e-mails (utilizada no sistema de suporte).
+    *   [pdfkit](https://pdfkit.org/): Para geração de recibos e relatórios em PDF.
+    *   [node-thermal-printer](https://github.com/Klemen1337/node-thermal-printer): Para formatação de impressão em impressoras térmicas.
+    *   [node-fetch](https://github.com/node-fetch/node-fetch): Uma implementação de `fetch` para Node.js, usada para fazer requisições HTTP.
 
 *   **Frontend:**
     *   HTML5, CSS3, JavaScript (Vanilla)
@@ -111,8 +119,19 @@ Para rodar este projeto em sua máquina, siga os passos abaixo.
 ### Pré-requisitos:
 *   Ter o [Node.js](https://nodejs.org/) instalado.
 *   Ter um servidor [MySQL](https://www.mysql.com/) rodando localmente.
+*   Ter uma conta do Gmail com a [Verificação em Duas Etapas](https://myaccount.google.com/signinoptions/two-step-verification) ativada e uma [Senha de Aplicativo](https://myaccount.google.com/apppasswords) de 16 letras gerada.
 
-### 1. Configuração do Banco de Dados
+### 1. Clonar o Repositório
+
+Primeiro, clone o repositório do projeto para sua máquina local:
+
+```bash
+git clone <URL_DO_SEU_REPOSITORIO>
+cd <nome_da_pasta_do_seu_projeto>
+```
+
+### 2. Configuração do Banco de Dados
+
 -   Crie um banco de dados no seu MySQL com o nome `cardapio_db` (ou o nome que preferir).
 -   Execute o script SQL abaixo para criar e configurar todas as tabelas necessárias. Este script consolidado já inclui todas as criações, alterações e inserções iniciais.
 
@@ -232,42 +251,58 @@ VALUES ('Admin Geral', 'admin@skina67.com', 'admin', '$2b$10$abcdefghijklmnopqrs
 
 ```
 
-### 2. Variáveis de Ambiente
--   Crie um arquivo `.env` na pasta `Backend`.
--   Defina as seguintes variáveis:
+### 3. Variáveis de Ambiente
+
+-   Crie um arquivo `.env` na pasta `Backend` do seu projeto.
+-   Defina as seguintes variáveis, substituindo os valores pelos seus dados:
+
     ```env
+    # Configurações do Banco de Dados
     DB_HOST=localhost
     DB_USER=seu_usuario_mysql
     DB_PASSWORD=sua_senha_mysql
     DB_NAME=cardapio_db
-    JWT_SECRET=sua_chave_secreta_para_jwt
-    REGISTER_SECRET_TOKEN=sua_chave_para_registrar_novos_usuarios
-    RESET_SECRET_TOKEN=sua_chave_secreta_para_resetar_o_banco
+
+    # Chaves de Segurança do Sistema
+    JWT_SECRET=sua_chave_secreta_para_jwt_aqui
+    REGISTER_SECRET_TOKEN=sua_chave_para_registrar_novos_usuarios_aqui
+    RESET_SECRET_TOKEN=sua_chave_secreta_para_resetar_o_banco_aqui
+
+    # Credenciais para Envio de E-mail de Suporte
+    GMAIL_SENDER_EMAIL=seu-email-do-gmail@gmail.com
+    GMAIL_APP_PASSWORD=sua-senha-de-app-de-16-letras-sem-espacos
+    SUPPORT_RECEIVER_EMAIL=email-que-recebera-os-chamados@exemplo.com
     ```
 
-### 3. Instalação das Dependências
--   Navegue até a pasta `Backend` pelo terminal:
+### 4. Instalação das Dependências do Backend
+
+-   Navegue até a pasta `Backend` do seu projeto pelo terminal:
+
     ```bash
     cd Backend
     ```
--   Instale todas as dependências do Node.js:
+
+-   Instale todas as dependências listadas no `package.json`:
+
     ```bash
     npm install
     ```
 
-### 4. Iniciando o Servidor
--   Ainda no terminal, dentro da pasta `Backend`, execute o comando:
+### 5. Iniciando o Servidor
+
+-   Ainda no terminal, dentro da pasta `Backend`, execute o comando para iniciar o servidor:
+
     ```bash
     node server.js
     ```
--   Se tudo estiver correto, você verá mensagens indicando que o servidor está rodando na porta 3000.
 
-### 5. Acessando o Sistema
--   **Painel de Gerenciamento:** Abra seu navegador e acesse `http://localhost:3000/login-gerencia`
--   **Interface do Cliente:** Abra outra aba e acesse `http://localhost:3000/login`
+-   Se tudo estiver correto, você verá mensagens no terminal indicando que o servidor está rodando, geralmente na porta 3000.
 
+### 6. Acessando o Sistema
 
-
+-   Abra seu navegador e acesse as URLs:
+    -   **Painel de Gerenciamento:** `http://localhost:3000/login-gerencia`
+    -   **Interface do Cliente:** `http://localhost:3000/login`
 
 ---
 
@@ -277,3 +312,5 @@ Feito com ❤️ por **Lucas Felipe**.
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white )](https://www.linkedin.com/in/lucas-felipe-pereira-amorim-2773092a7/ )
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white )](https://github.com/Lucasdx7 )
+
+

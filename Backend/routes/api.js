@@ -1853,7 +1853,6 @@ router.post('/reset-database', checarPermissaoConfig, async (req, res) => {
 
 
 
-
 module.exports = router;
 
 

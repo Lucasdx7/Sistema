@@ -2,7 +2,7 @@
 
 // --- 1. Módulos Necessários ---
 console.log('[DEBUG] 1. Iniciando o carregamento dos módulos...');
-require('dotenv').config();
+require('dotenv').config(); // <<< MOVIDO para ser a PRIMEIRA linha, garantindo que as variáveis de ambiente carreguem antes de tudo.
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -15,14 +15,15 @@ console.log('[DEBUG] 1. Módulos básicos carregados com sucesso.');
 console.log('[DEBUG] 2. Tentando carregar os arquivos de rotas e middlewares...');
 const authRoutes = require('./routes/auth');
 const apiRoutes = require('./routes/api');
-const publicRoutes = require('./routes/public'); // Rota pública
+const publicRoutes = require('./routes/public');
+const suporteRoutes = require('./routes/suporte'); // <<< NOVO: Importa as rotas de suporte aqui, junto com as outras.
 const { protegerRota } = require('./middleware/authMiddleware');
 console.log('[DEBUG] 2. Todos os arquivos de rotas e middlewares foram carregados sem erro.');
 
 // --- 3. Configuração Inicial ---
 console.log('[DEBUG] 3. Configurando o Express...');
 const app = express();
-const PORT = process.env.PORT || 3000; // Usa a porta do ambiente ou 3000 como padrão
+const PORT = process.env.PORT || 3000;
 console.log('[DEBUG] 3. Express configurado.');
 
 // --- 4. Middlewares Globais do Express ---
@@ -65,7 +66,6 @@ console.log('[DEBUG] 5. Servidor WebSocket configurado.');
 console.log('[DEBUG] 6. Vinculando as rotas da API...');
 
 // ROTA PÚBLICA (para fontes, permissões, etc.) - SEM PROTEÇÃO
-// **DEVE VIR ANTES** da rota principal da API para não ser bloqueada.
 app.use('/api/public', publicRoutes);
 console.log('[DEBUG] 6a. Rota PÚBLICA /api/public vinculada.');
 
@@ -76,6 +76,12 @@ console.log('[DEBUG] 6b. Rota de AUTENTICAÇÃO /auth vinculada.');
 // ROTA PRINCIPAL DA API - COM PROTEÇÃO
 app.use('/api', protegerRota, apiRoutes);
 console.log('[DEBUG] 6c. Rota PROTEGIDA /api vinculada.');
+
+// <<< NOVO: Rota de Suporte - Também precisa de proteção
+// A rota de suporte deve ser usada por um usuário logado, então a colocamos junto com as rotas protegidas.
+app.use('/api/suporte', protegerRota, suporteRoutes);
+console.log('[DEBUG] 6d. Rota PROTEGIDA /api/suporte vinculada.');
+
 
 // --- 7. Rotas para servir as páginas HTML ---
 console.log('[DEBUG] 7. Servindo rotas de arquivos HTML...');
@@ -94,6 +100,7 @@ app.get('/relatorios', (req, res) => { res.sendFile(path.join(__dirname, '..', '
 app.get('/acompanhar', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'pedidos.html')); });
 app.get('/configuracoes', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'configuracoes.html')); });
 app.get('/sobre', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina cliente', 'sobre.html')); });
+app.get('/suporte', (req, res) => { res.sendFile(path.join(__dirname, '..', 'Frontend', 'Pagina gerencia', 'suporte.html')); });
 app.get('/', (req, res) => { res.redirect('/login'); });
 console.log('[DEBUG] 7. Rotas de arquivos HTML servidas.');
 

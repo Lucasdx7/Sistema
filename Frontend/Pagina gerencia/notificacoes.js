@@ -13,6 +13,7 @@
  * Notificacao.erro('Oops...', 'Ocorreu um erro ao salvar.');
  * const confirmado = await Notificacao.confirmar('Tem certeza?', 'A ação não pode ser desfeita.');
  * if (confirmado) { ... }
+ * Notificacao.mostrarCarregando('Processando...');
  */
 
 const Notificacao = {
@@ -26,15 +27,14 @@ const Notificacao = {
         Swal.fire({
             icon: 'success',
             title: titulo,
-            toast: true, // Define o alerta como um "toast"
-            position: 'top-end', // Posição no canto superior direito
-            showConfirmButton: false, // Não mostra o botão "OK"
-            timer: 3000, // O alerta some automaticamente em 3 segundos
-            timerProgressBar: true, // Mostra uma barrinha de progresso do tempo
-            background: '#3f4f6bff', // Cor de fundo escura
-            color: '#ecf0f1', // Cor do texto clara
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            background: '#3f4f6bff',
+            color: '#ecf0f1',
             didOpen: (toast) => {
-                // Pausa o timer se o mouse estiver sobre o alerta
                 toast.addEventListener('mouseenter', Swal.stopTimer);
                 toast.addEventListener('mouseleave', Swal.resumeTimer);
             }
@@ -52,9 +52,9 @@ const Notificacao = {
             icon: 'error',
             title: titulo,
             text: texto,
-            confirmButtonColor: '#e74c3c', // Cor vermelha para o botão de confirmação
-            background: '#2f3452ff', // Fundo escuro
-            color: '#ecf0f1' // Texto claro
+            confirmButtonColor: '#e74c3c',
+            background: '#2f3452ff',
+            color: '#ecf0f1'
         });
     },
 
@@ -69,16 +69,31 @@ const Notificacao = {
         const resultado = await Swal.fire({
             title: titulo,
             text: texto,
-            icon: 'warning', // Ícone de aviso
-            showCancelButton: true, // Mostra o botão de cancelar
+            icon: 'warning',
+            showCancelButton: true,
             confirmButtonText: 'Sim, continuar!',
             cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#30d646ff', // Cor azul para confirmar
-            cancelButtonColor: '#d33', // Cor vermelha para cancelar
+            confirmButtonColor: '#30d646ff',
+            cancelButtonColor: '#d33',
             background: '#36506dff',
             color: '#ecf0f1'
         });
-        // Retorna true apenas se o botão de confirmação foi clicado
         return resultado.isConfirmed;
+    },
+
+    /**
+     * NOVO MÉTODO: Mostra um pop-up de carregamento sem botões.
+     * Ideal para aguardar respostas do servidor.
+     * @param {string} titulo - O título a ser exibido no pop-up (ex: 'Carregando...').
+     */
+    mostrarCarregando(titulo) {
+        Swal.fire({
+            title: titulo,
+            text: 'Por favor, aguarde.',
+            allowOutsideClick: false, // Impede que o usuário feche clicando fora
+            didOpen: () => {
+                Swal.showLoading(); // Ativa a animação de carregamento
+            }
+        });
     }
 };

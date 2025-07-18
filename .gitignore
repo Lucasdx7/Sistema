@@ -1,2 +1,2 @@
 Frontend/Img/*.json
-backend/*.env
+.env

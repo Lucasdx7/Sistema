@@ -55,9 +55,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const dadosCliente = JSON.parse(localStorage.getItem('dadosCliente'));
     const nomeMesa = localStorage.getItem('nomeMesa');
 
+    // Validação de sessão: se não houver token ou ID, redireciona para o login.
     if (!token || !sessaoId) {
-        Notificacao.erro('Sessão não encontrada', 'Redirecionando para a tela de login.')
-            .then(() => window.location.href = '/login');
+        Notificacao.erro('Sessão não encontrada', 'Redirecionando para a tela de login.');
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 2500); // Redireciona após 2.5 segundos
         return;
     }
 
@@ -80,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (clienteMesaEl) clienteMesaEl.textContent = nomeMesa || 'Mesa';
 
     // ==================================================================
-    // LÓGICA DO TECLADO VIRTUAL (Sem alterações)
+    // LÓGICA DO TECLADO VIRTUAL
     // ==================================================================
     const keyboard = document.getElementById('virtual-keyboard-alphanumeric');
     const inputs = document.querySelectorAll('.virtual-input');
@@ -233,12 +236,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==================================================================
-    // --- LÓGICA DE LOGOUT ATUALIZADA ---
+    // --- LÓGICA DE LOGOUT ATUALIZADA (COM A CORREÇÃO) ---
     // ==================================================================
     logoutForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitButton = logoutForm.querySelector('button[type="submit"]');
-        // Coleta os dados dos campos corretos (nome de usuário e senha do funcionário)
         const nomeUsuarioFuncionario = document.getElementById('funcionario-usuario').value;
         const senhaFuncionario = document.getElementById('funcionario-senha').value;
         const formaPagamento = formaPagamentoInput.value;
@@ -254,11 +256,10 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Autorizando...';
 
         try {
-            // 1. Autentica as credenciais do FUNCIONÁRIO usando a rota de login
+            // 1. Autentica as credenciais do FUNCIONÁRIO
             const authResponse = await fetch('/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Envia 'nome_usuario' em vez de 'email'
                 body: JSON.stringify({ 
                     nome_usuario: nomeUsuarioFuncionario, 
                     senha: senhaFuncionario 
@@ -277,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Este funcionário não tem permissão para fechar contas.');
             }
 
-            // 2. Se a autenticação for bem-sucedida, fecha a conta usando o token do funcionário
+            // 2. Fecha a conta usando o token do funcionário
             const closeResponse = await fetch(`/api/sessoes/${sessaoId}/fechar`, {
                 method: 'POST',
                 headers: { 
@@ -291,8 +292,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(closeResult.message);
             }
 
-            // 3. Limpa o localStorage e redireciona
-            localStorage.clear();
+            // 3. Limpa APENAS os dados da sessão do cliente e redireciona
+            localStorage.removeItem('token');
+            localStorage.removeItem('sessaoId');
+            localStorage.removeItem('dadosCliente');
+            localStorage.removeItem('nomeMesa');
+            
             Notificacao.sucesso('Sessão Encerrada!', 'Obrigado pela preferência e volte sempre.');
             setTimeout(() => {
                 window.location.href = '/login';
